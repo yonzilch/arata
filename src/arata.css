@@ -353,6 +353,15 @@ nav .right-nav #dark-mode-toggle:hover {
   background-color: transparent;
 }
 
+/* Active nav item highlighting.
+   apollo does not highlight the active menu item; this is an arata addition
+   for wayfinding. The `active` class is added by view/header.gleam via
+   `attribute.classes([#("active", is_active(...))])` when the menu item's URL
+   matches the current route. */
+nav .right-nav a.active {
+  color: var(--primary-color);
+}
+
 /* TODO: Is this still used? */
 .logo {
   border-bottom: unset;

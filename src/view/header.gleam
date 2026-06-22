@@ -17,10 +17,14 @@ import gleam/option
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
-import route
+import route.{type Route, Home, Page, Post, Posts, Projects, Talks}
 
 /// Render the site header (`<nav>`).
-pub fn view(config: Config) -> Element(msg) {
+///
+/// `current_route` is passed in so the active menu item can be highlighted
+/// with an `active` class (apollo itself does not highlight the active nav
+/// item; this is a small arata addition for better wayfinding).
+pub fn view(config: Config, current_route: Route) -> Element(msg) {
   html.nav([], [
     html.div([attribute.class("left-nav")], [
       view_site_title(config),
@@ -31,12 +35,58 @@ pub fn view(config: Config) -> Element(msg) {
       // Menu items (internal links) followed by two non-functional
       // placeholder buttons; handlers arrive in Phase 5 (search) and
       // Phase 10 (theme).
-      list.append(view_menu(config.menu), [
+      list.append(view_menu(config.menu, current_route), [
         view_search_button(),
         view_theme_toggle(),
       ]),
     ),
   ])
+}
+
+/// Whether the menu item with `url` is the active nav entry for
+/// `current_route`. Matches apollo's URL scheme:
+///
+///   "/"          -> Home
+///   "/posts"     -> Posts(_) or Post(_) (single posts are still in the
+///                   posts section, so the section link stays active)
+///   "/projects"  -> Projects
+///   "/talks"     -> Talks
+///   "/about"     -> Page("about")
+///
+/// `/projects/{slug}` and `/talks/{slug}` parse as `Page(slug)` rather than
+/// `Projects`/`Talks`, so the section link only highlights on the section
+/// index itself (matching apollo's section/page distinction). A future phase
+/// can refine this if desired.
+fn is_active(current_route: Route, url: String) -> Bool {
+  case url {
+    "/" ->
+      case current_route {
+        Home -> True
+        _ -> False
+      }
+    "/posts" ->
+      case current_route {
+        Posts(_) -> True
+        Post(_) -> True
+        _ -> False
+      }
+    "/projects" ->
+      case current_route {
+        Projects -> True
+        _ -> False
+      }
+    "/talks" ->
+      case current_route {
+        Talks -> True
+        _ -> False
+      }
+    "/about" ->
+      case current_route {
+        Page("about") -> True
+        _ -> False
+      }
+    _ -> False
+  }
 }
 
 // LEFT NAV ---------------------------------------------------------------------
@@ -71,13 +121,24 @@ fn view_socials(socials: List(config.Social)) -> List(Element(msg)) {
 
 // RIGHT NAV --------------------------------------------------------------------
 
-fn view_menu(menu: List(config.MenuItem)) -> List(Element(msg)) {
+fn view_menu(
+  menu: List(config.MenuItem),
+  current_route: Route,
+) -> List(Element(msg)) {
   list.map(menu, fn(item) {
     // Menu URLs are same-origin paths; modem intercepts the click and routes
     // through `parse_route`. Using `attribute.href` (rather than `route.href`)
     // because the URL is a raw string from config, not a typed `Route`.
+    //
+    // The `active` class is added (via `attribute.classes`) when this item's
+    // URL matches `current_route` per `is_active`; `arata.css` paints an
+    // active item with `--primary-color`.
     html.a(
-      [attribute.href(item.url), attribute.style("margin-right", "0.5em")],
+      [
+        attribute.href(item.url),
+        attribute.style("margin-right", "0.5em"),
+        attribute.classes([#("active", is_active(current_route, item.url))]),
+      ],
       [html.text(item.name)],
     )
   })
