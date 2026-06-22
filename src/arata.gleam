@@ -24,6 +24,7 @@ import data/search.{type SearchResult}
 import data/talk.{type Talk}
 import effect/codeblock as codeblock_effect
 import effect/note as note_effect
+import effect/script as script_effect
 import effect/search as search_effect
 import effect/theme as theme_effect
 import effect/toc as toc_effect
@@ -135,7 +136,7 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
   // The search keyboard listener subscribes to global keydown for Cmd/Ctrl+K.
   let nav_effect =
     modem.init(fn(uri) { uri |> route.parse_route |> UserNavigatedTo })
-  let post_effects = post_effects_for(initial_route)
+  let post_effects = post_effects_for(initial_route, False)
   let theme_init = effect.map(theme_effect.init_theme(), theme_msg_to_msg)
   let search_keys =
     effect.map(search_effect.subscribe_to_search_keys(), SearchKeyPressed)
@@ -182,7 +183,13 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       // when landing on a single post (the previous observer watched the old
       // post's DOM, which is gone after the view re-renders).
       let model = Model(..model, route:, active_heading: option.None)
-      #(model, post_effects_for(route))
+      #(
+        model,
+        post_effects_for(
+          route,
+          is_effective_dark(model.theme, model.system_prefers_dark),
+        ),
+      )
     }
     TocActiveHeadingChanged(id) -> #(
       Model(..model, active_heading: option.Some(id)),
@@ -195,31 +202,38 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         theme_effect.Dark -> theme_effect.Auto
         theme_effect.Auto -> theme_effect.Light
       }
+      let new_model = Model(..model, theme: next_theme)
+      // Re-render mermaid with the new theme if we're on a post page.
+      let mermaid_eff = mermaid_rerender_for(new_model)
       #(
-        Model(..model, theme: next_theme),
-        effect.map(
-          theme_effect.apply_theme_choice(next_theme),
-          theme_msg_to_msg,
-        ),
+        new_model,
+        effect.batch([
+          effect.map(
+            theme_effect.apply_theme_choice(next_theme),
+            theme_msg_to_msg,
+          ),
+          mermaid_eff,
+        ]),
       )
     }
     ThemeLoaded(theme) -> {
       // The FFI has already applied the theme to the DOM; we just store it.
-      #(Model(..model, theme:), effect.none())
+      let new_model = Model(..model, theme:)
+      #(new_model, mermaid_rerender_for(new_model))
     }
     SystemPrefersDarkChanged(prefers_dark) -> {
       // When the OS preference changes and the user chose Auto, re-apply the
-      // theme so the <html> class updates.
-      let model = Model(..model, system_prefers_dark: prefers_dark)
-      let eff = case model.theme {
+      // theme so the <html> class updates, and re-render mermaid.
+      let new_model = Model(..model, system_prefers_dark: prefers_dark)
+      let theme_eff = case new_model.theme {
         theme_effect.Auto ->
           effect.map(
-            theme_effect.apply_theme_choice(model.theme),
+            theme_effect.apply_theme_choice(new_model.theme),
             theme_msg_to_msg,
           )
         _ -> effect.none()
       }
-      #(model, eff)
+      #(new_model, effect.batch([theme_eff, mermaid_rerender_for(new_model)]))
     }
     NoOp -> #(model, effect.none())
     // SEARCH -------------------------------------------------------------
@@ -274,25 +288,60 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         ),
         effect.batch([
           modem.push(route.href_url(target_route), option.None, option.None),
-          post_effects_for(target_route),
+          post_effects_for(
+            target_route,
+            is_effective_dark(model.theme, model.system_prefers_dark),
+          ),
         ]),
       )
     }
   }
 }
 
-/// Effects to run when landing on a route: on a single post, both the TOC
-/// IntersectionObserver (for scroll-driven heading highlighting) and the
-/// code-block enhancer (for copy buttons + language labels) are armed.
-/// Everywhere else, no effects.
-fn post_effects_for(route: Route) -> effect.Effect(Msg) {
+/// Effects to run when landing on a route: on a single post, the TOC
+/// IntersectionObserver, the code-block enhancer, the note toggle enhancer,
+/// and the MathJax/Mermaid renderers are all armed. Everywhere else, no
+/// effects. `is_dark` selects the mermaid theme ("dark" vs "neutral").
+fn post_effects_for(route: Route, is_dark: Bool) -> effect.Effect(Msg) {
   case route {
     Post(_) ->
       effect.batch([
         effect.map(toc_effect.observe(), TocActiveHeadingChanged),
         effect.map(codeblock_effect.enhance(), fn(_) { NoOp }),
         effect.map(note_effect.enhance(), fn(_) { NoOp }),
+        effect.map(script_effect.typeset_math(), fn(_) { NoOp }),
+        effect.map(script_effect.render_mermaid(is_dark), fn(_) { NoOp }),
       ])
+    _ -> effect.none()
+  }
+}
+
+/// Whether the effective theme is dark, given the user's choice and the
+/// system preference. `Auto` resolves to the system preference.
+fn is_effective_dark(
+  theme: theme_effect.Theme,
+  system_prefers_dark: Bool,
+) -> Bool {
+  case theme {
+    theme_effect.Dark -> True
+    theme_effect.Light -> False
+    theme_effect.Auto -> system_prefers_dark
+  }
+}
+
+/// Re-render mermaid diagrams with the new theme, but only if we're currently
+/// on a post page (mermaid blocks only exist inside post bodies). Returns
+/// `effect.none()` on other routes.
+fn mermaid_rerender_for(model: Model) -> effect.Effect(Msg) {
+  case model.route {
+    Post(_) ->
+      effect.map(
+        script_effect.render_mermaid(is_effective_dark(
+          model.theme,
+          model.system_prefers_dark,
+        )),
+        fn(_) { NoOp },
+      )
     _ -> effect.none()
   }
 }
@@ -372,7 +421,10 @@ fn handle_search_key(
             ),
             effect.batch([
               modem.push(route.href_url(target_route), option.None, option.None),
-              post_effects_for(target_route),
+              post_effects_for(
+                target_route,
+                is_effective_dark(model.theme, model.system_prefers_dark),
+              ),
             ]),
           )
         }
