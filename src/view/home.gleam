@@ -12,8 +12,12 @@ import gleam/option
 import lustre/attribute
 import lustre/element.{type Element, unsafe_raw_html}
 import lustre/element/html
+import view/wavy_boundary
 
-/// Render the homepage.
+/// Render the homepage. The wavy boundary is inserted between the hero
+/// section (the page-header + subtitle) and the body content, creating a soft
+/// visual transition. The wave uses `var(--bg-0)` above and `var(--bg-1)`
+/// below so it blends into the body section.
 pub fn view(home: Page) -> Element(msg) {
   html.main([], [
     html.article([], [
@@ -22,6 +26,7 @@ pub fn view(home: Page) -> Element(msg) {
           html.text(home.title),
           ..view_subtitle(home.subtitle)
         ]),
+        wavy_boundary.view("var(--bg-0)", "var(--bg-1)"),
         unsafe_raw_html("", "div", [], home.body),
       ]),
     ]),
