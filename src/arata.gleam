@@ -8,18 +8,23 @@
 //// to a per-route view wrapped in the apollo 3-column shell.
 ////
 //// The `/posts` index and `/posts/{slug}` single-post routes are fully wired
-//// (Phase 5): the list paginates the sample content, and a single post renders
-//// its title, meta, body, and tags. The remaining routes (home, projects,
-//// talks, tags, standalone pages) still render `.page-header` placeholders
-//// pending Phases 7-9.
+//// (Phases 5-6): the list paginates the sample content, and a single post
+//// renders its title, meta row (date, updated, word count, reading time),
+//// optional tl;dr box, body, and tags. A scroll-driven table of contents in
+//// the `.right-content` sidebar highlights the active heading via an
+//// IntersectionObserver effect. The remaining routes (home, projects, talks,
+//// tags, standalone pages) still render `.page-header` placeholders pending
+//// Phases 7-9.
 
 import config
 import data/post.{type Post}
 import data/sample_content
+import effect/toc as toc_effect
+import gleam/option.{type Option}
 import lustre
 import lustre/attribute
 import lustre/effect
-import lustre/element.{type Element}
+import lustre/element.{type Element, none}
 import lustre/element/html
 import modem
 import route.{
@@ -30,6 +35,7 @@ import view/header
 import view/layout
 import view/post as post_view
 import view/post_list
+import view/toc as toc_view
 
 // MAIN ------------------------------------------------------------------------
 
@@ -49,7 +55,13 @@ pub fn main() {
 // MODEL -----------------------------------------------------------------------
 
 pub type Model {
-  Model(route: Route, config: config.Config, posts: List(Post))
+  Model(
+    route: Route,
+    config: config.Config,
+    posts: List(Post),
+    /// The id of the heading currently highlighted in the TOC, or `None`.
+    active_heading: Option(String),
+  )
 }
 
 fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
@@ -64,60 +76,89 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       route: initial_route,
       config: config.default(),
       posts: sample_content.posts(),
+      active_heading: option.None,
     )
 
   // Initialise modem so internal `<a>` clicks are intercepted and dispatched
   // as `UserNavigatedTo` messages instead of triggering a full page reload.
+  // If the initial route is a single post, also kick off the TOC observer.
   let nav_effect =
     modem.init(fn(uri) { uri |> route.parse_route |> UserNavigatedTo })
+  let toc_effect = toc_effect_for(initial_route)
+  let effects = effect.batch([nav_effect, toc_effect])
 
-  #(model, nav_effect)
+  #(model, effects)
 }
 
 // UPDATE ----------------------------------------------------------------------
 
 pub type Msg {
   UserNavigatedTo(route: Route)
+  /// The TOC IntersectionObserver reported a new active heading.
+  TocActiveHeadingChanged(id: String)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
-    UserNavigatedTo(route) -> #(Model(..model, route:), effect.none())
+    UserNavigatedTo(route) -> {
+      // Reset the active heading on navigation, then re-arm the TOC observer
+      // when landing on a single post (the previous observer watched the old
+      // post's DOM, which is gone after the view re-renders).
+      let model = Model(..model, route:, active_heading: option.None)
+      #(model, toc_effect_for(route))
+    }
+    TocActiveHeadingChanged(id) -> #(
+      Model(..model, active_heading: option.Some(id)),
+      effect.none(),
+    )
+  }
+}
+
+/// The TOC observer effect to run for a route: `observe()` on a single post,
+/// `effect.none()` everywhere else.
+fn toc_effect_for(route: Route) -> effect.Effect(Msg) {
+  case route {
+    Post(_) -> effect.map(toc_effect.observe(), TocActiveHeadingChanged)
+    _ -> effect.none()
   }
 }
 
 // VIEW ------------------------------------------------------------------------
 
 fn view(model: Model) -> Element(Msg) {
-  let main_content = case model.route {
-    Home -> view_home()
-    Posts(page) -> post_list.view(model.posts, page, posts_per_page)
+  let #(main_content, right_content) = case model.route {
+    Home -> #(view_home(), none())
+    Posts(page) -> #(post_list.view(model.posts, page, posts_per_page), none())
     Post(slug) ->
       case post.find_by_slug(model.posts, slug) {
-        Ok(found) -> post_view.view(found)
-        Error(Nil) -> view_not_found()
+        Ok(found) -> #(
+          post_view.view(found),
+          toc_view.view(found.toc, model.active_heading),
+        )
+        Error(Nil) -> #(view_not_found(), none())
       }
-    Projects -> view_projects()
-    Talks -> view_talks()
-    Tags -> view_tags()
-    Tag(name) -> view_tag(name)
-    Page(slug) -> view_page(slug)
-    NotFound(_) -> view_not_found()
+    Projects -> #(view_projects(), none())
+    Talks -> #(view_talks(), none())
+    Tags -> #(view_tags(), none())
+    Tag(name) -> #(view_tag(name), none())
+    Page(slug) -> #(view_page(slug), none())
+    NotFound(_) -> #(view_not_found(), none())
   }
 
-  layout.view([
-    header.view(model.config, model.route),
-    main_content,
-    footer.view(model.config),
-  ])
+  layout.view(
+    [
+      header.view(model.config, model.route),
+      main_content,
+      footer.view(model.config),
+    ],
+    right_content,
+  )
 }
 
 // PLACEHOLDER PAGE VIEWS ------------------------------------------------------
 //
-// Each route renders a minimal placeholder so the Phase 1 CSS (which targets
-// `.page-header` and `.not-found-header`) styles the shell. Full rendering is
-// Phases 4–6: post lists, single posts, projects grid, talks grid, tag lists,
-// and standalone pages.
+// These routes still render `.page-header` placeholders; full rendering is
+// Phases 7-9 (projects grid, talks grid, tag lists, standalone pages).
 
 fn view_home() -> Element(Msg) {
   page_main("Home")
