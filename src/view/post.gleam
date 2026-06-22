@@ -13,6 +13,7 @@
 //// so we inject it verbatim with `lustre/element.unsafe_raw_html`. The body
 //// is trusted: it is produced from our own markdown sources, not user input.
 
+import data/markdown
 import data/post.{type Post}
 import data/site.{type CommentsConfig}
 import gleam/int
@@ -49,7 +50,12 @@ pub fn view(post: Post, comments_config: CommentsConfig) -> Element(msg) {
         view_meta(post),
       ]),
       view_tldr(post.tldr),
-      unsafe_raw_html("", "section", [attribute.class("body")], post.body),
+      unsafe_raw_html(
+        "",
+        "section",
+        [attribute.class("body")],
+        markdown.to_html(post.body),
+      ),
       view_tags(post.tags),
     ]),
     comments.view(comments_config, post.slug),

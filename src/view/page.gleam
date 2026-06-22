@@ -6,6 +6,7 @@
 //// arata renders a simpler `<main><article>` with just a `.page-header` title
 //// and the body via `unsafe_raw_html`.
 
+import data/markdown
 import data/page.{type Page}
 import lustre/attribute
 import lustre/element.{type Element, unsafe_raw_html}
@@ -16,7 +17,12 @@ pub fn view(page: Page) -> Element(msg) {
   html.main([], [
     html.article([], [
       html.div([attribute.class("page-header")], [html.text(page.title)]),
-      unsafe_raw_html("", "section", [attribute.class("body")], page.body),
+      unsafe_raw_html(
+        "",
+        "section",
+        [attribute.class("body")],
+        markdown.to_html(page.body),
+      ),
     ]),
   ])
 }

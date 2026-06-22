@@ -7,6 +7,7 @@
 //// optional subtitle), then the pre-rendered HTML body via
 //// `unsafe_raw_html`.
 
+import data/markdown
 import data/page.{type Page}
 import gleam/option
 import lustre/attribute
@@ -27,7 +28,7 @@ pub fn view(home: Page) -> Element(msg) {
           ..view_subtitle(home.subtitle)
         ]),
         wavy_boundary.view("var(--bg-0)", "var(--bg-1)"),
-        unsafe_raw_html("", "div", [], home.body),
+        unsafe_raw_html("", "div", [], markdown.to_html(home.body)),
       ]),
     ]),
   ])
