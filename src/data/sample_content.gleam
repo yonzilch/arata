@@ -14,6 +14,7 @@
 //// the build pipeline from the markdown source; here they are hand-authored to
 //// match the bodies.
 
+import data/page.{type Page, Page}
 import data/post.{type Post, Post, TocEntry}
 import data/project.{type Project, Project}
 import data/talk.{type Talk, Talk}
@@ -256,6 +257,94 @@ pub fn talks() -> List(Talk) {
       organizer: Some(#("Functional Conf", "https://example.com")),
       slides: None,
       code: None,
+    ),
+  ]
+}
+
+/// The homepage content: a hero section followed by an introductory body.
+/// apollo's homepage uses `homepage.html` which renders the `_index.md`
+/// markdown body (with inline styles for the hero). arata ships a pre-rendered
+/// HTML body with the same structure.
+pub fn homepage() -> Page {
+  Page(
+    slug: "home",
+    title: "arata",
+    subtitle: Some(
+      "A modern and minimalistic blog theme powered by Gleam and Lustre.",
+    ),
+    body: "
+      <div class='homepage-hero'>
+        <h1 class='homepage-hero-title'>arata</h1>
+        <p class='homepage-hero-subtitle'>
+          A modern and minimalistic blog theme powered by Gleam and Lustre.
+        </p>
+      </div>
+
+      <h2 id='features'>Features</h2>
+      <ul>
+        <li>Light, dark, and auto themes (Phase 10)</li>
+        <li><a href='/projects'>Projects page</a></li>
+        <li><a href='/talks'>Talks page</a></li>
+        <li>MathJax rendering (Phase 14)</li>
+        <li><a href='/tags'>Taxonomies</a></li>
+        <li>Custom homepage</li>
+        <li>Comments (Phase 15)</li>
+        <li>Search functionality (Phase 12)</li>
+      </ul>
+
+      <h2 id='quick-start'>Quick Start</h2>
+      <ol>
+        <li><strong>Scaffold the project:</strong>
+          <pre><code>gleam new my-blog --template javascript
+cd my-blog
+gleam add lustre modem</code></pre>
+        </li>
+        <li><strong>Start the dev server:</strong>
+          <pre><code>gleam run -m lustre/dev start</code></pre>
+        </li>
+        <li><strong>Write content</strong> as Gleam constants (a build pipeline
+          arrives in Phase 17).</li>
+      </ol>
+
+      <p>Checkout all the <a href='/posts/configuration'>options you can
+      configure</a> and the <a href='/posts'>example posts</a>.</p>
+    ",
+  )
+}
+
+/// The full list of standalone pages. Rendered via the `Page(slug)` route.
+pub fn pages() -> List(Page) {
+  [
+    Page(
+      slug: "about",
+      title: "About",
+      subtitle: None,
+      body: "
+        <p>
+          <strong>arata</strong> is a faithful reimplementation of the
+          <a href='https://github.com/not-matthias/apollo'>apollo</a> blog
+          theme, built with <a href='https://gleam.run'>Gleam</a> and
+          <a href='https://hexdocs.pm/lustre'>Lustre</a>.
+        </p>
+        <h2 id='why'>Why arata?</h2>
+        <p>
+          apollo is a beautiful, minimalistic theme for the Zola static site
+          generator. arata reproduces its design and feature set as a
+          client-side single-page application, leveraging Gleam's type safety
+          and Lustre's Elm Architecture for a maintainable codebase.
+        </p>
+        <h2 id='stack'>The stack</h2>
+        <ul>
+          <li><strong>Gleam</strong> — a typed, functional language compiling to JavaScript.</li>
+          <li><strong>Lustre</strong> — a frontend framework following The Elm Architecture.</li>
+          <li><strong>modem</strong> — client-side routing over the History API.</li>
+        </ul>
+        <p>
+          See the <a href='/posts'>posts</a> for deep dives into the
+          implementation, or the <a href='/projects'>projects page</a> for
+          related work.
+        </p>
+      ",
     ),
   ]
 }

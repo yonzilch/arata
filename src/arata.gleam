@@ -7,14 +7,15 @@
 //// stores the current `Route` in the model, and the `view` function dispatches
 //// to a per-route view wrapped in the apollo 3-column shell.
 ////
-//// The `/posts` index, `/posts/{slug}` single-post, `/projects` cards grid,
-//// and `/talks` grid routes are fully wired (Phases 5-7). A single post also
-//// renders a scroll-driven table of contents in the `.right-content` sidebar
-//// with IntersectionObserver active highlighting. The remaining routes (home,
-//// tags, standalone pages) still render `.page-header` placeholders pending
-//// Phases 8-9.
+//// All routes are now fully wired (Phases 5-9): /posts (paginated list),
+//// /posts/{slug} (single post with TOC), /projects (card grid), /talks (talk
+//// grid), /tags (tag index), /tags/{name} (single tag), / (homepage), and
+//// /{slug} (standalone pages). A single post also renders a scroll-driven
+//// table of contents in the `.right-content` sidebar with IntersectionObserver
+//// active highlighting.
 
 import config
+import data/page.{type Page}
 import data/post.{type Post}
 import data/project.{type Project}
 import data/sample_content
@@ -33,7 +34,9 @@ import route.{
 import view/cards
 import view/footer
 import view/header
+import view/home as home_view
 import view/layout
+import view/page as page_view
 import view/post as post_view
 import view/post_list
 import view/tags
@@ -64,6 +67,8 @@ pub type Model {
     posts: List(Post),
     projects: List(Project),
     talks: List(Talk),
+    homepage: Page,
+    pages: List(Page),
     /// The id of the heading currently highlighted in the TOC, or `None`.
     active_heading: Option(String),
   )
@@ -83,6 +88,8 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       posts: sample_content.posts(),
       projects: sample_content.projects(),
       talks: sample_content.talks(),
+      homepage: sample_content.homepage(),
+      pages: sample_content.pages(),
       active_heading: option.None,
     )
 
@@ -134,7 +141,7 @@ fn toc_effect_for(route: Route) -> effect.Effect(Msg) {
 
 fn view(model: Model) -> Element(Msg) {
   let #(main_content, right_content) = case model.route {
-    Home -> #(view_home(), none())
+    Home -> #(home_view.view(model.homepage), none())
     Posts(page) -> #(post_list.view(model.posts, page, posts_per_page), none())
     Post(slug) ->
       case post.find_by_slug(model.posts, slug) {
@@ -152,7 +159,11 @@ fn view(model: Model) -> Element(Msg) {
         Ok(entry) -> #(tags.view_single(entry.name, entry.posts), none())
         Error(Nil) -> #(view_not_found(), none())
       }
-    Page(slug) -> #(view_page(slug), none())
+    Page(slug) ->
+      case page.find_by_slug(model.pages, slug) {
+        Ok(found) -> #(page_view.view(found), none())
+        Error(Nil) -> #(view_not_found(), none())
+      }
     NotFound(_) -> #(view_not_found(), none())
   }
 
@@ -166,18 +177,7 @@ fn view(model: Model) -> Element(Msg) {
   )
 }
 
-// PLACEHOLDER PAGE VIEWS ------------------------------------------------------
-//
-// These routes still render `.page-header` placeholders; full rendering is
-// Phase 9 (homepage, standalone pages).
-
-fn view_home() -> Element(Msg) {
-  page_main("Home")
-}
-
-fn view_page(slug: String) -> Element(Msg) {
-  page_main(slug)
-}
+// All routes are now fully wired — no placeholder views remain.
 
 fn view_not_found() -> Element(Msg) {
   // Mirrors apollo's `404.html`: a `<main class="not-found-header">` containing
@@ -185,13 +185,5 @@ fn view_not_found() -> Element(Msg) {
   html.main([attribute.class("not-found-header")], [
     html.div([attribute.class("page-header")], [html.text("404")]),
     html.span([], [html.text("Page not found :(")]),
-  ])
-}
-
-/// A `<main>` containing a single `.page-header` — the common placeholder
-/// shape for section/list/standalone routes.
-fn page_main(title: String) -> Element(Msg) {
-  html.main([], [
-    html.div([attribute.class("page-header")], [html.text(title)]),
   ])
 }

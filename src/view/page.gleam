@@ -1,11 +1,22 @@
-//// Static page view: renders a standalone page (e.g. an about page) that is
-//// not part of the post stream.
+//// Standalone page view: renders a page's title and body, mirroring apollo's
+//// `templates/page.html` (without the post-specific meta row, TOC, or tags).
 ////
-//// Scaffold stub; see `ROADMAP.md` (Phase 4).
+//// apollo renders standalone pages (like `/about`) with the same `page.html`
+//// template as posts, but without the date/word-count meta, TOC, or tags.
+//// arata renders a simpler `<main><article>` with just a `.page-header` title
+//// and the body via `unsafe_raw_html`.
 
-import lustre/element.{type Element}
+import data/page.{type Page}
+import lustre/attribute
+import lustre/element.{type Element, unsafe_raw_html}
+import lustre/element/html
 
-/// Render a static page. Not yet implemented.
-pub fn view(_page: a) -> Element(msg) {
-  todo as "page.view: standalone page content (ROADMAP Phase 4)"
+/// Render a standalone page.
+pub fn view(page: Page) -> Element(msg) {
+  html.main([], [
+    html.article([], [
+      html.div([attribute.class("page-header")], [html.text(page.title)]),
+      unsafe_raw_html("", "section", [attribute.class("body")], page.body),
+    ]),
+  ])
 }
