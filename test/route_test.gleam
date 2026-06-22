@@ -5,7 +5,7 @@ import gleeunit
 import gleeunit/should
 
 import route.{
-  type Route, Home, NotFound, Page, Post, Posts, Projects, Tag, Tags, Talks,
+  type Route, Home, Links, NotFound, Page, Post, Posts, Projects, Tag, Tags,
 }
 
 pub fn main() -> Nil {
@@ -55,12 +55,8 @@ pub fn parse_project_detail_test() {
   parse("/projects/some-project") |> should.equal(Page("some-project"))
 }
 
-pub fn parse_talks_test() {
-  parse("/talks") |> should.equal(Talks)
-}
-
-pub fn parse_talk_detail_test() {
-  parse("/talks/some-talk") |> should.equal(Page("some-talk"))
+pub fn parse_links_test() {
+  parse("/links") |> should.equal(Links)
 }
 
 pub fn parse_tags_index_test() {
@@ -105,8 +101,8 @@ pub fn href_projects_test() {
   route.href_url(Projects) |> should.equal("/projects")
 }
 
-pub fn href_talks_test() {
-  route.href_url(Talks) |> should.equal("/talks")
+pub fn href_links_test() {
+  route.href_url(Links) |> should.equal("/links")
 }
 
 pub fn href_tags_test() {

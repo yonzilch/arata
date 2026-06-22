@@ -1,7 +1,7 @@
 +++
 title = "Porting apollo's SCSS to plain CSS"
-date = "2025-01-25"
-updated = "2025-02-03"
+date = "2026-01-25"
+updated = "2026-02-03"
 description = "Notes on hand-porting a SCSS design system to a single plain-CSS file — and why it's worth it."
 tags = ["css", "design"]
 draft = false

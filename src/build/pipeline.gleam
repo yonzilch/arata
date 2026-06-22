@@ -11,20 +11,22 @@
 ////   4. Compiles the Gleam JavaScript and bundles it into `dist/app.mjs` via
 ////      `bun build` (replacing `lustre/dev build`, which requires Erlang/OTP).
 ////
-//// The content source is the Gleam constants in `data/sample_content` (the
-//// markdown-to-HTML pipeline is a future enhancement).
+//// The content source is the `.md` files under `content/` (loaded by
+//// `content/loader`), serialized to `content_index.json` for the SPA to
+//// fetch at runtime.
 
 import build/feeds
 import content/loader
+import data/link.{type Link}
 import data/page.{type Page}
 import data/post.{type Post, type TocEntry}
 import data/project.{type Project}
-import data/sample_content
 import data/site
-import data/talk.{type Talk}
+import gleam/int
 import gleam/io
 import gleam/json
 import gleam/list
+import gleam/option.{None, Some}
 import gleam/string
 import simplifile
 
@@ -47,8 +49,8 @@ pub fn main() -> Nil {
 pub fn run() -> Result(Nil, String) {
   let site_meta = site.default()
   let posts = loader.load_posts()
-  let projects = sample_content.projects()
-  let talks = sample_content.talks()
+  let projects = loader.load_projects()
+  let links = loader.load_links()
   let pages = loader.load_pages()
   let homepage = loader.load_homepage()
 
@@ -58,7 +60,7 @@ pub fn run() -> Result(Nil, String) {
   // 1. Content index JSON.
   write(
     dist_dir <> "/content_index.json",
-    content_index_json(site_meta, posts, projects, talks, pages, homepage),
+    content_index_json(site_meta, posts, projects, links, pages, homepage),
   )
 
   // 2. Search index JSON.
@@ -179,16 +181,13 @@ fn simplify_error(_e: simplifile.FileError) -> String {
 @external(javascript, "../ffi/shell.ffi.mjs", "run_command")
 fn run_command(command: String) -> Int
 
-import gleam/int
-import gleam/option.{None, Some}
-
 /// The content index JSON: the full content tree serialized for the SPA to
 /// consume (or for future SSR hydration).
 fn content_index_json(
   site_meta: site.SiteMeta,
   posts: List(Post),
   projects: List(Project),
-  talks: List(Talk),
+  links: List(Link),
   pages: List(Page),
   homepage: Page,
 ) -> String {
@@ -221,21 +220,13 @@ fn content_index_json(
         #("reading_time", json.int(post.reading_time)),
       ])
     })
-  let projects_arr =
-    json.array(projects, fn(project) {
+  let projects_arr = json.array(projects, fn(project) { project_json(project) })
+  let links_arr =
+    json.array(links, fn(link) {
       json.object([
-        #("slug", json.string(project.slug)),
-        #("title", json.string(project.title)),
-        #("description", json.string(project.description)),
-      ])
-    })
-  let talks_arr =
-    json.array(talks, fn(talk) {
-      json.object([
-        #("slug", json.string(talk.slug)),
-        #("title", json.string(talk.title)),
-        #("description", json.string(talk.description)),
-        #("date", json.string(talk.date)),
+        #("title", json.string(link.title)),
+        #("url", json.string(link.url)),
+        #("description", json.string(link.description)),
       ])
     })
   let pages_arr =
@@ -265,11 +256,34 @@ fn content_index_json(
       #("config", config_obj),
       #("posts", posts_arr),
       #("projects", projects_arr),
-      #("talks", talks_arr),
+      #("links", links_arr),
       #("pages", pages_arr),
       #("homepage", home_obj),
     ]),
   )
+}
+
+/// Serialize a `Project` as `{slug, title, description, link_to, image,
+/// github, demo, tags}`. Optional fields are emitted as JSON `null` when
+/// `None` so the runtime decoder's `decode.optional_field` round-trips them.
+fn project_json(project: Project) -> json.Json {
+  json.object([
+    #("slug", json.string(project.slug)),
+    #("title", json.string(project.title)),
+    #("description", json.string(project.description)),
+    #("link_to", option_to_json(project.link_to)),
+    #("image", option_to_json(project.image)),
+    #("github", option_to_json(project.github)),
+    #("demo", option_to_json(project.demo)),
+    #("tags", json.array(project.tags, json.string)),
+  ])
+}
+
+fn option_to_json(opt: option.Option(String)) -> json.Json {
+  case opt {
+    Some(s) -> json.string(s)
+    None -> json.null()
+  }
 }
 
 /// Serialize a `TocEntry` as `{"id": ..., "title": ..., "children": [...]}`.

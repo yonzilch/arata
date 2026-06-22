@@ -8,22 +8,22 @@
 //// to a per-route view wrapped in the apollo 3-column shell.
 ////
 //// All routes are now fully wired (Phases 5-9): /posts (paginated list),
-//// /posts/{slug} (single post with TOC), /projects (card grid), /talks (talk
-//// grid), /tags (tag index), /tags/{name} (single tag), / (homepage), and
-//// /{slug} (standalone pages). A single post also renders a scroll-driven
-//// table of contents in the `.right-content` sidebar with IntersectionObserver
-//// active highlighting. The theme toggle (Phase 10) cycles Light/Dark/Auto
-//// with localStorage persistence and matchMedia reactivity.
+//// /posts/{slug} (single post with TOC), /projects (card grid), /links
+//// (friend-link list), /tags (tag index), /tags/{name} (single tag), /
+//// (homepage), and /{slug} (standalone pages). A single post also renders a
+//// scroll-driven table of contents in the `.right-content` sidebar with
+//// IntersectionObserver active highlighting. The theme toggle (Phase 10)
+//// cycles Light/Dark/Auto with localStorage persistence and matchMedia
+//// reactivity.
 
 import config
 import content/runtime as content_runtime
+import data/link.{type Link}
 import data/page.{type Page}
 import data/post.{type Post}
 import data/project.{type Project}
-import data/sample_content
 import data/search.{type SearchResult}
 import data/site.{type SiteMeta}
-import data/talk.{type Talk}
 import effect/analytics as analytics_effect
 import effect/codeblock as codeblock_effect
 import effect/note as note_effect
@@ -43,19 +43,19 @@ import lustre/element/html
 import lustre/event
 import modem
 import route.{
-  type Route, Home, NotFound, Page, Post, Posts, Projects, Tag, Tags, Talks,
+  type Route, Home, Links, NotFound, Page, Post, Posts, Projects, Tag, Tags,
 }
 import view/cards
 import view/footer
 import view/header
 import view/home as home_view
 import view/layout
+import view/links as links_view
 import view/page as page_view
 import view/post as post_view
 import view/post_list
 import view/search_modal
 import view/tags
-import view/talks
 import view/toc as toc_view
 
 // MAIN ------------------------------------------------------------------------
@@ -82,7 +82,7 @@ pub type Model {
     site_meta: SiteMeta,
     posts: List(Post),
     projects: List(Project),
-    talks: List(Talk),
+    links: List(Link),
     homepage: Page,
     pages: List(Page),
     /// The id of the heading currently highlighted in the TOC, or `None`.
@@ -119,13 +119,12 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       route: initial_route,
       config: config.default(),
       site_meta: site.default(),
-      // Posts/pages/homepage are loaded asynchronously from
-      // `content_index.json` via `content_runtime.load()`; they start empty
-      // and are populated when `ContentLoaded` arrives. Projects and talks
-      // are still loaded synchronously from `sample_content`.
+      // All content (posts/pages/homepage/links/projects) is loaded
+      // asynchronously from `content_index.json` via `content_runtime.load()`;
+      // the lists start empty and are populated when `ContentLoaded` arrives.
       posts: [],
-      projects: sample_content.projects(),
-      talks: sample_content.talks(),
+      projects: [],
+      links: [],
       homepage: page.Page(
         slug: "home",
         title: "arata",
@@ -269,8 +268,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     NoOp -> #(model, effect.none())
     ContentLoaded(result) -> {
       // Replace the empty placeholder content with the fetched posts/pages/
-      // homepage. On error (e.g. fetch failed), keep the empty defaults so
-      // the app still renders the shell.
+      // homepage/links/projects. On error (e.g. fetch failed), keep the empty
+      // defaults so the app still renders the shell.
       case result {
         Ok(content) -> {
           let model =
@@ -279,6 +278,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               posts: content.posts,
               pages: content.pages,
               homepage: content.homepage,
+              links: content.links,
+              projects: content.projects,
             )
           #(model, effect.none())
         }
@@ -509,7 +510,7 @@ fn view(model: Model) -> Element(Msg) {
         Error(Nil) -> #(view_not_found(), none())
       }
     Projects -> #(cards.view(model.projects), none())
-    Talks -> #(talks.view(model.talks), none())
+    Links -> #(links_view.view(model.links), none())
     Tags -> #(tags.view_list(post.tag_index(model.posts)), none())
     Tag(name) ->
       case post.find_tag(post.tag_index(model.posts), name) {

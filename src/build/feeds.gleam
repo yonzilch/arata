@@ -41,7 +41,7 @@ pub fn atom_feed(site: SiteMeta, posts: List(Post)) -> String {
   <> "    <updated>"
   <> case list.first(posts) {
     Ok(post) -> post.date
-    Error(_) -> "2025-01-01"
+    Error(_) -> "2026-01-01"
   }
   <> "T00:00:00Z</updated>\n"
   <> entries

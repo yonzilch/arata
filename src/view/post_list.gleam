@@ -8,9 +8,9 @@
 //// links to the post and whose `.post-content` carries the description. Draft
 //// posts get a `.draft-label` badge after the title.
 ////
-//// `posts` is assumed to be newest-first (see `data/sample_content`); the
-//// caller (Phase 17's markdown pipeline) is responsible for sorting. We slice
-//// `posts` by `current_page` and `per_page` and render the visible slice.
+//// `posts` is assumed to be newest-first (sorted by `content/loader`); we
+//// slice `posts` by `current_page` and `per_page` and render the visible
+//// slice.
 
 import data/post.{type Post}
 import gleam/list

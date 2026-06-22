@@ -36,10 +36,10 @@ pub fn default() -> Config {
     title: "arata",
     description: "A blog built with Gleam and Lustre.",
     menu: [
-      MenuItem(name: "/posts", url: "/posts"),
-      MenuItem(name: "/projects", url: "/projects"),
-      MenuItem(name: "/talks", url: "/talks"),
-      MenuItem(name: "/about", url: "/about"),
+      MenuItem(name: "posts", url: "/posts"),
+      MenuItem(name: "projects", url: "/projects"),
+      MenuItem(name: "links", url: "/links"),
+      MenuItem(name: "about", url: "/about"),
     ],
     socials: [
       Social(

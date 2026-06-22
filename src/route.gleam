@@ -14,8 +14,7 @@
 ////   `/posts/{slug}`      -> Post(slug)
 ////   `/projects`          -> Projects        (section index)
 ////   `/projects/{slug}`   -> Page(slug)      (project detail renders as a page)
-////   `/talks`             -> Talks           (section index)
-////   `/talks/{slug}`      -> Page(slug)      (talk detail renders as a page)
+////   `/links`             -> Links           (friend links index)
 ////   `/tags`              -> Tags            (taxonomy index)
 ////   `/tags/{name}`       -> Tag(name)
 ////   `/{slug}`            -> Page(slug)      (standalone page, e.g. /about)
@@ -32,7 +31,7 @@ pub type Route {
   Posts(page: Int)
   Post(slug: String)
   Projects
-  Talks
+  Links
   Tags
   Tag(name: String)
   Page(slug: String)
@@ -44,12 +43,12 @@ pub type Route {
 
 /// Parse a browser URI into a `Route`.
 ///
-/// Section indices (`/posts`, `/projects`, `/talks`, `/tags`) are matched
+/// Section indices (`/posts`, `/projects`, `/links`, `/tags`) are matched
 /// before single-segment standalone pages so that e.g. `/posts` is `Posts(1)`
 /// and not `Page("posts")`. The paginated index `/posts/page/{n}` is matched
 /// before single-post `/posts/{slug}` so the literal segment `"page"` is
-/// reserved. Detail pages under `/projects/` and `/talks/` parse as
-/// `Page(slug)` — apollo renders both as `page.html`.
+/// reserved. Detail pages under `/projects/` parse as `Page(slug)` — apollo
+/// renders them as `page.html`. (`/links` has no detail pages.)
 pub fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) {
     [] | [""] -> Home
@@ -67,8 +66,7 @@ pub fn parse_route(uri: Uri) -> Route {
 
     ["projects"] -> Projects
     ["projects", slug] -> Page(slug:)
-    ["talks"] -> Talks
-    ["talks", slug] -> Page(slug:)
+    ["links"] -> Links
     ["tags"] -> Tags
     ["tags", name] -> Tag(name:)
 
@@ -100,7 +98,7 @@ pub fn href_url(route: Route) -> String {
     Posts(page) -> "/posts/page/" <> int.to_string(page)
     Post(slug) -> "/posts/" <> slug
     Projects -> "/projects"
-    Talks -> "/talks"
+    Links -> "/links"
     Tags -> "/tags"
     Tag(name) -> "/tags/" <> name
     Page(slug) -> "/" <> slug

@@ -133,7 +133,7 @@
 
   --border-color: var(--bg-2);
 
-  --primary-color: #ef5350;
+  --primary-color: #3555b3;
   --hover-color: white;
 
   --icon-filter: none;
@@ -161,7 +161,7 @@
   --text-2: #737373;     /* lighten(#121212, 40%) */
 
   /* --border-color stays var(--bg-2) (defined on :root) */
-  /* --primary-color stays #ef5350 */
+  /* --primary-color stays #3555b3 */
   /* --hover-color stays white */
 
   --icon-filter: invert(1);
@@ -508,10 +508,11 @@ main a {
   z-index: 1;
 }
 
-/* Disable colored links in: .meta, header (socials, theme toggle), /talks, /projects */
+/* Disable colored links in: .meta, header (socials, theme toggle), /talks, /projects, .post-header */
 main .meta a,
 main .talks-grid a,
-main .cards a {
+main .cards a,
+main .post-header a {
   border-bottom: none;
 }
 
@@ -1644,9 +1645,16 @@ pre.giallo code {
   background-color: transparent;
 }
 
-/* Search modal */
+/* Search modal
+   -------------------------------------------------------------------------
+   NOTE: arata conditionally renders the modal in Gleam (search_modal.view
+   returns element.none() when closed, full markup when open). Unlike apollo,
+   which keeps the modal in the DOM and toggles visibility via JS, arata's
+   modal is only in the DOM when it should be visible — so `display: none`
+   must NOT be set here, otherwise the rendered modal stays invisible and the
+   search button appears not to respond to clicks. */
 .search-modal {
-  display: none;
+  display: block;
   position: fixed;
   top: 0;
   left: 0;
@@ -1710,8 +1718,10 @@ pre.giallo code {
   fill: var(--text-1);
 }
 
+/* Results container is always visible when the modal is open; arata
+   populates results via Gleam (no JS show/hide), so `display: none` would
+   hide the "No results" / "N results" line and result list. */
 .search-modal #results-container {
-  display: none;
   border-top: 1px solid var(--bg-1);
 }
 
@@ -1796,7 +1806,8 @@ pre.giallo code {
   border: none;
   padding: 4px;
   cursor: pointer;
-  display: none; /* Initially hidden, shown via JS when input has text */
+  /* Always visible: arata renders the clear button conditionally
+     (only when the search input has text) rather than toggling CSS. */
   width: 24px;
   height: 24px;
 }
@@ -2062,37 +2073,6 @@ pre.giallo code {
 :root.dark .z-meta.z-diff.z-header.z-to-file { color: #85E89D; background-color: #144620; }
 :root.dark .z-constant.z-other.z-reference.z-link { color: #DBEDFF; text-decoration: underline; }
 :root.dark .z-punctuation.z-definition.z-list.z-begin.z-markdown { color: #FFAB70; }
-
-/* =========================================================================
-   22. Wavy section boundary (arata-original — not in apollo)
-   A soft, SVG-based divider between two sections of the site. The SVG
-   stretches to full width via preserveAspectRatio="none"; the wave height
-   is fixed at 80px. Theme-aware via CSS custom properties.
-   ------------------------------------------------------------------------- */
-
-.wavy-boundary {
-  width: 100%;
-  height: 80px;
-  margin: 0;
-  padding: 0;
-  line-height: 0;
-  /* Prevent the boundary from overlapping the sticky footer or content. */
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.wavy-boundary svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* On very narrow viewports, reduce the wave height so it doesn't dominate. */
-@media (max-width: 576px) {
-  .wavy-boundary {
-    height: 48px;
-  }
-}
 
 /* =========================================================================
    23. Accessibility — focus-visible styles

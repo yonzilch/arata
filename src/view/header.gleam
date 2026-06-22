@@ -17,7 +17,7 @@ import gleam/option
 import lustre/attribute.{type Attribute}
 import lustre/element.{type Element}
 import lustre/element/html
-import route.{type Route, Home, Page, Post, Posts, Projects, Talks}
+import route.{type Route, Home, Links, Page, Post, Posts, Projects}
 
 /// Render the site header (`<nav>`).
 ///
@@ -54,13 +54,13 @@ pub fn view(
 ///   "/posts"     -> Posts(_) or Post(_) (single posts are still in the
 ///                   posts section, so the section link stays active)
 ///   "/projects"  -> Projects
-///   "/talks"     -> Talks
+///   "/links"     -> Links
 ///   "/about"     -> Page("about")
 ///
-/// `/projects/{slug}` and `/talks/{slug}` parse as `Page(slug)` rather than
-/// `Projects`/`Talks`, so the section link only highlights on the section
-/// index itself (matching apollo's section/page distinction). A future phase
-/// can refine this if desired.
+/// `/projects/{slug}` parses as `Page(slug)` rather than `Projects`, so the
+/// section link only highlights on the section index itself (matching
+/// apollo's section/page distinction). A future phase can refine this if
+/// desired.
 fn is_active(current_route: Route, url: String) -> Bool {
   case url {
     "/" ->
@@ -79,9 +79,9 @@ fn is_active(current_route: Route, url: String) -> Bool {
         Projects -> True
         _ -> False
       }
-    "/talks" ->
+    "/links" ->
       case current_route {
-        Talks -> True
+        Links -> True
         _ -> False
       }
     "/about" ->

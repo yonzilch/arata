@@ -1,6 +1,6 @@
 +++
 title = "The Elm Architecture in Lustre"
-date = "2025-01-20"
+date = "2026-01-20"
 description = "How Model-View-Update with managed effects keeps arata's code predictable."
 tags = ["lustre", "architecture"]
 draft = false

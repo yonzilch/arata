@@ -7,8 +7,10 @@
 //// at startup. If the fetch fails (e.g. during development without a build
 //// step), it falls back to empty content.
 
+import data/link.{type Link, Link}
 import data/page.{type Page, Page}
 import data/post.{type Post, type TocEntry, Post, TocEntry}
+import data/project.{type Project, Project}
 import gleam/dynamic/decode
 import gleam/option
 import lustre/effect.{type Effect}
@@ -16,7 +18,13 @@ import rsvp
 
 /// All content loaded from `content_index.json`.
 pub type Content {
-  Content(posts: List(Post), pages: List(Page), homepage: Page)
+  Content(
+    posts: List(Post),
+    pages: List(Page),
+    homepage: Page,
+    links: List(Link),
+    projects: List(Project),
+  )
 }
 
 /// Messages produced by the content loading effect.
@@ -39,7 +47,9 @@ fn decode_content_index() -> decode.Decoder(Content) {
   use posts <- decode.field("posts", decode.list(decode_post()))
   use pages <- decode.field("pages", decode.list(decode_page()))
   use homepage <- decode.field("homepage", decode_page())
-  decode.success(Content(posts:, pages:, homepage:))
+  use links <- decode.field("links", decode.list(decode_link()))
+  use projects <- decode.field("projects", decode.list(decode_project()))
+  decode.success(Content(posts:, pages:, homepage:, links:, projects:))
 }
 
 fn decode_post() -> decode.Decoder(Post) {
@@ -100,4 +110,48 @@ fn decode_toc_entry() -> decode.Decoder(TocEntry) {
     decode.list(decode_toc_entry()),
   )
   decode.success(TocEntry(id: id, title: title, children: children))
+}
+
+fn decode_link() -> decode.Decoder(Link) {
+  use title <- decode.field("title", decode.string)
+  use url <- decode.field("url", decode.string)
+  use description <- decode.field("description", decode.string)
+  decode.success(Link(title: title, url: url, description: description))
+}
+
+fn decode_project() -> decode.Decoder(Project) {
+  use slug <- decode.field("slug", decode.string)
+  use title <- decode.field("title", decode.string)
+  use description <- decode.field("description", decode.string)
+  use link_to <- decode.optional_field(
+    "link_to",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use image <- decode.optional_field(
+    "image",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use github <- decode.optional_field(
+    "github",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use demo <- decode.optional_field(
+    "demo",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use tags <- decode.optional_field("tags", [], decode.list(decode.string))
+  decode.success(Project(
+    slug: slug,
+    title: title,
+    description: description,
+    link_to: link_to,
+    image: image,
+    github: github,
+    demo: demo,
+    tags: tags,
+  ))
 }
