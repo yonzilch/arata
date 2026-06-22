@@ -9,7 +9,8 @@
 //// URL scheme (mirrors apollo's content layout):
 ////
 ////   `/`                  -> Home
-////   `/posts`             -> Posts           (section index)
+////   `/posts`             -> Posts(1)        (section index, first page)
+////   `/posts/page/{n}`    -> Posts(n)        (paginated section index)
 ////   `/posts/{slug}`      -> Post(slug)
 ////   `/projects`          -> Projects        (section index)
 ////   `/projects/{slug}`   -> Page(slug)      (project detail renders as a page)
@@ -20,13 +21,15 @@
 ////   `/{slug}`            -> Page(slug)      (standalone page, e.g. /about)
 ////   anything else        -> NotFound(uri)
 
+import gleam/int
 import gleam/uri.{type Uri}
 import lustre/attribute.{type Attribute}
 
 /// The set of pages arata can render. One variant per apollo page template.
 pub type Route {
   Home
-  Posts
+  /// The paginated post list. `page` is 1-indexed.
+  Posts(page: Int)
   Post(slug: String)
   Projects
   Talks
@@ -42,22 +45,36 @@ pub type Route {
 /// Parse a browser URI into a `Route`.
 ///
 /// Section indices (`/posts`, `/projects`, `/talks`, `/tags`) are matched
-/// before single-segment standalone pages so that e.g. `/posts` is `Posts` and
-/// not `Page("posts")`. Detail pages under `/projects/` and `/talks/` parse as
+/// before single-segment standalone pages so that e.g. `/posts` is `Posts(1)`
+/// and not `Page("posts")`. The paginated index `/posts/page/{n}` is matched
+/// before single-post `/posts/{slug}` so the literal segment `"page"` is
+/// reserved. Detail pages under `/projects/` and `/talks/` parse as
 /// `Page(slug)` — apollo renders both as `page.html`.
 pub fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) {
     [] | [""] -> Home
-    ["posts"] -> Posts
-    ["posts", slug] -> Post(slug:)
+
+    // /posts and /posts/page/{n} — paginated section index.
+    ["posts"] -> Posts(1)
+    ["posts", "page", page] ->
+      case int.parse(page) {
+        Ok(page) -> Posts(page)
+        Error(_) -> NotFound(uri:)
+      }
+
+    // /posts/{slug} — single post.
+    ["posts", slug] -> Post(slug)
+
     ["projects"] -> Projects
     ["projects", slug] -> Page(slug:)
     ["talks"] -> Talks
     ["talks", slug] -> Page(slug:)
     ["tags"] -> Tags
     ["tags", name] -> Tag(name:)
+
     // Any other single segment is a standalone page (e.g. /about, /404).
     [slug] -> Page(slug:)
+
     // Anything with two or more segments that didn't match above is unknown.
     _ -> NotFound(uri:)
   }
@@ -79,7 +96,8 @@ pub fn href(route: Route) -> Attribute(message) {
 pub fn href_url(route: Route) -> String {
   case route {
     Home -> "/"
-    Posts -> "/posts"
+    Posts(1) -> "/posts"
+    Posts(page) -> "/posts/page/" <> int.to_string(page)
     Post(slug) -> "/posts/" <> slug
     Projects -> "/projects"
     Talks -> "/talks"

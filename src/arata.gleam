@@ -13,6 +13,9 @@
 //// Phases 4–6.
 
 import config
+import data/post.{type Post}
+import data/sample_content
+import gleam/int
 import lustre
 import lustre/attribute
 import lustre/effect
@@ -39,7 +42,7 @@ pub fn main() {
 // MODEL -----------------------------------------------------------------------
 
 pub type Model {
-  Model(route: Route, config: config.Config)
+  Model(route: Route, config: config.Config, posts: List(Post))
 }
 
 fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
@@ -49,7 +52,12 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
     Ok(uri) -> route.parse_route(uri)
     Error(_) -> Home
   }
-  let model = Model(route: initial_route, config: config.default())
+  let model =
+    Model(
+      route: initial_route,
+      config: config.default(),
+      posts: sample_content.posts(),
+    )
 
   // Initialise modem so internal `<a>` clicks are intercepted and dispatched
   // as `UserNavigatedTo` messages instead of triggering a full page reload.
@@ -76,7 +84,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 fn view(model: Model) -> Element(Msg) {
   let main_content = case model.route {
     Home -> view_home()
-    Posts -> view_posts()
+    Posts(page) -> view_posts(page)
     Post(slug) -> view_post(slug)
     Projects -> view_projects()
     Talks -> view_talks()
@@ -104,8 +112,8 @@ fn view_home() -> Element(Msg) {
   page_main("Home")
 }
 
-fn view_posts() -> Element(Msg) {
-  page_main("Posts")
+fn view_posts(page: Int) -> Element(Msg) {
+  page_main("Posts (page " <> int.to_string(page) <> ")")
 }
 
 fn view_post(slug: String) -> Element(Msg) {
