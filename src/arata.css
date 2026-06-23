@@ -1900,7 +1900,9 @@ pre.giallo code {
    flex-wrap container so tags flow onto multiple lines if needed, with a
    consistent `gap` for spacing. `margin-bottom` separates the tag row from
    the TOC below. Tags themselves are simple `<a class="tag">` links to
-   `/tags/<tag>`. */
+   `/tags/<tag>`. The `.heading` child mirrors the TOC's heading and spans
+   the full width (via `flex-basis: 100%`) so the tag links wrap onto the
+   next line beneath it. */
 .right-content .post-tags {
   margin-bottom: 1.5rem;
   display: flex;
@@ -1908,8 +1910,28 @@ pre.giallo code {
   gap: 0.5rem;
 }
 
+.right-content .post-tags .heading {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
 .right-content .post-tags .tag {
   display: inline-block;
+}
+
+/* =========================================================================
+   20b. Links page (friend-link list)
+   ------------------------------------------------------------------------- */
+
+/* Avatar image rendered beside a friend link's title/description when the
+   link's frontmatter carries an `image` URL. The avatar is a 48px circle
+   floated inline with the link's text content. */
+.link-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  vertical-align: middle;
 }
 
 /* =========================================================================

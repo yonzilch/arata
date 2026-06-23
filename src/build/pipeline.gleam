@@ -238,6 +238,7 @@ fn content_index_json(
         #("title", json.string(link.title)),
         #("url", json.string(link.url)),
         #("description", json.string(link.description)),
+        #("image", option_to_json(link.image)),
       ])
     })
   let pages_arr =

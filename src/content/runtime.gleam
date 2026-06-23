@@ -116,7 +116,17 @@ fn decode_link() -> decode.Decoder(Link) {
   use title <- decode.field("title", decode.string)
   use url <- decode.field("url", decode.string)
   use description <- decode.field("description", decode.string)
-  decode.success(Link(title: title, url: url, description: description))
+  use image <- decode.optional_field(
+    "image",
+    option.None,
+    decode.optional(decode.string),
+  )
+  decode.success(Link(
+    title: title,
+    url: url,
+    description: description,
+    image: image,
+  ))
 }
 
 fn decode_project() -> decode.Decoder(Project) {

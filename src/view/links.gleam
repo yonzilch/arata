@@ -2,6 +2,7 @@
 
 import data/link.{type Link}
 import gleam/list
+import gleam/option
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -17,6 +18,16 @@ pub fn view(links: List(Link)) -> Element(msg) {
 }
 
 fn view_link(link: Link) -> Element(msg) {
+  let avatar = case link.image {
+    option.Some(url) -> [
+      html.img([
+        attribute.src(url),
+        attribute.alt(link.title),
+        attribute.class("link-avatar"),
+      ]),
+    ]
+    option.None -> []
+  }
   html.li([attribute.class("link-item")], [
     html.a(
       [
@@ -24,12 +35,12 @@ fn view_link(link: Link) -> Element(msg) {
         attribute.target("_blank"),
         attribute.rel("noopener"),
       ],
-      [
+      list.append(avatar, [
         html.h2([attribute.class("link-title")], [html.text(link.title)]),
         html.p([attribute.class("link-description")], [
           html.text(link.description),
         ]),
-      ],
+      ]),
     ),
   ])
 }

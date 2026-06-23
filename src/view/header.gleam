@@ -17,7 +17,7 @@ import gleam/option
 import lustre/attribute.{type Attribute}
 import lustre/element.{type Element}
 import lustre/element/html
-import route.{type Route, Home, Links, Page, Post, Posts, Projects}
+import route.{type Route, Home, Links, Page, Post, Posts, Projects, Tag, Tags}
 
 /// Render the site header (`<nav>`).
 ///
@@ -60,6 +60,8 @@ pub fn view(
 ///                   posts section, so the section link stays active)
 ///   "/projects"  -> Projects
 ///   "/links"     -> Links
+///   "/tags"      -> Tags or Tag(_) (single-tag pages are still in the
+///                   tags section, so the section link stays active)
 ///   "/about"     -> Page("about")
 ///
 /// `/projects/{slug}` parses as `Page(slug)` rather than `Projects`, so the
@@ -87,6 +89,12 @@ fn is_active(current_route: Route, url: String) -> Bool {
     "/links" ->
       case current_route {
         Links -> True
+        _ -> False
+      }
+    "/tags" ->
+      case current_route {
+        Tags -> True
+        Tag(_) -> True
         _ -> False
       }
     "/about" ->

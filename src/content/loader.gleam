@@ -86,7 +86,11 @@ fn load_link(path: String) -> Result(Link, Nil) {
   let title = tom.get_string(toml, ["title"]) |> result.unwrap("")
   let url = tom.get_string(toml, ["url"]) |> result.unwrap("")
   let description = tom.get_string(toml, ["description"]) |> result.unwrap("")
-  Ok(Link(title: title, url: url, description: description))
+  let image = case tom.get_string(toml, ["image"]) {
+    Ok(s) -> Some(s)
+    Error(_) -> None
+  }
+  Ok(Link(title: title, url: url, description: description, image: image))
 }
 
 /// Load all projects from `content/projects/*.md`.
@@ -265,23 +269,23 @@ fn extract_toc(markdown: String) -> List(TocEntry) {
 /// Convert a heading title to a URL-safe slug. Matches the algorithm used by
 /// `add_heading_ids` so the TOC entry's `id` is identical to the `id`
 /// attribute mork's HTML output is post-processed to carry: lowercase the
-/// text, keep alphanumerics, convert spaces/dashes/underscores to `-`, and
-/// drop every other character (punctuation, backticks, slashes, etc.). This
-/// makes headings like `## Site metadata (\`data/site.gleam\`)` (markdown)
-/// and `<h2>Site metadata (<code>data/site.gleam</code>)</h2>` (HTML, after
-/// stripping the `<code>` tags) slugify to the same `site-metadata-datasitegleam`.
+/// text, convert spaces/dashes/underscores to `-`, and drop common punctuation
+/// (`. , : ? ! ( ) ' "`). Every other grapheme — including CJK characters,
+/// letters, and numbers — is kept verbatim. Modern browsers resolve URL
+/// fragments containing CJK characters fine, so headings like `## 简介` or
+/// `## 導入` produce non-empty slugs (`简介`, `導入`) that the TOC's `#id`
+/// anchors can resolve. This mirrors the algorithm used by `add_heading_ids`
+/// so the TOC entry's `id` is identical to the `id` attribute mork's HTML
+/// output is post-processed to carry.
 fn slugify(text: String) -> String {
   text
   |> string.lowercase()
   |> string.to_graphemes()
   |> list.fold("", fn(acc, ch) {
-    case string.contains("abcdefghijklmnopqrstuvwxyz0123456789", ch) {
-      True -> acc <> ch
-      False ->
-        case ch {
-          " " | "-" | "_" -> acc <> "-"
-          _ -> acc
-        }
+    case ch {
+      " " | "-" | "_" -> acc <> "-"
+      "." | "," | ":" | "?" | "!" | "(" | ")" | "'" | "\"" -> acc
+      _ -> acc <> ch
     }
   })
 }

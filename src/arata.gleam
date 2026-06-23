@@ -625,13 +625,13 @@ fn view_tags_sidebar(post_tags: List(String)) -> Element(Msg) {
   case post_tags {
     [] -> none()
     _ ->
-      html.div(
-        [attribute.class("post-tags")],
-        list.map(post_tags, fn(tag) {
+      html.div([attribute.class("post-tags")], [
+        html.div([attribute.class("heading")], [html.text("Tags")]),
+        ..list.map(post_tags, fn(tag) {
           html.a([attribute.class("tag"), route.href(route.Tag(tag))], [
             html.text(tag),
           ])
-        }),
-      )
+        })
+      ])
   }
 }

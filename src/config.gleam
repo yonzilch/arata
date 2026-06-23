@@ -70,6 +70,7 @@ pub fn default() -> Config {
       MenuItem(name: "posts", url: "/posts"),
       MenuItem(name: "projects", url: "/projects"),
       MenuItem(name: "links", url: "/links"),
+      MenuItem(name: "tags", url: "/tags"),
       MenuItem(name: "about", url: "/about"),
     ],
     // The RSS social link is only added when `rss_enabled` is `True`. The URL
