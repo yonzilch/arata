@@ -73,6 +73,7 @@ pub fn parse_route(uri: Uri) -> Route {
     // Static files that should not be handled by the SPA router.
     ["atom.xml"]
     | ["rss.xml"]
+    | ["robots.txt"]
     | ["sitemap.xml"]
     | ["content_index.json"]
     | ["search_index.json"]

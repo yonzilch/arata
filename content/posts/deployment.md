@@ -1,6 +1,6 @@
 +++
 title = "Deployment"
-date = "2026-01-04"
+date = "2026-06-22"
 updated = "2022-06-23"
 description = "Building and deploying arata to GitHub Pages, Cloudflare Pages, or any static host."
 tags = ["docs", "deployment"]
