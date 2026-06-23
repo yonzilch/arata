@@ -4,7 +4,9 @@
 //// Running `gleam run -m build/pipeline` produces a complete static site in
 //// `dist/`:
 ////   1. Emits the JSON content index, search index, feeds, sitemap, a custom
-////      `index.html` with FOUC prevention, and a `404.html` redirect shim.
+////      `index.html` with FOUC prevention, and a `404.html` that serves the
+////      SPA shell directly (so deep-link refreshes load the SPA without a
+////      redirect).
 ////   2. Copies each CSS module under `src/css/` (base, layout, components,
 ////      post, cards, links, search, toc, syntax, accessibility) to
 ////      `dist/css/` as a separate file, allowing the browser to load them
@@ -103,8 +105,11 @@ pub fn run() -> Result(Nil, String) {
   // 5. Custom index.html with FOUC prevention.
   write(dist_dir <> "/index.html", index_html(site_meta))
 
-  // 6. 404.html redirect shim.
-  write(dist_dir <> "/404.html", not_found_html())
+  // 6. 404.html — the SPA shell (same content as index.html). Static hosts
+  // that serve 404.html for unknown paths load the SPA directly; the SPA's
+  // modem reads `window.location.pathname` and the router handles the deep
+  // link, no redirect needed (preserves the URL).
+  write(dist_dir <> "/404.html", not_found_html(site_meta))
 
   // 7. Copy each CSS module from src/css/ to dist/css/ as a separate file.
   build_css()
@@ -420,36 +425,13 @@ fn index_html(site_meta: site.SiteMeta) -> String {
 </html>"
 }
 
-/// The 404.html redirect shim: on static hosts that serve 404.html for
-/// unknown paths, this script stores the intended path in sessionStorage and
-/// bounces to `/` (the SPA root). The SPA's `init` effect reads the stored
-/// path via `get_redirect_path()` (see `ffi/redirect.ffi.mjs`) and navigates
-/// to the intended route, preserving the deep link.
-///
-/// Previous versions redirected to the original path directly, which caused an
-/// infinite loop: the server served 404.html for the path, 404.html redirected
-/// to the same path, the server served 404.html again, etc. Redirecting to `/`
-/// (which the server serves as `index.html`) breaks the loop, and sessionStorage
-/// lets us restore the deep link once the SPA is loaded.
-fn not_found_html() -> String {
-  "<!DOCTYPE html>
-<html>
-<head>
-  <meta charset='UTF-8'>
-  <script>
-    // Store the intended deep-link path so the SPA can navigate to it after
-    // loading, then redirect to the SPA root. sessionStorage is scoped to the
-    // tab and cleared once read, so it survives the top-level navigation to `/`
-    // without persisting across sessions.
-    var path = window.location.pathname;
-    if (path && path !== '/') {
-      try { sessionStorage.setItem('arata-redirect', path); } catch (e) {}
-    }
-    window.location.href = '/';
-  </script>
-</head>
-<body>
-  <p>Redirecting… If you are not redirected, <a href='/'>click here</a>.</p>
-</body>
-</html>"
+/// The 404.html page: the SPA shell (identical to `index.html`). When a
+/// static host serves 404.html for an unknown path, the SPA loads, modem
+/// reads `window.location.pathname`, and the router handles the route — no
+/// redirect, URL preserved. Previous versions used a sessionStorage +
+/// `window.location.href = '/'` shim, which discarded the URL bar and
+/// required an FFI round-trip to restore; serving the SPA directly is
+/// simpler and lossless.
+fn not_found_html(site_meta: site.SiteMeta) -> String {
+  index_html(site_meta)
 }

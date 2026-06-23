@@ -145,7 +145,12 @@ nav .right-nav a {
 nav .right-nav #dark-mode-toggle {
   /* Plain icon button: no rounded "pill"/oval background. Icons are shown
      as-is (no brightness/invert filter), and the button communicates hover
-     via opacity rather than a background fill. */
+     via opacity rather than a background fill. `appearance: none` overrides
+     the user-agent default button styling (which on some browsers paints a
+     rounded native background even when `background`/`border-radius` are
+     reset) — the real fix for the residual oval. */
+  appearance: none;
+  -webkit-appearance: none;
   background: none;
   border: none;
   border-radius: 0;
