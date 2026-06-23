@@ -5,6 +5,49 @@ All notable changes to arata are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.1] — 2026-06-23
+
+### Added
+
+- Added Zola-style `weight` support for friend links.
+  - Links can now define `weight` in frontmatter.
+  - Smaller `weight` values appear earlier on the `/links` page.
+  - Links without an explicit `weight` fall back to the default weight.
+
+- Added support for Zola-style link metadata compatibility.
+  - `extra.link_to` can be used as the link target.
+  - `extra.remote_image` can be used as the link avatar image.
+
+- Added new icons for the links page and related external-link presentation.
+
+### Changed
+
+- Updated the links page content and presentation.
+- Links are now sorted deterministically:
+  - primary sort: `weight` ascending
+  - fallback sort: lowercase `title` ascending
+- Improved `/links` page behavior so display order is no longer dependent on filesystem listing order.
+
+### Performance
+
+- Inlined all CSS modules into the SPA shell during the static build.
+  - `index.html` and `404.html` now include the generated CSS in a single inline `<style>` block.
+  - The previous render-blocking stylesheet requests for `/css/base.css`, `/css/layout.css`, `/css/components.css`, `/css/post.css`, `/css/cards.css`, `/css/links.css`, `/css/search.css`, `/css/toc.css`, `/css/syntax.css`, and `/css/accessibility.css` are removed from the critical rendering path.
+  - `dist/css/*.css` is still emitted for inspection/debugging, but the SPA shell no longer references those files directly.
+
+### Fixed
+
+- Fixed unstable ordering on the `/links` page.
+  - Previously, link ordering could appear random or filesystem-dependent.
+  - Link order is now controlled explicitly by frontmatter `weight`.
+
+### Tests
+
+- Added tests to lock weight-based link ordering.
+  - Verifies links are sorted by ascending `weight`.
+  - Verifies equal weights use deterministic lowercase title ordering.
+  - Verifies loaded links have valid non-negative weights.
+
 ## [v1.1.0] — 2026-06-23
 
 ### Added
