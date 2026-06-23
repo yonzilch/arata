@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Links page: card content no longer wrapped in `<a>` (`role=generic`); only the title is a link.
 - Posts list: `post-header` changed from `<a>` to `<div>`; only the title is a link.
 - Posts per page increased to 10 (was 7).
-- Blockquote colour changed to `#BAC2DE` (was `#737373`).
+- Blockquote colour changed to `#3555b3` (was `#737373`).
 - HR separator colour set to `#6c7086`.
 
 ### Fixed

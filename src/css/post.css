@@ -6,12 +6,12 @@
    ========================================================================= */
 
 .draft-label {
-  color: var(--hover-color);
-  text-decoration: none;
-  padding: 2px 4px;
-  border-radius: 4px;
-  margin-left: 6px;
-  background-color: var(--primary-color);
+    color: var(--hover-color);
+    text-decoration: none;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin-left: 6px;
+    background-color: var(--primary-color);
 }
 
 /* Fix 6: pin the post body (`.body` section) to font-weight 400 so the
@@ -20,16 +20,16 @@
    explicitly here makes the intent obvious and insulates the post body
    from future global font-weight changes. */
 .body {
-  font-weight: 400;
+    font-weight: 400;
 }
 blockquote {
-  border-left: 3px solid var(--primary-color);
-  /* Fix 10: lifted the blockquote text color from the muted #737373 to a
+    border-left: 3px solid var(--primary-color);
+    /* Fix 10: lifted the blockquote text color from the muted #737373 to a
      brighter #BAC2DE so quoted text reads as part of the page rather than
      fading into the background. */
-  color: #bac2de;
-  margin: 0;
-  padding-left: 1em;
+    color: #3555b3;
+    margin: 0;
+    padding-left: 1em;
 }
 /* =========================================================================
    8. tl;dr box  (class name from page.html, _misc.scss has no rule)
@@ -37,219 +37,219 @@ blockquote {
    ------------------------------------------------------------------------- */
 
 .tldr {
-  margin: 1rem 0;
-  padding: 0.5rem 1rem;
-  border-left: 3px solid var(--primary-color);
-  background: var(--bg-1);
-  border-radius: 4px;
+    margin: 1rem 0;
+    padding: 0.5rem 1rem;
+    border-left: 3px solid var(--primary-color);
+    background: var(--bg-1);
+    border-radius: 4px;
 }
 /* =========================================================================
    9. Image shortcode styles  (sass/parts/_image.scss)
    ------------------------------------------------------------------------- */
 
 img {
-  max-width: 100%;
-  border-radius: 0.5rem;
+    max-width: 100%;
+    border-radius: 0.5rem;
 }
 
 figure {
-  box-sizing: border-box;
-  display: inline-block;
-  margin: 0;
-  max-width: 100%;
+    box-sizing: border-box;
+    display: inline-block;
+    margin: 0;
+    max-width: 100%;
 }
 
 figure img {
-  max-height: 500px;
+    max-height: 500px;
 }
 
 @media screen and (min-width: 600px) {
-  figure {
-    padding: 0 40px;
-  }
+    figure {
+        padding: 0 40px;
+    }
 }
 
 figure h4 {
-  font-size: 1rem;
-  margin: 0;
-  margin-bottom: 1em;
+    font-size: 1rem;
+    margin: 0;
+    margin-bottom: 1em;
 }
 
 figure h4::before {
-  content: "↳ ";
+    content: "↳ ";
 }
 /* =========================================================================
    10. Tables  (sass/parts/_table.scss)
    ------------------------------------------------------------------------- */
 
 table {
-  border-spacing: 0;
-  border-collapse: collapse;
+    border-spacing: 0;
+    border-collapse: collapse;
 }
 
 table th {
-  padding: 6px 13px;
-  border: 1px solid #dfe2e5;
-  font-size: large;
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+    font-size: large;
 }
 
 table td {
-  padding: 6px 13px;
-  border: 1px solid #dfe2e5;
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
 }
 /* =========================================================================
    11. Mermaid diagrams  (sass/parts/_mermaid.scss)
    ------------------------------------------------------------------------- */
 
 .mermaid {
-  text-align: center;
-  margin-top: 1em;
-  margin-bottom: 1em;
+    text-align: center;
+    margin-top: 1em;
+    margin-bottom: 1em;
 }
 
 .mermaid strong {
-  font-weight: bold;
+    font-weight: bold;
 }
 /* =========================================================================
    12. Notes (static & dynamic)  (sass/parts/_note.scss)
    ------------------------------------------------------------------------- */
 
 .note-container {
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 1em 0;
-  position: relative;
-  border-left: 3px solid var(--primary-color);
-  font-family: var(--text-font);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1em 0;
+    position: relative;
+    border-left: 3px solid var(--primary-color);
+    font-family: var(--text-font);
 }
 
 .note-toggle,
 .note-header {
-  color: var(--note-header-color);
-  background-color: var(--note-header-bg);
-  padding: 10px 25px;
-  text-align: left;
-  border: none;
-  width: 100%;
-  position: relative;
-  outline: none;
-  font-size: 1.2em;
-  transition: background-color 0.3s ease;
+    color: var(--note-header-color);
+    background-color: var(--note-header-bg);
+    padding: 10px 25px;
+    text-align: left;
+    border: none;
+    width: 100%;
+    position: relative;
+    outline: none;
+    font-size: 1.2em;
+    transition: background-color 0.3s ease;
 }
 
 .note-toggle p,
 .note-header p {
-  margin: 0;
+    margin: 0;
 }
 
 .note-toggle .note-center,
 .note-header .note-center {
-  text-align: center;
-  padding-right: 50px;
+    text-align: center;
+    padding-right: 50px;
 }
 
 .note-toggle .note-icon,
 .note-header .note-icon {
-  padding-left: 25px;
+    padding-left: 25px;
 }
 
 .note-toggle {
-  font-family: inherit;
-  padding: 10px 25px; /* Stop header intersecting with note-icon */
-  cursor: pointer;
-  position: relative;
+    font-family: inherit;
+    padding: 10px 25px; /* Stop header intersecting with note-icon */
+    cursor: pointer;
+    position: relative;
 }
 
 .note-toggle::before {
-  content: "▼";
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+    content: "▼";
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .note-toggle:hover,
 .note-toggle:focus {
-  color: var(--note-header-color);
-  background-color: var(--note-header-bg);
-  outline: none;
+    color: var(--note-header-color);
+    background-color: var(--note-header-bg);
+    outline: none;
 }
 
 .note-content {
-  padding: 10px 20px;
-  background-color: var(--note-content-bg);
+    padding: 10px 20px;
+    background-color: var(--note-content-bg);
 }
 
 .note-icon::before {
-  content: "✎";
-  color: var(--primary-color);
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+    content: "✎";
+    color: var(--primary-color);
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 summary {
-  padding-left: 0.5em;
+    padding-left: 0.5em;
 }
 
 summary:hover {
-  background-color: var(--primary-color);
-  color: var(--hover-color);
-  cursor: pointer;
+    background-color: var(--primary-color);
+    color: var(--hover-color);
+    cursor: pointer;
 }
 /* =========================================================================
    13. Character shortcode  (sass/parts/_character.scss)
    ------------------------------------------------------------------------- */
 
 .character-note {
-  display: flex;
-  flex-direction: row;
-  margin-block: 1.5rem;
-  margin-inline-start: auto;
-  margin-inline-end: auto;
+    display: flex;
+    flex-direction: row;
+    margin-block: 1.5rem;
+    margin-inline-start: auto;
+    margin-inline-end: auto;
 }
 
 .character-note.character-right {
-  flex-direction: row-reverse;
+    flex-direction: row-reverse;
 }
 
 .character-note.character-right .character-avatar img {
-  transform: scaleX(-1);
+    transform: scaleX(-1);
 }
 
 .character-note.character-left {
-  flex-direction: row;
+    flex-direction: row;
 }
 
 .character-note .character-avatar {
-  font-size: 2rem;
-  align-self: flex-start;
-  flex-shrink: 0;
+    font-size: 2rem;
+    align-self: flex-start;
+    flex-shrink: 0;
 }
 
 .character-note .character-avatar img {
-  --head-size: 3.2em;
-  width: var(--head-size);
-  height: var(--head-size);
+    --head-size: 3.2em;
+    width: var(--head-size);
+    height: var(--head-size);
 }
 
 .character-note .character-content {
-  align-self: flex-start;
-  max-width: min(93%, 45em);
-  overflow: hidden;
+    align-self: flex-start;
+    max-width: min(93%, 45em);
+    overflow: hidden;
 }
 
 .character-note .character-bubble {
-  --character-bubble-bg: var(--bg-1);
-  --character-bubble-border: var(--border-color);
-  --character-code-bg: var(--bg-0);
+    --character-bubble-bg: var(--bg-1);
+    --character-bubble-border: var(--border-color);
+    --character-code-bg: var(--bg-0);
 
-  background: var(--character-bubble-bg);
-  border: 1px solid var(--character-bubble-border);
-  border-radius: 0.5rem;
-  padding-inline: 0.9em;
-  padding-block: 0.2em;
+    background: var(--character-bubble-bg);
+    border: 1px solid var(--character-bubble-border);
+    border-radius: 0.5rem;
+    padding-inline: 0.9em;
+    padding-block: 0.2em;
 }
 /* =========================================================================
    14. Code blocks, language labels, clipboard button  (sass/parts/_code.scss)
@@ -258,482 +258,482 @@ summary:hover {
    ------------------------------------------------------------------------- */
 
 .code-label {
-  background: #333;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #333;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 /* --- language color labels (one per entry in $language-colors) --- */
 
 .label-js {
-  background: #f7df1e;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #f7df1e;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-yaml {
-  background: #f71e6a;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #f71e6a;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-shell {
-  background: #4eaa25;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #4eaa25;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-json {
-  background: dodgerblue;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: dodgerblue;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-python {
-  background: #3572a5;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #3572a5;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-css {
-  background: #264de4;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #264de4;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-go {
-  background: #00add8;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #00add8;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-markdown {
-  background: #0000ff;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #0000ff;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-rust {
-  background: #ff4647;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #ff4647;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-java {
-  background: #f89820;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #f89820;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-csharp {
-  background: #178600;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #178600;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-ruby {
-  background: #701516;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #701516;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-swift {
-  background: #f05138;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #f05138;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-php {
-  background: #777bb4;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #777bb4;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-typescript {
-  background: #3178c6;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #3178c6;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-scala {
-  background: #c22d40;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #c22d40;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-kotlin {
-  background: #f18e33;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #f18e33;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-lua {
-  background: #000080;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #000080;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-perl {
-  background: #0298c3;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #0298c3;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-haskell {
-  background: #5e5086;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #5e5086;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-r {
-  background: #198ce7;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #198ce7;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-dart {
-  background: #00d2b8;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #00d2b8;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-elixir {
-  background: #6e4a7e;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #6e4a7e;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-clojure {
-  background: #5881d8;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #5881d8;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-bash {
-  background: #4eaa25;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #4eaa25;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 .label-default {
-  background: #333;
-  color: var(--label-color);
-  border-radius: 0 0 0.25rem 0.25rem;
-  font-size: 12px;
-  letter-spacing: 0.025rem;
-  padding: 0.1rem 0.5rem;
-  text-align: right;
-  text-transform: uppercase;
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-top: 0.1rem;
+    background: #333;
+    color: var(--label-color);
+    border-radius: 0 0 0.25rem 0.25rem;
+    font-size: 12px;
+    letter-spacing: 0.025rem;
+    padding: 0.1rem 0.5rem;
+    text-align: right;
+    text-transform: uppercase;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0.1rem;
 }
 
 /* --- inline code & pre --- */
 
 code {
-  background-color: var(--bg-primary);
-  padding: 0.1em 0.2em;
-  border-radius: 5px;
-  border: 1px solid var(--border-color);
-  font-family: var(--code-font);
+    background-color: var(--bg-primary);
+    padding: 0.1em 0.2em;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    font-family: var(--code-font);
 }
 
 pre {
-  background-color: var(--bg-primary) !important;
-  border-radius: 5px;
-  border: 1px solid var(--border-color);
-  line-height: 1.4;
-  overflow-x: auto;
-  padding: 1em;
-  position: relative;
+    background-color: var(--bg-primary) !important;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    line-height: 1.4;
+    overflow-x: auto;
+    padding: 1em;
+    position: relative;
 }
 
 pre code {
-  background-color: transparent !important;
-  color: var(--text-color);
-  font-size: 100%;
-  padding: 0;
-  border: none;
-  font-family: var(--code-font);
+    background-color: transparent !important;
+    color: var(--text-color);
+    font-size: 100%;
+    padding: 0;
+    border: none;
+    font-family: var(--code-font);
 }
 
 /* Giallo lines (Zola 0.22+) */
 pre.giallo {
-  padding-left: 0;
-  padding-right: 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 pre.giallo code {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
 .giallo-l {
-  padding: 0 1em;
+    padding: 0 1em;
 }
 
 /* Giallo highlighted lines — background color set by giallo theme CSS below */
 .z-hl {
-  padding-top: 2px;
-  padding-bottom: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 /* Giallo line numbers (Zola 0.22+) */
 .giallo-ln {
-  display: inline-block;
-  -webkit-user-select: none;
-  user-select: none;
-  min-width: 1ch;
-  margin-right: 2ch;
-  opacity: 0.8;
+    display: inline-block;
+    -webkit-user-select: none;
+    user-select: none;
+    min-width: 1ch;
+    margin-right: 2ch;
+    opacity: 0.8;
 }
 
 /* Clipboard copy button — bottom-right of <pre> */
 .clipboard-button,
 .clipboard-button svg {
-  all: unset;
-  cursor: pointer;
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  z-index: 10;
-  background-color: transparent;
-  border: none;
-  fill: var(--text-color);
+    all: unset;
+    cursor: pointer;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    z-index: 10;
+    background-color: transparent;
+    border: none;
+    fill: var(--text-color);
 }
