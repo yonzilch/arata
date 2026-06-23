@@ -1,5 +1,5 @@
 /* =========================================================================
-   links.css — .link-avatar (friend-link avatar shown beside title/desc).
+   links.css — friend-link cards (list, item, avatar, title, description).
    (section 20b from src/arata.css)
    ========================================================================= */
 
@@ -7,9 +7,46 @@
    20b. Links page (friend-link list)
    ------------------------------------------------------------------------- */
 
+/* The `.links-list` `<ul>` is laid out as a vertical flex column with a
+   generous gap so each friend-link card reads as a distinct unit. The list
+   style and padding are reset since the cards carry their own borders. */
+.links-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Each friend link is rendered as a `.link-item` card with a rounded border
+   and a subtle hover treatment (primary-coloured border + soft shadow) so
+   users get clear affordance that the card is clickable. */
+.link-item {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.link-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* The `.link-item` `<a>` wraps an optional `.link-avatar` `<img>` alongside a
+   `.link-title` `<div>` and `.link-description` `<p>`. Without flexbox the
+   avatar would sit on its own line above the title — the flex row keeps the
+   avatar pinned to the left of the title/description block. */
+.link-item a {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  text-decoration: none;
+}
+
 /* Avatar image rendered beside a friend link's title/description when the
-   link's frontmatter carries an `image` URL. The avatar is a 48px circle
-   floated inline with the link's text content. */
+   link's frontmatter carries an `image` URL. The avatar is a 48px circle. */
 .link-avatar {
   width: 48px;
   height: 48px;
@@ -18,23 +55,17 @@
   flex-shrink: 0;
 }
 
-/* The `.link-item` `<a>` wraps an optional `.link-avatar` `<img>` alongside a
-   `.link-title` `<h2>` and `.link-description` `<p>`. Without flexbox the
-   avatar would sit on its own line above the title — the flex row keeps the
-   avatar pinned to the left of the title/description block. */
-.link-item a {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  text-decoration: none;
-}
-
-/* Remove default heading margins so the avatar+title row stays compact. */
-.link-item .link-title {
+/* The link title — a `<div>` (not an `<h2>`) so it doesn't inherit heading
+   margins/`##` styling from arata.css. */
+.link-title {
+  font-size: 1.2rem;
+  font-weight: 700;
   margin: 0;
+  color: var(--text-0);
 }
 
-.link-item .link-description {
+.link-description {
   margin: 0.25rem 0 0 0;
   color: var(--text-1);
+  font-size: 0.9rem;
 }

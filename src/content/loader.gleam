@@ -437,6 +437,10 @@ fn add_heading_ids(html: String) -> String {
 /// fallback number to hand to the following heading — it advances by one only
 /// when this heading needed a fallback id (`heading-{counter}`); otherwise it
 /// stays put so the ASCII slugs don't burn numbers.
+///
+/// The heading's title text is also wrapped in an `<a href="#{final_id}">` so
+/// clicking it scrolls to the heading's own anchor — matching the ToC links'
+/// `#id` same-page-scroll behaviour.
 fn add_id_to_heading_piece(piece: String, counter: Int) -> #(String, Int) {
   let levels = ["1>", "2>", "3>", "4>", "5>", "6>"]
   let is_heading = list.any(levels, fn(lv) { string.starts_with(piece, lv) })
@@ -456,9 +460,11 @@ fn add_id_to_heading_piece(piece: String, counter: Int) -> #(String, Int) {
                 opening
                   <> " id=\""
                   <> final_id
+                  <> "\"><a href=\"#"
+                  <> final_id
                   <> "\">"
                   <> title
-                  <> "</h"
+                  <> "</a></h"
                   <> after_close,
                 next_counter,
               )

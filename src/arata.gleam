@@ -154,7 +154,8 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
   // The search keyboard listener subscribes to global keydown for Cmd/Ctrl+K.
   let nav_effect =
     modem.init(fn(uri) { uri |> route.parse_route |> UserNavigatedTo })
-  let post_effects = post_effects_for(initial_route, False)
+  let post_effects =
+    post_effects_for(initial_route, False, model.config.mathjax_enabled)
   let theme_init = effect.map(theme_effect.init_theme(), theme_msg_to_msg)
   let search_keys = case model.config.search_enabled {
     True ->
@@ -233,6 +234,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         post_effects_for(
           route,
           is_effective_dark(model.theme, model.system_prefers_dark),
+          model.config.mathjax_enabled,
         ),
       )
     }
@@ -357,6 +359,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           post_effects_for(
             target_route,
             is_effective_dark(model.theme, model.system_prefers_dark),
+            model.config.mathjax_enabled,
           ),
         ]),
       )
@@ -372,16 +375,25 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 /// IntersectionObserver, the code-block enhancer, the note toggle enhancer,
 /// and the MathJax/Mermaid renderers are all armed. Everywhere else, no
 /// effects. `is_dark` selects the mermaid theme ("dark" vs "neutral").
-fn post_effects_for(route: Route, is_dark: Bool) -> effect.Effect(Msg) {
+fn post_effects_for(
+  route: Route,
+  is_dark: Bool,
+  mathjax_enabled: Bool,
+) -> effect.Effect(Msg) {
   case route {
-    Post(_) ->
+    Post(_) -> {
+      let mathjax_eff = case mathjax_enabled {
+        True -> effect.map(script_effect.typeset_math(), fn(_) { NoOp })
+        False -> effect.none()
+      }
       effect.batch([
         effect.map(toc_effect.observe(), TocActiveHeadingChanged),
         effect.map(codeblock_effect.enhance(), fn(_) { NoOp }),
         effect.map(note_effect.enhance(), fn(_) { NoOp }),
-        effect.map(script_effect.typeset_math(), fn(_) { NoOp }),
+        mathjax_eff,
         effect.map(script_effect.render_mermaid(is_dark), fn(_) { NoOp }),
       ])
+    }
     _ -> effect.none()
   }
 }
@@ -504,6 +516,7 @@ fn handle_search_key(
               post_effects_for(
                 target_route,
                 is_effective_dark(model.theme, model.system_prefers_dark),
+                model.config.mathjax_enabled,
               ),
             ]),
           )

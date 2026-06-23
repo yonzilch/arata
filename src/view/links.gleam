@@ -36,7 +36,7 @@ fn view_link(link: Link) -> Element(msg) {
         attribute.rel("noopener"),
       ],
       list.append(avatar, [
-        html.h2([attribute.class("link-title")], [html.text(link.title)]),
+        html.div([attribute.class("link-title")], [html.text(link.title)]),
         html.p([attribute.class("link-description")], [
           html.text(link.description),
         ]),

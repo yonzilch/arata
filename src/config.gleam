@@ -57,6 +57,11 @@ pub type Config {
     /// This mirrors `SiteMeta.analytics` so analytics can be configured from
     /// `config.gleam` rather than only from `data/site.gleam`.
     analytics: Analytics,
+    /// Whether MathJax typesetting runs on post pages. When `False`, the
+    /// MathJax typeset effect is skipped (no MathJax script injection/queue
+    /// on post navigation) — useful when no post uses LaTeX. Defaults to
+    /// `False` to avoid loading MathJax unless explicitly opted in.
+    mathjax_enabled: Bool,
   )
 }
 
@@ -93,6 +98,7 @@ pub fn default() -> Config {
     ),
     search_enabled: True,
     analytics: AnalyticsDisabled,
+    mathjax_enabled: False,
   )
 }
 
