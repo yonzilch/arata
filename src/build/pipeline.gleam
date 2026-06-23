@@ -65,6 +65,7 @@ pub fn main() -> Nil {
 /// Run the build pipeline, returning a result.
 pub fn run() -> Result(Nil, String) {
   let site_meta = config.site_meta()
+  let site_config = config.default()
   let posts = loader.load_posts()
   let projects = loader.load_projects()
   let links = loader.load_links()
@@ -111,13 +112,13 @@ pub fn run() -> Result(Nil, String) {
   )
 
   // 7. Custom index.html with FOUC prevention.
-  write(dist_dir <> "/index.html", index_html(site_meta))
+  write(dist_dir <> "/index.html", index_html(site_meta, site_config))
 
   // 8. 404.html — the SPA shell (same content as index.html). Static hosts
   // that serve 404.html for unknown paths load the SPA directly; the SPA's
   // modem reads `window.location.pathname` and the router handles the deep
   // link, no redirect needed (preserves the URL).
-  write(dist_dir <> "/404.html", not_found_html(site_meta))
+  write(dist_dir <> "/404.html", not_found_html(site_meta, site_config))
 
   // 9. Copy each CSS module from src/css/ to dist/css/ as a separate file.
   build_css()
@@ -416,7 +417,7 @@ fn sanitize_style_text(css: String) -> String {
 /// All asset paths are absolute (`/app.mjs`, `/css/...`, `/icon/...`) rather
 /// than relative (`./app.mjs`). On a deep link like `/posts/markdown`, the
 /// static host serves 404.html, and relative assets would resolve incorrectly.
-fn index_html(site_meta: site.SiteMeta) -> String {
+fn index_html(site_meta: site.SiteMeta, site_config: config.Config) -> String {
   let feed_links = case site_meta.rss_enabled {
     True ->
       "  <link rel='alternate' type='application/atom+xml' href='/atom.xml'>
@@ -425,6 +426,10 @@ fn index_html(site_meta: site.SiteMeta) -> String {
     False -> ""
   }
   let css = inline_css()
+  let favicon = case site_config.favicon {
+    option.Some(path) -> path
+    option.None -> "/icon/favicon.png"
+  }
 
   "<!DOCTYPE html>
 <html lang='en' class='dark light'>
@@ -433,7 +438,7 @@ fn index_html(site_meta: site.SiteMeta) -> String {
   <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>" <> site_meta.title <> "</title>
   <meta name='description' content='" <> site_meta.description <> "'>
-  <link rel='icon' type='image/png' href='/icon/favicon.png'>
+  <link rel='icon' href='" <> favicon <> "'>
 " <> feed_links <> " <style id='arata-css'>
 " <> css <> "
   </style>
@@ -446,6 +451,9 @@ fn index_html(site_meta: site.SiteMeta) -> String {
 }
 
 /// The 404.html page: the SPA shell, identical to `index.html`.
-fn not_found_html(site_meta: site.SiteMeta) -> String {
-  index_html(site_meta)
+fn not_found_html(
+  site_meta: site.SiteMeta,
+  site_config: config.Config,
+) -> String {
+  index_html(site_meta, site_config)
 }

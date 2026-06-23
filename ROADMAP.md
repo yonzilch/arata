@@ -386,7 +386,7 @@ default `#333`); label text color `--label-color: #f0f0f0`.
 | `theme` | string | `"toggle"` | `light\|dark\|auto\|toggle\|toggle-auto` |
 | `toc` | bool | `false` | Enable TOC |
 | `use_cdn` | bool | `false` | Load fonts from jsDelivr |
-| `favicon` | string | `/icon/favicon.png` | Favicon path |
+| `favicon` | string | `/icons/favicon.png` | Favicon path |
 | `fancy_code` | bool | `false` | Copy button + language label |
 | `dynamic_note` | bool | `false` | Toggling note shortcode |
 | `mathjax` | bool | `false` | Global MathJax |
