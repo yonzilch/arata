@@ -81,7 +81,7 @@ pub type Config {
 pub fn default() -> Config {
   let rss_enabled = True
   Config(
-    title: "arata",
+    title: "Arata",
     description: "A blog built with Gleam and Lustre.",
     menu: [
       MenuItem(name: "posts", url: "/posts"),
@@ -114,7 +114,7 @@ pub fn default() -> Config {
     ),
     search_enabled: True,
     analytics: AnalyticsDisabled,
-    mathjax_enabled: False,
+    mathjax_enabled: True,
     sidebar_enabled: True,
     floating_buttons_enabled: True,
   )
