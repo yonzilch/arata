@@ -79,6 +79,42 @@ pub fn parse_unknown_path_test() {
   }
 }
 
+// Fix 10: static files must NOT be routed as pages. The SPA's router treats
+// `/atom.xml`, `/rss.xml`, and `/sitemap.xml` as `NotFound` so modem lets the
+// browser fetch them directly (otherwise they'd be intercepted as 404s).
+
+pub fn parse_atom_xml_not_page_test() {
+  let result = parse("/atom.xml")
+  case result {
+    NotFound(_) -> Nil
+    _ -> should.fail()
+  }
+}
+
+pub fn parse_rss_xml_not_page_test() {
+  let result = parse("/rss.xml")
+  case result {
+    NotFound(_) -> Nil
+    _ -> should.fail()
+  }
+}
+
+pub fn parse_sitemap_xml_not_page_test() {
+  let result = parse("/sitemap.xml")
+  case result {
+    NotFound(_) -> Nil
+    _ -> should.fail()
+  }
+}
+
+// Fix 10: a deep link to a single post should parse to `Post(slug)`, not
+// `NotFound` — this is the case that broke RSS-on-sub-pages before the
+// `target="_blank"` fix landed.
+
+pub fn parse_deep_link_test() {
+  parse("/posts/markdown") |> should.equal(Post("markdown"))
+}
+
 // href_url -------------------------------------------------------------------
 
 pub fn href_home_test() {

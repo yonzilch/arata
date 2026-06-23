@@ -52,50 +52,36 @@
 }
 
 /* =========================================================================
-   Mobile floating ToC button — only visible on post pages below 992px.
-   A round FAB sits in the bottom-right corner; tapping it opens a
-   bottom-sheet overlay that re-renders the same `.toc` tree as the
-   sidebar but forces it visible (the sidebar `.toc` is hidden below
-   1365px).
+   Floating ToC button — visible on ALL screen sizes (Fix 5). A round FAB
+   sits in the bottom-right corner; tapping it opens a bottom-sheet overlay
+   that re-renders the same `.toc` tree as the sidebar.
    ========================================================================= */
 
 .toc-fab {
-  display: none;
-}
-
-@media (max-width: 991px) {
-  .toc-fab {
-    display: flex;
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    z-index: 200;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  }
+  display: flex;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  z-index: 200;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .toc-overlay {
-  display: none;
-}
-
-@media (max-width: 991px) {
-  .toc-overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 199;
-  }
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 199;
 }
 
 .toc-overlay-content {
@@ -119,4 +105,29 @@
   font-weight: 700;
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
+}
+
+/* =========================================================================
+   Scroll-to-top FAB (Fix 7) — sits to the left of the ToC FAB. Visible on
+   ALL pages (not just posts), so it lives at the layout level rather than
+   inside the post-only conditional.
+   ========================================================================= */
+
+.scroll-top-fab {
+  display: flex;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  color: var(--text-0);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  z-index: 200;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }

@@ -132,6 +132,18 @@ fn load_project(path: String, filename: String) -> Result(Project, Nil) {
     Ok(s) -> Some(s)
     Error(_) -> None
   }
+  let gitlab = case tom.get_string(toml, ["gitlab"]) {
+    Ok(s) -> Some(s)
+    Error(_) -> None
+  }
+  let codeberg = case tom.get_string(toml, ["codeberg"]) {
+    Ok(s) -> Some(s)
+    Error(_) -> None
+  }
+  let forgejo = case tom.get_string(toml, ["forgejo"]) {
+    Ok(s) -> Some(s)
+    Error(_) -> None
+  }
   let demo = case tom.get_string(toml, ["demo"]) {
     Ok(s) -> Some(s)
     Error(_) -> None
@@ -155,6 +167,9 @@ fn load_project(path: String, filename: String) -> Result(Project, Nil) {
     link_to: link_to,
     image: image,
     github: github,
+    gitlab: gitlab,
+    codeberg: codeberg,
+    forgejo: forgejo,
     demo: demo,
     tags: tags,
   ))

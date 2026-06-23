@@ -338,8 +338,10 @@ fn content_index_json(
 }
 
 /// Serialize a `Project` as `{slug, title, description, link_to, image,
-/// github, demo, tags}`. Optional fields are emitted as JSON `null` when
-/// `None` so the runtime decoder's `decode.optional_field` round-trips them.
+/// github, gitlab, codeberg, forgejo, demo, tags}`. Optional fields are
+/// emitted as JSON `null` when `None` so the runtime decoder's
+/// `decode.optional_field` round-trips them. Fix 13 added gitlab/codeberg/
+/// forgejo.
 fn project_json(project: Project) -> json.Json {
   json.object([
     #("slug", json.string(project.slug)),
@@ -348,6 +350,9 @@ fn project_json(project: Project) -> json.Json {
     #("link_to", option_to_json(project.link_to)),
     #("image", option_to_json(project.image)),
     #("github", option_to_json(project.github)),
+    #("gitlab", option_to_json(project.gitlab)),
+    #("codeberg", option_to_json(project.codeberg)),
+    #("forgejo", option_to_json(project.forgejo)),
     #("demo", option_to_json(project.demo)),
     #("tags", json.array(project.tags, json.string)),
   ])

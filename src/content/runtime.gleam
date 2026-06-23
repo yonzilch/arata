@@ -148,6 +148,21 @@ fn decode_project() -> decode.Decoder(Project) {
     option.None,
     decode.optional(decode.string),
   )
+  use gitlab <- decode.optional_field(
+    "gitlab",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use codeberg <- decode.optional_field(
+    "codeberg",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use forgejo <- decode.optional_field(
+    "forgejo",
+    option.None,
+    decode.optional(decode.string),
+  )
   use demo <- decode.optional_field(
     "demo",
     option.None,
@@ -161,6 +176,9 @@ fn decode_project() -> decode.Decoder(Project) {
     link_to: link_to,
     image: image,
     github: github,
+    gitlab: gitlab,
+    codeberg: codeberg,
+    forgejo: forgejo,
     demo: demo,
     tags: tags,
   ))

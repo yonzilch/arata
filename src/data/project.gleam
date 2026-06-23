@@ -21,6 +21,12 @@ pub type Project {
     image: Option(String),
     /// Optional GitHub URL for the icon-button.
     github: Option(String),
+    /// Optional GitLab URL for the icon-button (Fix 13).
+    gitlab: Option(String),
+    /// Optional Codeberg URL for the icon-button (Fix 13).
+    codeberg: Option(String),
+    /// Optional Forgejo URL for the icon-button (Fix 13).
+    forgejo: Option(String),
     /// Optional demo URL for the icon-button.
     demo: Option(String),
     /// Inline tag chips shown on the card footer.

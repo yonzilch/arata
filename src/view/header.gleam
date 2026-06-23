@@ -154,12 +154,18 @@ fn view_socials(socials: List(config.Social)) -> List(Element(msg)) {
     // `/posts/markdown` would be hijacked by the router and 404 instead
     // of fetching `/atom.xml`. External links (GitHub, etc.) already
     // open in a new tab anyway, so this is consistent for all socials.
+    //
+    // Fix 8+9: `rel="noopener"` (rather than `rel="me"`) is the right
+    // pairing for `target="_blank"` — it prevents the new tab from
+    // accessing `window.opener` and is the standard recommendation for
+    // any link that opens in a new browsing context. `rel="me"` is for
+    // indieweb identity links and is not appropriate here.
     html.a(
       [
         attribute.class("social"),
         attribute.href(social.url),
         attribute.target("_blank"),
-        attribute.rel("me"),
+        attribute.rel("noopener"),
       ],
       [
         html.img([
@@ -222,12 +228,11 @@ fn view_theme_toggle(on_toggle: Attribute(msg)) -> Element(msg) {
   // theme-cycle message. Three icons (sun/moon/auto) are rendered; the FFI
   // shows/hides them based on the current theme.
   //
-  // Fix 11: the moon and auto icons start with `display:none` so only the
-  // sun icon is visible on initial render (light is the default theme).
-  // Previously all three icons flashed on screen until `apply_theme` ran,
-  // producing a visible "three stacked icons" flicker on every navigation.
-  // The FFI's `apply_theme` overwrites `display` once it loads, so this
-  // initial inline style is purely a no-flicker default.
+  // Fix 14: the sun and moon icons start with `display:none` so only the
+  // AUTO icon is visible on initial render. The default theme is `Auto`
+  // (resolves to the system preference), so this matches what most users
+  // see on first visit. The FFI's `apply_theme` overwrites `display` once
+  // it loads, so this initial inline style is purely a no-flicker default.
   html.button(
     [
       attribute.id("dark-mode-toggle"),
@@ -239,6 +244,7 @@ fn view_theme_toggle(on_toggle: Attribute(msg)) -> Element(msg) {
         attribute.src("/icons/sun.svg"),
         attribute.id("sun-icon"),
         attribute.alt("Light"),
+        attribute.style("display", "none"),
       ]),
       html.img([
         attribute.src("/icons/moon.svg"),
@@ -250,7 +256,6 @@ fn view_theme_toggle(on_toggle: Attribute(msg)) -> Element(msg) {
         attribute.src("/icons/auto.svg"),
         attribute.id("auto-icon"),
         attribute.alt("Auto"),
-        attribute.style("display", "none"),
       ]),
     ],
   )
