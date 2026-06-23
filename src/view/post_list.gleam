@@ -81,6 +81,23 @@ pub fn view_items(posts: List(Post)) -> Element(msg) {
 /// `.title` span are siblings. The `.post-content` div below carries the
 /// description.
 fn view_list_item(post: Post) -> Element(msg) {
+  // Fix 3: render the post's tags between the header and the description.
+  // When the post has no tags, render `element.none()` so the layout stays
+  // flat (no empty wrapper div). Each tag links to its `/tags/<name>` route
+  // so modem intercepts the click for client-side navigation.
+  let tags_el = case post.tags {
+    [] -> element.none()
+    _ ->
+      html.div(
+        [attribute.class("post-list-tags")],
+        list.map(post.tags, fn(tag) {
+          html.a(
+            [attribute.class("post-list-tag"), route.href(route.Tag(tag))],
+            [html.text(tag)],
+          )
+        }),
+      )
+  }
   html.li([attribute.class("list-item post-card")], [
     html.div([attribute.class("post-header")], [
       html.span([attribute.class("meta")], [
@@ -90,6 +107,7 @@ fn view_list_item(post: Post) -> Element(msg) {
         html.span([attribute.class("title")], view_title(post)),
       ]),
     ]),
+    tags_el,
     html.div([attribute.class("post-content")], [html.text(post.description)]),
   ])
 }

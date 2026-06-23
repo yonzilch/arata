@@ -11,8 +11,8 @@ and acceptance criteria. Phases are ordered so that each one produces a
 runnable, reviewable increment.
 
 The research underpinning this roadmap lives in
-`/home/z/my-project/apollo/RESEARCH_NOTES.md` and
-`/home/z/my-project/lustre/RESEARCH_NOTES.md` (produced during scaffolding).
+`apollo/RESEARCH_NOTES.md` and
+`lustre/RESEARCH_NOTES.md` (produced during scaffolding).
 
 ---
 
@@ -1055,11 +1055,11 @@ arata is "done" when **all** of the following hold:
 ## 12. References
 
 - apollo source: `https://github.com/not-matthias/apollo` (cloned to
-  `/home/z/my-project/apollo`).
-- apollo research notes: `/home/z/my-project/apollo/RESEARCH_NOTES.md`.
+  `apollo/`).
+- apollo research notes: `apollo/RESEARCH_NOTES.md`.
 - Lustre source: `https://github.com/lustre-labs/lustre` (cloned to
-  `/home/z/my-project/lustre`).
-- Lustre research notes: `/home/z/my-project/lustre/RESEARCH_NOTES.md`.
+  `lustre/`).
+- Lustre research notes: `lustre/RESEARCH_NOTES.md`.
 - Lustre docs: `https://hexdocs.pm/lustre`.
 - Key example: `lustre/examples/04-applications/01-routing` (the arata skeleton).
 - modem docs: `https://hexdocs.pm/modem`.

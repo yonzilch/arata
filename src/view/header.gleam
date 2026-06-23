@@ -251,6 +251,7 @@ fn view_theme_toggle(on_toggle: Attribute(msg)) -> Element(msg) {
         attribute.id("moon-icon"),
         attribute.alt("Dark"),
         attribute.style("display", "none"),
+        attribute.style("filter", "invert(1)"),
       ]),
       html.img([
         attribute.src("/icons/auto.svg"),

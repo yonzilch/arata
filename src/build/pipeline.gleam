@@ -428,7 +428,7 @@ fn index_html(site_meta: site.SiteMeta) -> String {
   <link rel='stylesheet' href='/css/accessibility.css'>
 </head>
 <body>
-  <div id='app'></div>
+  <div id='app'><div style='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg-0);color:var(--text-1);font-family:sans-serif;'>Loading…</div></div>
   <script type='module' src='/app.mjs'></script>
 </body>
 </html>"

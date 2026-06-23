@@ -7,7 +7,7 @@
 /*
  * arata.css — hand-port of apollo's SCSS design system to plain CSS.
  *
- * Source files (apollo Zola theme, /home/z/my-project/apollo/):
+ * Source files (apollo Zola theme, apollo/):
  *   - sass/main.scss            (base resets, layout, body/content/left/right)
  *   - sass/fonts.scss           (@font-face declarations)
  *   - sass/theme/light.scss     (:root.light variables — here merged into :root)
@@ -134,7 +134,7 @@
   --bg-1: #fafafa;       /* darken(#fff, 2%)  */
   --bg-2: #f0f0f0;       /* darken(#fafafa, 5%) */
   --text-0: #151515;     /* darken(#fff, 87%) */
-  --text-1: #666666;     /* darken(#fff, 60%) */
+  --text-1: #222222;     /* Fix 7: darker than the previous #666 for stronger contrast */
   --text-2: #b3b3b3;     /* darken(#fff, 30%) */
 
   --border-color: var(--bg-2);
@@ -163,7 +163,7 @@
   --bg-1: #1c1c1c;       /* lighten(#121212, 5%)  */
   --bg-2: #262626;       /* lighten(#1c1c1c, 10%) */
   --text-0: #f0f0f0;     /* lighten(#121212, 87%) */
-  --text-1: #999999;     /* lighten(#121212, 60%) */
+  --text-1: #cccccc;     /* Fix 7: lighter than the previous #999 for stronger contrast */
   --text-2: #737373;     /* lighten(#121212, 40%) */
 
   /* Fix 5: dark-theme body text — semi-transparent light gray (#F0F0F0DE)

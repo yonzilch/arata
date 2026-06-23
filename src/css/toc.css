@@ -121,8 +121,9 @@
 }
 
 .toc-overlay-scroll-top {
-  background: var(--bg-2);
-  border: 1px solid var(--border-color);
+  background: var(--primary-color);
+  color: white;
+  border: none;
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -131,4 +132,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* =========================================================================
+   Floating overlay tags (Fix 5): the bottom-sheet overlay re-renders the
+   `.post-tags` row from the right sidebar so the post's tags are reachable
+   on small screens. Without these rules the tags would inherit the sidebar
+   layout (flex-wrap with `--gap`), but the overlay's narrower width and
+   different padding need a tighter, pill-style layout that matches the
+   `.post-list-tag` chips on the posts index.
+   ========================================================================= */
+
+.toc-overlay-content .post-tags {
+  margin-bottom: 1rem;
+}
+
+.toc-overlay-content .post-tags .tag {
+  display: inline-block;
+  margin: 2px 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text-1);
+  font-size: 0.8rem;
+}
+
+.toc-overlay-content .post-tags .tag:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }

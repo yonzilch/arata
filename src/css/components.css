@@ -73,6 +73,31 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* Post-list tags (Fix 3): pill-style tag chips rendered between the
+   `.post-header` and the `.post-content` description. Each tag links to its
+   `/tags/<name>` route; hovering picks up the primary color. */
+.post-list-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.post-list-tag {
+  font-size: 0.75rem;
+  color: var(--text-1);
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.post-list-tag:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
 .post-list .post-header,
 .tag-list .post-header {
   display: flex;
@@ -135,6 +160,34 @@
 
 .pagination .page-item .page-link {
   /* inherits main a underline; same border-bottom treatment */
+}
+
+/* Page-jump input (Fix 2): a small, modern number input rendered as a third
+   pagination item so the user can type a page number and jump straight to
+   it. Styled with a border, radius, and a focus state that picks up the
+   primary color. */
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.page-jump input {
+  width: 48px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-size: 0.9rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.page-jump input:focus {
+  border-color: var(--primary-color);
 }
 /* =========================================================================
    15. Icon-button component  (sass/parts/_components.scss)
