@@ -15,6 +15,7 @@
 //// fetch at runtime.
 
 import build/feeds
+import build/llms
 import build/robots
 import content/loader
 import data/link.{type Link}
@@ -97,28 +98,33 @@ pub fn run() -> Result(Nil, String) {
   write(dist_dir <> "/sitemap.xml", feeds.sitemap(site_meta, posts, page_slugs))
 
   // 5. robots.txt.
-  //
-  // This must be a real static file in dist/. The SPA router only prevents
-  // modem from treating `/robots.txt` as a standalone page; it does not create
-  // the file. Search engines and crawlers expect this file at the site root.
   write(dist_dir <> "/robots.txt", robots.render(site_meta))
 
-  // 6. Custom index.html with FOUC prevention.
+  // 6. llms.txt.
+  //
+  // Must be a real Markdown file in dist/. Lighthouse/PageSpeed expects at
+  // least one H1 and at least one Markdown link.
+  write(
+    dist_dir <> "/llms.txt",
+    llms.render(site_meta, posts, projects, links, pages),
+  )
+
+  // 7. Custom index.html with FOUC prevention.
   write(dist_dir <> "/index.html", index_html(site_meta))
 
-  // 7. 404.html — the SPA shell (same content as index.html). Static hosts
+  // 8. 404.html — the SPA shell (same content as index.html). Static hosts
   // that serve 404.html for unknown paths load the SPA directly; the SPA's
   // modem reads `window.location.pathname` and the router handles the deep
   // link, no redirect needed (preserves the URL).
   write(dist_dir <> "/404.html", not_found_html(site_meta))
 
-  // 8. Copy each CSS module from src/css/ to dist/css/ as a separate file.
+  // 9. Copy each CSS module from src/css/ to dist/css/ as a separate file.
   build_css()
 
-  // 9. Copy all static assets (fonts, icons, images, vendored CSS) to dist/.
+  // 10. Copy all static assets (fonts, icons, images, vendored CSS) to dist/.
   copy_directory_contents(static_dir, dist_dir)
 
-  // 10. Compile the Gleam JavaScript and bundle into dist/app.mjs.
+  // 11. Compile the Gleam JavaScript and bundle into dist/app.mjs.
   bundle_spa()
 
   io.println("Build complete. dist/ contains:")
