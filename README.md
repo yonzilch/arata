@@ -4,7 +4,7 @@ A faithful reimplementation of the [apollo](https://github.com/not-matthias/apol
 
 arata reproduces apollo's minimal, typography-driven aesthetic as a client-side single-page application: content is authored in Markdown, parsed at build time by [mork](https://hex.pm/packages/mork) (a pure-Gleam CommonMark + GFM parser), and served to a Lustre SPA that fetches a single `content_index.json` at runtime. No file system access happens in the browser.
 
-> **Status:** v0.1.0. The build pipeline reads `.md` files under `content/`, renders them to HTML via mork, and emits a complete static site in `dist/`.
+> **Status:** Stable version is out
 
 ## Stack
 
