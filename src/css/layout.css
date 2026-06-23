@@ -73,7 +73,13 @@ nav {
   flex-wrap: wrap;
   justify-content: space-between;
   padding: 0;
-  position: relative;
+  /* Fix 2 — sticky header navbar: keep the header pinned to the top of the
+     viewport while scrolling. `background: var(--bg-0)` prevents page content
+     from showing through the (otherwise transparent) header on scroll. */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-0);
 }
 
 @media (max-width: 600px) {
@@ -137,8 +143,19 @@ nav .right-nav a {
 }
 
 nav .right-nav #dark-mode-toggle {
+  /* Fix 9a — modernize theme toggle: circular button with a subtle
+     background, smooth transition, and a hover state that lifts the bg
+     and accents the border with the primary color. */
+  background: var(--bg-1);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  padding: 8px;
   margin-left: 0.5rem;
-  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 nav .right-nav #dark-mode-toggle > img {
@@ -146,9 +163,11 @@ nav .right-nav #dark-mode-toggle > img {
   height: 24px;
 }
 
-/* Don't display background on hover */
+/* Modern hover: lift the background and accent the border with the
+   primary color instead of clearing the background entirely. */
 nav .right-nav #dark-mode-toggle:hover {
-  background-color: transparent;
+  background-color: var(--bg-2);
+  border-color: var(--primary-color);
 }
 
 /* Active nav item highlighting.
@@ -274,8 +293,15 @@ nav .right-nav a.active {
     display: block;
   }
 
-  /* Make sure the right-content sidebar shows below the content rather than
-     being hidden. */
+  /* Fix 1 — Tags/ToC sidebar display on desktop + mobile:
+     On desktop (>= 992px) the rule above sticks `.right-content` to the
+     viewport as a sidebar. On mobile (< 992px) the sidebar is NOT hidden
+     (the dropdown menu above only contains nav links/search/theme toggle);
+     instead `.right-content` is re-flowed as a static block below the
+     main content so the tags + ToC remain reachable. This is intentional
+     and verified working — no extra rules are needed for the mobile menu
+     dropdown to also surface tags/ToC, since they live in `.right-content`,
+     not `.right-nav`. */
   .arata-shell .right-content {
     display: block;
     position: static;

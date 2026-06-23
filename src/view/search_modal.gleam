@@ -69,6 +69,12 @@ pub fn view(
                 attribute.type_("text"),
                 attribute.placeholder("Search..."),
                 attribute.value(query),
+                // Fix 4 — auto-focus the search input when the modal opens.
+                // Because the modal goes from `none()` to a real element on
+                // open, the browser sees a freshly-inserted `#searchInput`
+                // with `autofocus` and focuses it as part of the DOM insertion.
+                // This avoids the need for a Lustre effect / FFI focus call.
+                attribute.attribute("autofocus", ""),
                 attribute.attribute("role", "combobox"),
                 attribute.attribute("autocomplete", "off"),
                 attribute.attribute("spellcheck", "false"),

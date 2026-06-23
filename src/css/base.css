@@ -189,6 +189,11 @@ html {
   color: var(--text-0);
   font-family: var(--text-font);
   line-height: var(--line-height);
+  /* Fix 8 — body text font-weight: bump from the default 400 (normal) to
+     500 (medium) so the body text reads slightly heavier, matching the
+     visual density of modern system-UI web text. Headings and bold spans
+     override this via their own font-weight rules. */
+  font-weight: 500;
 }
 
 @media (max-width: 992px) {

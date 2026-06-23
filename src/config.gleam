@@ -83,7 +83,13 @@ pub fn default() -> Config {
     fonts: Fonts(
       text: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
       header: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
-      code: "\"SF Mono\", \"Fira Code\", \"JetBrains Mono\", Consolas, \"Liberation Mono\", Menlo, monospace",
+      // Fix 9b — default the code font to the browser's native monospace
+      // (`ui-monospace`) first, then fall back to common code-editor fonts
+      // (Cascadia Code, Source Code Pro), then OS monospace defaults
+      // (Menlo/Consolas/DejaVu Sans Mono), and finally the generic
+      // `monospace` family. This matches what VS Code and Zed use by
+      // default and respects the user's OS-level monospace preference.
+      code: "ui-monospace, \"Cascadia Code\", \"Source Code Pro\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace",
     ),
     search_enabled: True,
     analytics: AnalyticsDisabled,
