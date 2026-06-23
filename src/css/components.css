@@ -1,0 +1,186 @@
+/* =========================================================================
+   components.css — .page-header, .not-found-header, .meta, .post-list,
+   .tag-list, .list-item, .post-header, .pagination, .icon-button, .tags,
+   .authors, .post-tags, .tag.
+   (sections 4, 6, 7, 15, 18 + the .post-tags piece of 20 from src/arata.css)
+   ========================================================================= */
+
+.page-header {
+  font-size: 2.5em;
+  line-height: 100%;
+  font-family: var(--header-font);
+  margin: 4rem 0px 1rem 0px;
+}
+
+/* 404 header */
+.not-found-header {
+  font-family: var(--header-font);
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 3em;
+}
+/* TODO: Is this still used? */
+.meta {
+  color: #999;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 0.3em;
+}
+/* Post-list & tag-list shared layout (sass/parts/_misc.scss) */
+.post-list,
+.tag-list {
+  /* container */
+}
+
+.post-list > ul,
+.tag-list > ul {
+  margin: 0;
+  padding: 1rem 0 0 0;
+}
+
+.post-list .list-item,
+.tag-list .list-item {
+  margin-bottom: 1.5rem;
+  list-style-type: none;
+}
+
+.post-list .post-header,
+.tag-list .post-header {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+@media all and (max-width: 640px) {
+  .post-list .post-header,
+  .tag-list .post-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+@media all and (min-width: 640px) {
+  .post-list .post-header,
+  .tag-list .post-header {
+    gap: 1rem;
+  }
+}
+
+@media only screen and (max-width: 640px) {
+  .post-list .post-header,
+  .tag-list .post-header {
+    margin: 1.6rem 0px;
+  }
+}
+
+.post-list .post-header h1,
+.tag-list .post-header h1 {
+  margin: 0;
+  font-weight: normal;
+  font-family: var(--header-font);
+}
+
+.post-list .post-header h1 a,
+.tag-list .post-header h1 a {
+  border-bottom: none;
+}
+
+.post-list .post-header time,
+.tag-list .post-header time {
+  font-family: var(--mono-text-font);
+  text-align: left;
+  margin: 0;
+}
+/* =========================================================================
+   7. Pagination  (class names from section.html / cards.html / talks.html)
+   ------------------------------------------------------------------------- */
+
+.pagination {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  padding: 0;
+  margin: 1rem 0 0 0;
+}
+
+.pagination .page-item .page-link {
+  /* inherits main a underline; same border-bottom treatment */
+}
+/* =========================================================================
+   15. Icon-button component  (sass/parts/_components.scss)
+   ------------------------------------------------------------------------- */
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  gap: 3px;
+  background: var(--bg-2);
+  font-size: 0.75rem;
+  color: var(--text-color);
+
+  /* Ensure that the a tag has also a bottom border, which is by default hidden */
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px;
+}
+
+.icon-button svg,
+.icon-button img {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.icon-button img {
+  filter: var(--icon-filter);
+}
+
+.icon-button:hover {
+  cursor: pointer;
+  background: var(--bg-1);
+  color: var(--text-color);
+  /* FIXME: Exclude this in the `main a` tag which adds it's own underline */
+  border: 1px solid var(--border-color);
+}
+/* =========================================================================
+   18. Tags / authors shortcodes  (sass/parts/_tags.scss)
+   ------------------------------------------------------------------------- */
+
+.tags a::before {
+  content: "#";
+  display: inline;
+  white-space: nowrap !important;
+}
+
+.authors a::before {
+  content: "@";
+  display: inline;
+  white-space: nowrap !important;
+}
+/* Post tags in the right sidebar (above the TOC). The `.post-tags` row is a
+   flex-wrap container so tags flow onto multiple lines if needed, with a
+   consistent `gap` for spacing. `margin-bottom` separates the tag row from
+   the TOC below. Tags themselves are simple `<a class="tag">` links to
+   `/tags/<tag>`. The `.heading` child mirrors the TOC's heading and spans
+   the full width (via `flex-basis: 100%`) so the tag links wrap onto the
+   next line beneath it. */
+.right-content .post-tags {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.right-content .post-tags .heading {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+.right-content .post-tags .tag {
+  display: inline-block;
+}

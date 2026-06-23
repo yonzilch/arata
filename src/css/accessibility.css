@@ -1,0 +1,44 @@
+/* =========================================================================
+   accessibility.css — :focus-visible outlines and .skip-link.
+   (section 23 from src/arata.css)
+   ========================================================================= */
+
+/* =========================================================================
+   23. Accessibility — focus-visible styles
+   Visible focus outlines for keyboard navigation across all interactive
+   elements. Uses the :focus-visible pseudo-class so mouse clicks don't
+   show outlines (matching apollo's clean aesthetic) while keyboard users
+   get clear focus indicators.
+   ------------------------------------------------------------------------- */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* The search input already has a primary-color border on focus (ported from
+   apollo's _search.scss); augment rather than override. */
+.search-modal #searchInput:focus-visible {
+  outline: none;
+}
+
+/* Skip-to-content link for screen readers and keyboard users. Visually
+   hidden until focused. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary-color);
+  color: var(--hover-color);
+  padding: 8px 16px;
+  z-index: 1000;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0;
+}

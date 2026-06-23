@@ -1,0 +1,19 @@
+/* =========================================================================
+   links.css — .link-avatar (friend-link avatar shown beside title/desc).
+   (section 20b from src/arata.css)
+   ========================================================================= */
+
+/* =========================================================================
+   20b. Links page (friend-link list)
+   ------------------------------------------------------------------------- */
+
+/* Avatar image rendered beside a friend link's title/description when the
+   link's frontmatter carries an `image` URL. The avatar is a 48px circle
+   floated inline with the link's text content. */
+.link-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}

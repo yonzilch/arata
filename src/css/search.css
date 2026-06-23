@@ -1,0 +1,237 @@
+/* =========================================================================
+   search.css — .search-button, .search-modal, .search-backdrop,
+   #modal-content, #searchBar, #searchInput, .clear-button, #results,
+   #results-container, #results-info.
+   (section 19 from src/arata.css)
+   ========================================================================= */
+
+/* =========================================================================
+   19. Search button + modal  (sass/parts/_search.scss)
+   ------------------------------------------------------------------------- */
+
+/* Search button in navbar */
+.search-button {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.25em;
+}
+
+.search-button img {
+  border: none;
+}
+
+.search-button .search-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.search-button:hover {
+  background-color: transparent;
+}
+
+/* Search modal
+   -------------------------------------------------------------------------
+   NOTE: arata conditionally renders the modal in Gleam (search_modal.view
+   returns element.none() when closed, full markup when open). Unlike apollo,
+   which keeps the modal in the DOM and toggles visibility via JS, arata's
+   modal is only in the DOM when it should be visible — so `display: none`
+   must NOT be set here, otherwise the rendered modal stays invisible and the
+   search button appears not to respond to clicks. */
+.search-modal {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.search-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  cursor: pointer;
+}
+
+.search-modal #modal-content {
+  position: relative;
+  z-index: 1;
+  margin: 8% auto;
+  width: 80%;
+  max-width: 28rem;
+  background-color: var(--bg-0);
+  border: 1px solid var(--bg-1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-modal #searchBar {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  gap: 0.5rem;
+}
+
+.search-modal #searchBar #searchInput {
+  flex: 1;
+  padding: 0.75rem 2.5rem;
+  font-size: 1rem;
+  color: var(--text-0);
+  background: var(--bg-1);
+  border: 1px solid var(--bg-1);
+  border-radius: 20px;
+  width: 100%;
+}
+
+.search-modal #searchBar #searchInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.search-modal #searchBar #searchInput::placeholder {
+  color: var(--text-1);
+}
+
+.search-modal #searchBar .close-icon {
+  position: absolute;
+  right: 1.5rem;
+  display: none;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.search-modal #searchBar .close-icon svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: var(--text-1);
+}
+
+/* Results container is always visible when the modal is open; arata
+   populates results via Gleam (no JS show/hide), so `display: none` would
+   hide the "No results" / "N results" line and result list. */
+.search-modal #results-container {
+  border-top: 1px solid var(--bg-1);
+}
+
+.search-modal #results-container #results-info {
+  padding: 0.5rem;
+  color: var(--text-1);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.search-modal #results-container #results {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.search-modal #results-container #results > div {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+}
+
+.search-modal #results-container #results > div[aria-selected="true"] {
+  background: var(--primary-color);
+}
+
+.search-modal #results-container #results > div[aria-selected="true"] * {
+  color: var(--hover-color) !important;
+}
+
+.search-modal #results-container #results > div span:first-child {
+  display: block;
+  color: var(--text-0);
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.search-modal #results-container #results > div span:nth-child(2) {
+  display: block;
+  color: var(--text-1);
+  font-size: 0.9rem;
+}
+
+.search-modal #results-container #results > div:hover:not([aria-selected="true"]) {
+  background: var(--bg-1);
+}
+
+/* Second #modal-content block in apollo SCSS adds padding + h1 styling */
+.search-modal #modal-content {
+  position: relative;
+  margin: 8% auto;
+  width: 80%;
+  max-width: 28rem;
+  background-color: var(--bg-0);
+  border: 1px solid var(--bg-1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
+.search-modal #modal-content h1 {
+  margin-top: 0; /* Override the default 2em margin */
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.search-modal #modal-content h1::before {
+  color: var(--primary-color);
+  content: "# ";
+}
+
+/* Top-level #searchBar — clear button */
+#searchBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+}
+
+#searchBar .clear-button {
+  position: absolute;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  /* Always visible: arata renders the clear button conditionally
+     (only when the search input has text) rather than toggling CSS. */
+  width: 24px;
+  height: 24px;
+}
+
+#searchBar .clear-button svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--text-1);
+}
+
+#searchBar .clear-button:hover svg {
+  fill: var(--primary-color);
+}
+
+/* Make sure input accommodates the clear button */
+#searchBar #searchInput {
+  padding-right: 2.5rem;
+}
+
+/* Mobile adjustments */
+@media only screen and (max-width: 600px) {
+  .search-modal #modal-content {
+    margin: 4% auto;
+    width: 92%;
+  }
+
+  .search-modal #results {
+    max-height: 70vh;
+  }
+}

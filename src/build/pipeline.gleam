@@ -5,7 +5,9 @@
 //// `dist/`:
 ////   1. Emits the JSON content index, search index, feeds, sitemap, a custom
 ////      `index.html` with FOUC prevention, and a `404.html` redirect shim.
-////   2. Copies `src/arata.css` (the design system) to `dist/arata.css`.
+////   2. Concatenates the CSS modules under `src/css/` (base, layout,
+////      components, post, cards, links, search, toc, syntax, accessibility)
+////      into a single `dist/arata.css` design system.
 ////   3. Copies all static assets (fonts, icons, images) from `static/` to
 ////      `dist/`.
 ////   4. Compiles the Gleam JavaScript and bundles it into `dist/app.mjs` via
@@ -33,8 +35,21 @@ import simplifile
 /// The output directory for the built site.
 const dist_dir = "dist"
 
-/// The source CSS file (in `src/`, not `static/`).
-const css_src = "src/arata.css"
+/// The CSS modules that, concatenated in order, produce `dist/arata.css`.
+/// `base.css` must come first (theme variables + resets); the rest follow the
+/// dependency order so cascade specificity resolves as intended.
+const css_modules = [
+  "src/css/base.css",
+  "src/css/layout.css",
+  "src/css/components.css",
+  "src/css/post.css",
+  "src/css/cards.css",
+  "src/css/links.css",
+  "src/css/search.css",
+  "src/css/toc.css",
+  "src/css/syntax.css",
+  "src/css/accessibility.css",
+]
 
 /// The static assets directory.
 const static_dir = "static"
@@ -88,8 +103,8 @@ pub fn run() -> Result(Nil, String) {
   // 6. 404.html redirect shim.
   write(dist_dir <> "/404.html", not_found_html())
 
-  // 7. Copy the design system CSS from src/ to dist/.
-  copy_file(css_src, dist_dir <> "/arata.css")
+  // 7. Concatenate the CSS modules from src/css/ into dist/arata.css.
+  build_css()
 
   // 8. Copy all static assets (fonts, icons, images, vendored CSS) to dist/.
   copy_directory_contents(static_dir, dist_dir)
@@ -112,6 +127,31 @@ pub fn run() -> Result(Nil, String) {
 /// Write `content` to `path`.
 fn write(path: String, content: String) -> Nil {
   let _ = simplifile.write(path, content)
+  Nil
+}
+
+/// Concatenate the CSS modules listed in `css_modules` (in order) into a
+/// single `dist/arata.css`. Each module is read independently; a missing
+/// module is treated as empty so a partial split still produces a buildable
+/// stylesheet (with a warning logged).
+fn build_css() -> Nil {
+  let contents =
+    list.map(css_modules, fn(path) {
+      case simplifile.read(from: path) {
+        Ok(content) -> content
+        Error(e) -> {
+          io.println(
+            "Warning: could not read CSS module "
+            <> path
+            <> ": "
+            <> simplify_error(e),
+          )
+          ""
+        }
+      }
+    })
+  let combined = string.join(contents, "\n")
+  let _ = simplifile.write(to: dist_dir <> "/arata.css", contents: combined)
   Nil
 }
 

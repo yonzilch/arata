@@ -1,0 +1,52 @@
+/* =========================================================================
+   toc.css — .toc, .toc a, .toc li, .toc ul, .heading, .selected, .parent.
+   (section 20 TOC pieces from src/arata.css; the .post-tags block at the
+   end of section 20 lives in components.css)
+   ========================================================================= */
+
+/* =========================================================================
+   20. Table of contents  (sass/parts/_toc.scss)
+   ------------------------------------------------------------------------- */
+
+@media only screen and (max-width: 1365px) {
+  .toc {
+    display: none;
+  }
+}
+
+.toc li,
+.toc a {
+  font-family: sans-serif;
+  color: var(--text-2);
+  transition: none;
+  border-bottom: none;
+}
+
+.toc a:hover {
+  color: var(--hover-color) !important;
+  transition: none;
+}
+
+.toc .heading {
+  font-weight: 700;
+}
+
+.toc ul {
+  list-style-type: none;
+  padding-left: 1em;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.toc > ul {
+  padding-left: 0;
+}
+
+.toc li.selected,
+.toc li.selected > a {
+  color: var(--text-0);
+}
+
+.toc .parent > a {
+  color: var(--text-0);
+}

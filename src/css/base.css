@@ -1,0 +1,337 @@
+/* =========================================================================
+   base.css — @font-face, theme variables, html/body, headings, links,
+   ::selection, responsive font-size scaling.
+   (sections 1, 2, 3, 5, and the link/global pieces of 6 from src/arata.css)
+   ========================================================================= */
+
+/*
+ * arata.css — hand-port of apollo's SCSS design system to plain CSS.
+ *
+ * Source files (apollo Zola theme, /home/z/my-project/apollo/):
+ *   - sass/main.scss            (base resets, layout, body/content/left/right)
+ *   - sass/fonts.scss           (@font-face declarations)
+ *   - sass/theme/light.scss     (:root.light variables — here merged into :root)
+ *   - sass/theme/dark.scss      (:root.dark variables)
+ *   - sass/parts/_cards.scss
+ *   - sass/parts/_character.scss
+ *   - sass/parts/_code.scss     (incl. $language-colors map → .label-<lang>)
+ *   - sass/parts/_components.scss
+ *   - sass/parts/_header.scss
+ *   - sass/parts/_image.scss
+ *   - sass/parts/_mermaid.scss
+ *   - sass/parts/_misc.scss     (global base styles, a, headings, post-list)
+ *   - sass/parts/_note.scss
+ *   - sass/parts/_search.scss
+ *   - sass/parts/_table.scss
+ *   - sass/parts/_tags.scss
+ *   - sass/parts/_talks.scss
+ *   - sass/parts/_toc.scss
+ *   - static/giallo-light.css   (syntax theme "github-light" — inlined as base)
+ *   - static/giallo-dark.css    (syntax theme "github-dark" — inlined under :root.dark)
+ *
+ * Theming approach:
+ *   apollo uses `:root.light { ... }` and `:root.dark { ... }` and always
+ *   applies one of the two classes to <html>. arata instead defines the
+ *   LIGHT palette directly on `:root` (so light is the default with NO
+ *   class on <html>) and the DARK palette as overrides on `:root.dark`.
+ *   The Phase 10 theme toggle simply adds/removes the `dark` class on
+ *   <html> (the documentElement), and every theme-aware variable and
+ *   syntax-highlight color responds automatically.
+ *
+ * SCSS constructs expanded to plain CSS:
+ *   - All `$var` interpolations inlined as their pre-computed values
+ *     (darken/lighten results taken from RESEARCH_NOTES.md §D.1).
+ *   - The `@each $lang, $color-info in $language-colors { ... }` loop in
+ *     _code.scss expanded to one `.label-<lang>` rule per language (26
+ *     entries: 25 languages + `.label-default`).
+ *   - The `@mixin base-label-style($bg-color, $text-color)` mixin inlined
+ *     into every `.label-*` rule and `.code-label`.
+ *   - Nested selectors (e.g. `body { .content { ... } }`) flattened to
+ *     their fully-qualified form.
+ *   - `@media` queries nested inside rules are emitted as standalone
+ *     `@media { selector { ... } }` blocks (one per breakpoint cluster).
+ */
+/* =========================================================================
+   1. @font-face declarations  (from sass/fonts.scss)
+   ------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "Jetbrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/JetbrainsMono/JetBrainsMono-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Jetbrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  src: url("/fonts/JetbrainsMono/JetBrainsMono-Bold.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/SpaceGrotesk/SpaceGrotesk-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 700;
+  src: url("/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ZedTextFtl";
+  src: url("/fonts/zed-fonts/ZedTextL-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ZedTextFtl";
+  src: url("/fonts/zed-fonts/ZedTextL-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ZedDisplayFtl";
+  src: url("/fonts/zed-fonts/ZedDisplayL-Heavy.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =========================================================================
+   2. Theme variables  (sass/theme/light.scss + dark.scss + main.scss :root)
+      Light = default on :root;  Dark = overrides on :root.dark
+   ------------------------------------------------------------------------- */
+
+:root {
+  /* Fonts */
+  --font-size-base: 17px;
+  --mono-text-font: "Jetbrains Mono";
+  --text-font: "ZedTextFtl";
+  --header-font: "ZedDisplayFtl", "Space Grotesk", "Helvetica", sans-serif;
+  --code-font: "Jetbrains Mono", monospace;
+
+  /* Layout & type scale */
+  --line-height: 1.5;
+  --page-width: 920px;
+
+  /* Light palette (sass/theme/light.scss, with darken() values pre-computed) */
+  --bg-0: #ffffff;
+  --bg-1: #fafafa;       /* darken(#fff, 2%)  */
+  --bg-2: #f0f0f0;       /* darken(#fafafa, 5%) */
+  --text-0: #151515;     /* darken(#fff, 87%) */
+  --text-1: #666666;     /* darken(#fff, 60%) */
+  --text-2: #b3b3b3;     /* darken(#fff, 30%) */
+
+  --border-color: var(--bg-2);
+
+  --primary-color: #3555b3;
+  --hover-color: white;
+
+  --icon-filter: none;
+
+  /* Code-block label text color (sass/parts/_code.scss :root) */
+  --label-color: #f0f0f0;
+
+  /* Note shortcode (sass/parts/_note.scss :root) */
+  --note-header-bg: var(--bg-2);
+  --note-header-color: var(--text-0);
+  --note-content-bg: var(--bg-1);
+
+  /* Code-block helper aliases (sass/parts/_code.scss :root) */
+  --bg-primary: var(--bg-1);
+  --text-color: var(--text-0);
+}
+
+:root.dark {
+  /* Dark palette (sass/theme/dark.scss, with lighten() values pre-computed) */
+  --bg-0: #121212;
+  --bg-1: #1c1c1c;       /* lighten(#121212, 5%)  */
+  --bg-2: #262626;       /* lighten(#1c1c1c, 10%) */
+  --text-0: #f0f0f0;     /* lighten(#121212, 87%) */
+  --text-1: #999999;     /* lighten(#121212, 60%) */
+  --text-2: #737373;     /* lighten(#121212, 40%) */
+
+  /* --border-color stays var(--bg-2) (defined on :root) */
+  /* --primary-color stays #3555b3 */
+  /* --hover-color stays white */
+
+  --icon-filter: invert(1);
+
+  /* Note-derived variables re-resolve automatically via var(--bg-*) refs. */
+
+  /* Dark-mode icon inversion for socials + search (from dark.scss nesting) */
+}
+
+:root.dark .social > img,
+:root.dark .search-button > img {
+  filter: invert(1);
+}
+/* =========================================================================
+   3. html / body / layout  (sass/main.scss)
+   ------------------------------------------------------------------------- */
+
+html {
+  background-color: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--text-font);
+  line-height: var(--line-height);
+}
+
+@media (max-width: 992px) {
+  html {
+    font-size: calc(var(--font-size-base) * 0.97);
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: calc(var(--font-size-base) * 0.95);
+  }
+}
+
+@media (max-width: 576px) {
+  html {
+    font-size: calc(var(--font-size-base) * 0.92);
+  }
+}
+
+/* =========================================================================
+   5. Headings h1–h6 + ::before prefix  (sass/parts/_header.scss)
+   ------------------------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--header-font);
+  font-size: 1.2rem;
+  margin-top: 2em;
+}
+
+h1::before {
+  color: var(--primary-color);
+  content: "# ";
+}
+
+h2::before {
+  color: var(--primary-color);
+  content: "## ";
+}
+
+h3::before {
+  color: var(--primary-color);
+  content: "### ";
+}
+
+h4::before {
+  color: var(--primary-color);
+  content: "#### ";
+}
+
+h5::before {
+  color: var(--primary-color);
+  content: "##### ";
+}
+
+h6::before {
+  color: var(--primary-color);
+  content: "###### ";
+}
+.primary-color {
+  color: var(--primary-color);
+}
+::-moz-selection {
+  background: var(--primary-color);
+  color: var(--hover-color);
+  text-shadow: none;
+}
+
+::selection {
+  background: var(--primary-color);
+  color: var(--hover-color);
+}
+
+hr {
+  color: var(--border-color);
+  background: none;
+  margin: 1.2rem auto;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* use colored hovering */
+a:hover {
+  background-color: var(--primary-color);
+  color: var(--hover-color);
+}
+
+/* hover link with child elements (e.g. code) */
+a:hover > code {
+  background-color: var(--primary-color);
+  color: var(--hover-color);
+  /* disable the border + vertical padding */
+  border: none;
+  padding: 0 .2em;
+}
+
+/* disable colored hovering for video in /talks */
+a.talk-video:hover {
+  background-color: transparent;
+  color: inherit;
+}
+
+/* Only have colored links inside the text */
+main a {
+  border-bottom: 2px solid var(--primary-color);
+  /* Make sure the underline is at the top */
+  position: relative; /* needed for z-index */
+  z-index: 1;
+}
+
+/* Disable colored links in: .meta, header (socials, theme toggle), /talks, /projects, .post-header */
+main .meta a,
+main .talks-grid a,
+main .cards a,
+main .post-header a {
+  border-bottom: none;
+}
+
+/* Don't display border on zola internal links on headers */
+main .zola-anchor {
+  border-bottom: none;
+}
+
+time {
+  color: var(--text-1);
+}
+/* change the line-through color */
+del {
+  text-decoration-color: var(--primary-color);
+  text-decoration-thickness: 3px;
+}
+
+/* MathJax display containers — allow horizontal scroll on small screens */
+.MathJax_Display,
+.MJXc-display,
+.MathJax_SVG_Display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}

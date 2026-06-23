@@ -1,0 +1,160 @@
+/* =========================================================================
+   layout.css — .arata-shell, .content, .left-content, .right-content, nav,
+   .left-nav, .right-nav, .logo.
+   (section 3 layout pieces, section 4 nav + logo from src/arata.css)
+   ========================================================================= */
+
+/*
+ * apollo makes <body> the flex container for the 3-column layout. arata is a
+ * Lustre SPA mounted inside <div id="app">, so the single root element returned
+ * by the layout view carries the `arata-shell` class — we target it here instead
+ * of `body`. The `body` keeps only the base font/color/background from section 1.
+ */
+.arata-shell {
+  display: flex;
+  flex-grow: 1;
+  padding: 0.9rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  min-height: calc(100vh - 150px);
+}
+
+@media (min-width: 992px) {
+  .arata-shell {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+  }
+}
+
+.arata-shell .content {
+  width: 100%;
+  max-width: var(--page-width);
+  flex-shrink: 0;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  word-wrap: break-word;
+}
+
+.arata-shell .left-content {
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .arata-shell .left-content {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.arata-shell .right-content {
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .arata-shell .right-content {
+    flex: 1 1 0;
+    min-width: 0;
+    /* Don't move this to the TOC, it won't work — FIXME: find a workaround. */
+    position: sticky;
+    top: 60px;
+    padding: 1em;
+    overflow-y: auto;
+    max-height: calc(100vh - 100px);
+  }
+}
+/* =========================================================================
+   4. Header / nav  (sass/parts/_header.scss)
+   ------------------------------------------------------------------------- */
+
+nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0;
+}
+
+@media (max-width: 600px) {
+  nav {
+    flex-direction: column;
+  }
+}
+
+/* title and socials */
+nav .left-nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.5rem;
+}
+
+nav .left-nav .socials {
+  /* flex-container */
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+nav .left-nav .socials .social img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Don't display background on hover */
+nav .left-nav .socials a:hover {
+  background-color: transparent;
+}
+
+/* navigation + theme toggle */
+nav .right-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+nav .right-nav #dark-mode-toggle {
+  margin-left: 0.5rem;
+  padding: 0.1rem;
+}
+
+nav .right-nav #dark-mode-toggle > img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Don't display background on hover */
+nav .right-nav #dark-mode-toggle:hover {
+  background-color: transparent;
+}
+
+/* Active nav item highlighting.
+   apollo does not highlight the active menu item; this is an arata addition
+   for wayfinding. The `active` class is added by view/header.gleam via
+   `attribute.classes([#("active", is_active(...))])` when the menu item's URL
+   matches the current route. */
+nav .right-nav a.active {
+  color: var(--primary-color);
+}
+
+/* TODO: Is this still used? */
+.logo {
+  border-bottom: unset;
+  background-image: unset;
+}
+
+.logo > img {
+  border: unset;
+  width: auto;
+  height: 24px;
+  vertical-align: middle;
+}
+
+.logo:hover {
+  background-color: transparent;
+}
