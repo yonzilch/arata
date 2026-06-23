@@ -131,6 +131,11 @@ fn default_socials(rss_enabled: Bool) -> List(Social) {
   }
   list.append(rss, [
     Social(
+      name: "Codeberg",
+      url: "https://codeberg.org/yonzilch/arata",
+      icon: "codeberg",
+    ),
+    Social(
       name: "GitHub",
       url: "https://github.com/yonzilch/arata",
       icon: "github",

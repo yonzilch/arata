@@ -1,7 +1,9 @@
 +++
-title = "arata"
-subtitle = "A modern and minimalistic blog theme powered by Gleam and Lustre."
+title = ""
+subtitle = "Welcome to demo site of arata"
 +++
+
+> Arata is a modern and minimalistic blog theme powered by Gleam and Lustre.
 
 ## Features
 
