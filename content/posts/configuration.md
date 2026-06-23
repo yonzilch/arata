@@ -12,7 +12,8 @@ arata is configured through two Gleam modules whose types mirror the
 
 - **`src/config.gleam`** — the `Config` type: `title`, `description`,
   navigation `menu`, `socials`, `logo`, `fonts`, `rss_enabled`,
-  `search_enabled`, and `analytics`.
+  `search_enabled`, `mathjax_enabled`, `sidebar_enabled`,
+  `floating_buttons_enabled`, and `analytics`.
 - **`src/data/site.gleam`** — the `SiteMeta` type: `base_url`, `title`,
   `description`, `analytics`, `comments`, `fediverse_creator`, and
   `rss_enabled`.
@@ -46,15 +47,18 @@ Config(
     MenuItem(name: "about", url: "/about"),
   ],
   socials: default_socials(rss_enabled),
-  logo: None,                 // or Some("/images/logo.png")
-  rss_enabled: True,          // set False to skip feeds + hide RSS social
+  logo: None,                       // or Some("/images/logo.png")
+  rss_enabled: True,                // set False to skip feeds + hide RSS social
   fonts: Fonts(
     text: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, ...",
     header: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, ...",
     code: "\"SF Mono\", \"Fira Code\", \"JetBrains Mono\", Consolas, ...",
   ),
-  search_enabled: True,       // set False to hide the search button + modal
+  search_enabled: True,             // set False to hide the search button + modal
   analytics: AnalyticsDisabled,
+  mathjax_enabled: False,           // set True to load MathJax on post pages
+  sidebar_enabled: True,            // set False to hide the right sidebar (ToC + Tags)
+  floating_buttons_enabled: True,   // set False to hide the floating ToC/tags FAB
 )
 ```
 
@@ -77,7 +81,10 @@ MenuItem(name: "posts", url: "/posts"),
 ```
 
 The default menu includes five entries — `posts`, `projects`, `links`,
-`tags`, and `about` — matching arata's five top-level section routes.
+`tags`, and `about` — matching arata's five top-level section routes. The
+`posts`, `links`, and `projects` entries map to the four content
+directories under `content/` (`pages/` is reachable via standalone `/{slug}`
+routes such as `/about`, not via a dedicated nav entry).
 
 ### `socials` — social links
 
@@ -150,6 +157,31 @@ A `Bool`. When `True` (the default):
 
 When `False`, the search button, the modal, and the keyboard shortcut are
 all omitted.
+
+### `mathjax_enabled` — enable/disable MathJax rendering
+
+A `Bool`. When `True`, the MathJax script is injected on post pages and
+the SPA queues a `MathJax.typesetPromise()` call after each post renders,
+so inline (`$…$`) and display (`$$…$$`) LaTeX typesets correctly. When
+`False` (the default), MathJax is never loaded — useful when no post uses
+LaTeX, since the script is ~280 KB and would otherwise be dead weight.
+
+### `sidebar_enabled` — enable/disable the right sidebar
+
+A `Bool`. When `True` (the default), post pages render the right sidebar
+containing the table of contents (ToC) and the post's tag list. When
+`False`, `view_tags_and_toc` is omitted so the post body takes the full
+content width — useful for prose-heavy posts that don't need a ToC, or on
+layouts where the sidebar would crowd the body.
+
+### `floating_buttons_enabled` — enable/disable floating buttons
+
+A `Bool`. When `True` (the default), the floating ToC/tags FAB is
+rendered in the bottom-right corner (visible on all screen sizes), and
+the floating overlay's scroll-to-top button is available. When `False`,
+no FAB is rendered and the floating overlay is unreachable (there is no
+entry point). Combine with `sidebar_enabled: True` if you want the ToC
+available only via the right sidebar, never as a floating overlay.
 
 ### `analytics` — analytics provider
 

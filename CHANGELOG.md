@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Post list tags: each entry on the `/posts` list now renders its `tags` as clickable pill chips between the title and the description/content excerpt; clicking a tag navigates to `/tags/<name>`.
 - Config: `sidebar_enabled` (enable/disable right sidebar ToC+Tags).
 - Config: `floating_buttons_enabled` (enable/disable floating ToC FAB).
 - Scroll-to-top button inside floating overlay (top-right, smooth scroll).
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Page-jump input: modernised with a visible border, rounded radius, and a `:focus` state that highlights with the accent colour; compact enough to slot into the pagination row.
 - Post titles: font-weight 700 (bold) in post list.
 - Floating overlay: Tags moved above ToC; duplicate "Table of Contents" heading removed.
 - Standalone scroll-top FAB removed (replaced by in-overlay button).
@@ -63,6 +65,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- 404 flash: the SPA shell's `<div id="app">` now ships with a small loading indicator so deep-link refreshes show something meaningful instead of a white flash before `app.mjs` boots.
+- Moon-icon: `filter: invert(1)` on `moon.svg` so the dark-theme state of the theme toggle is visible against the dark background (was a black glyph on dark).
+- `text-1` color: light `#222222`, dark `#cccccc` (was `#666666` / `#999999`) — secondary text is now legible without squinting.
+- Removed stray `/home/z/my-project/` absolute paths from `src/css/base.css` and `ROADMAP.md` (left over from local dev).
+- Floating menu tags spacing: the Tags list inside the floating ToC overlay now uses pill-style chips with a `0.5rem` gap, padding, and a rounded background (was cramped with no gap).
+- `toc-overlay-scroll-top`: `--primary-color` background with white text for contrast against the overlay (was nearly invisible).
 - Deep link blank page: `index.html`/`404.html` now use absolute paths (`/app.mjs`, `/css/...`) instead of relative (`./app.mjs`). On `/posts/markdown`, `./app.mjs` resolved to `/posts/app.mjs` (404).
 - Tags hidden on small screens: `.right-content .post-tags` now hides below 1365px, consistent with `.toc`.
 - Auto-icon default style: `display:block; filter:invert(1)` (was `display:block` with no filter).

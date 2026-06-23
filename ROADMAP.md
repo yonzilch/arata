@@ -983,6 +983,90 @@ in light) to reduce harsh contrast. Post content uses 400-weight body text —
 distinct from the 700-weight title — so headings stand out without the body
 feeling heavy. HR separators use `#6c7086` for a subtler rule.
 
+### 404 flash fix (loading indicator in `#app`)
+
+On deep-link refreshes the SPA shell was blank for the brief moment between
+the static `404.html` (served by the host) rendering and `app.mjs` booting.
+The shell's `<div id="app">` now ships with a small loading indicator so the
+reader sees something meaningful immediately instead of a white flash. The
+indicator is replaced by the Lustre-rendered tree on the first paint.
+
+### Post list tags (clickable pills between title and content)
+
+Each entry on the `/posts` list now renders its `tags` as clickable pill
+chips, placed between the title and the description/content excerpt. Clicking
+a tag navigates to `/tags/<name>`. The pills reuse the existing `.tag` /
+`.tag-list` styling from `src/css/components.css`, so they pick up the
+`--primary-color` accent and the dark-theme variants automatically.
+
+### Page-jump input modernized
+
+The pagination-bar page-jump input was restyled: it now has a visible border,
+a rounded radius, and a `:focus` state that highlights the field with the
+accent colour. The control is also more compact so it slots into the
+pagination row without pushing the Prev/Next buttons onto a second line on
+narrow viewports.
+
+### `toc-overlay-scroll-top` contrast
+
+The scroll-to-top button inside the floating ToC overlay was nearly invisible
+against the overlay background. It now uses `--primary-color` as its
+background, with white text, so it reads as a deliberate call-to-action and
+matches the accent used elsewhere on the page (links, active nav, tag pills).
+
+### Floating menu tags spacing (pill chips)
+
+The Tags list inside the floating ToC overlay was cramped — the chips ran
+together with no gap. They are now laid out as a proper pill row with
+`gap: 0.5rem`, padding, and a rounded background per chip, matching the
+project-card tag styling. Long tag lists wrap cleanly to the next line.
+
+### Moon-icon `filter: invert(1)`
+
+The `moon.svg` icon (used for the dark-theme state of the theme toggle) is
+drawn as a black glyph on transparent. In dark mode the black glyph was
+invisible against the dark background. The icon now carries
+`filter: invert(1)` in its CSS rule so it renders white-on-dark — visible in
+both themes without shipping a second, inverted SVG.
+
+### `text-1` color adjustment
+
+The `--text-1` token (used for secondary text: meta rows, captions, the
+`tl;dr` body, etc.) was too washed out (`#666666` light / `#999999` dark).
+It is now `#222222` in light mode and `#cccccc` in dark mode — still clearly
+secondary to the body text but legible enough to read without squinting.
+
+### Config: `sidebar_enabled` and `floating_buttons_enabled`
+
+The `Config` type gained two new boolean toggles:
+
+- **`sidebar_enabled`** — when `False`, the right sidebar (ToC + Tags) is
+  omitted on post pages so the body takes the full content width. Defaults
+  to `True`.
+- **`floating_buttons_enabled`** — when `False`, the floating ToC/tags FAB
+  and the overlay's scroll-to-top button are not rendered (the overlay is
+  also unreachable since there is no entry point). Defaults to `True`.
+
+Both are documented in `content/posts/configuration.md` and surfaced in the
+`Config` code sample.
+
+### Post cards (bordered with hover)
+
+Each entry on the `/posts` list is now wrapped in a bordered card with a
+hover effect (subtle border-colour shift + elevation). This mirrors the
+visual treatment already used by the links page and the projects grid, so
+all three list pages now read as a consistent "card" pattern.
+
+### Absolute paths in `index.html` / `404.html` (deep-link fix)
+
+`index.html` and `404.html` previously referenced `./app.mjs` and
+`./css/…`, which broke on deep links: refreshing `/posts/markdown` resolved
+`./app.mjs` to `/posts/app.mjs` (a 404) so the SPA never booted. Both shells
+now use absolute paths (`/app.mjs`, `/css/…`) so the assets resolve from the
+site root on every route. This complements the earlier "404.html serves the
+SPA shell directly" change and makes deep-link refreshes reliable on every
+static host.
+
 ---
 
 ## 9. Risks & key decisions
