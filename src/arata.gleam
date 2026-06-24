@@ -221,13 +221,12 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     )
 
     UserToggledTheme -> {
-      let next_theme = case model.theme {
-        theme_effect.Light -> theme_effect.Dark
-        theme_effect.Dark -> theme_effect.Auto
-        theme_effect.Auto -> theme_effect.Light
-      }
+      let next_theme =
+        next_theme_after_click(model.theme, model.system_prefers_dark)
 
       let new_model = Model(..model, theme: next_theme)
+
+      let mermaid_eff = mermaid_rerender_for(new_model)
 
       #(
         new_model,
@@ -236,7 +235,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             theme_effect.apply_theme_choice(next_theme),
             theme_msg_to_msg,
           ),
-          mermaid_rerender_for(new_model),
+          mermaid_eff,
         ]),
       )
     }
@@ -444,6 +443,42 @@ fn is_effective_dark(
     theme_effect.Dark -> True
     theme_effect.Light -> False
     theme_effect.Auto -> system_prefers_dark
+  }
+}
+
+/// Pick the next theme after a user click.
+///
+/// The cycle is system-aware so the first click from `Auto` always causes a
+/// visible change:
+///
+///   system light: Auto(light) -> Dark -> Light -> Auto(light)
+///   system dark:  Auto(dark)  -> Light -> Dark -> Auto(dark)
+///
+/// The final explicit theme -> Auto transition may be visually identical to
+/// the previous explicit theme when it matches the system preference, but the
+/// icon still changes to Auto and the state remains meaningful.
+fn next_theme_after_click(
+  theme: theme_effect.Theme,
+  system_prefers_dark: Bool,
+) -> theme_effect.Theme {
+  case theme {
+    theme_effect.Auto ->
+      case system_prefers_dark {
+        True -> theme_effect.Light
+        False -> theme_effect.Dark
+      }
+
+    theme_effect.Light ->
+      case system_prefers_dark {
+        True -> theme_effect.Dark
+        False -> theme_effect.Auto
+      }
+
+    theme_effect.Dark ->
+      case system_prefers_dark {
+        True -> theme_effect.Auto
+        False -> theme_effect.Light
+      }
   }
 }
 
