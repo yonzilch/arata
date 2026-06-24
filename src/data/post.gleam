@@ -77,6 +77,9 @@ pub fn tag_index(posts: List(Post)) -> List(TagEntry) {
 }
 
 /// Find the tag entry for `name`, or `Error(Nil)` if no post has that tag.
-pub fn find_tag(entries: List(TagEntry), name: String) -> Result(TagEntry, Nil) {
+pub fn find_tag(
+  entries: List(TagEntry),
+  name: String,
+) -> Result(TagEntry, Nil) {
   list.find(entries, fn(entry) { entry.name == name })
 }

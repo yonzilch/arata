@@ -81,7 +81,11 @@ pub fn rss_feed(site: SiteMeta, posts: List(Post)) -> String {
 }
 
 /// Generate a `sitemap.xml` from the site metadata and all known URLs.
-pub fn sitemap(site: SiteMeta, posts: List(Post), pages: List(String)) -> String {
+pub fn sitemap(
+  site: SiteMeta,
+  posts: List(Post),
+  pages: List(String),
+) -> String {
   let post_urls =
     posts
     |> list.map(fn(post) { "    <url>
