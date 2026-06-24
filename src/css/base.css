@@ -363,3 +363,46 @@ del {
     overflow-x: auto;
     overflow-y: hidden;
 }
+
+.home-latest-post {
+    padding: 0.95rem 0;
+}
+
+.home-latest-post-date::after {
+    content: "";
+    display: inline-block;
+    width: 0.22rem;
+    height: 0.22rem;
+    margin-left: 0.42rem;
+    margin-right: 0.42rem;
+    vertical-align: middle;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.95;
+}
+
+.home-latest-post:last-child {
+    border-bottom: none;
+}
+
+.home-latest-post-title {
+    display: inline-block;
+    text-decoration: none;
+    color: inherit;
+    font-size: 1rem;
+    font-weight: 580;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    transition: color 120ms ease;
+}
+
+.home-latest-post-title:hover {
+    color: var(--hover-color);
+}
+
+.home-latest-post-meta {
+    margin-top: 0.32rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--text-color-muted);
+}

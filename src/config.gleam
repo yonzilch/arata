@@ -95,6 +95,8 @@ pub type Config {
     /// Example: Some("since 2026-06-21")
     aratafetch_maintained_for: Option(String),
     lightbox_enabled: Bool,
+    latest_posts_enabled: Bool,
+    latest_posts_count: Int,
   )
 }
 
@@ -159,6 +161,8 @@ pub fn default() -> Config {
     aratafetch_enabled: True,
     aratafetch_maintained_for: Some("since 2026-06-21"),
     lightbox_enabled: True,
+    latest_posts_enabled: False,
+    latest_posts_count: 5,
   )
 }
 

@@ -867,6 +867,9 @@ fn view_route_content(model: Model) -> #(Element(Msg), Element(Msg)) {
       #(
         home_view.view(
           model.homepage,
+          model.posts,
+          model.config.latest_posts_enabled,
+          model.config.latest_posts_count,
           model.config.aratafetch_enabled,
           fetch_el,
         ),
