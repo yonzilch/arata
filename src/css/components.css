@@ -273,3 +273,317 @@
         display: none;
     }
 }
+
+.lightbox-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.82);
+}
+
+.lightbox-dialog {
+    position: relative;
+    max-width: min(96vw, 1200px);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.lightbox-image {
+    max-width: 100%;
+    max-height: 82vh;
+    object-fit: contain;
+    border-radius: 0.75rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.45);
+}
+
+.lightbox-caption {
+    max-width: 80ch;
+    margin: 0;
+    color: #f8fafc;
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.lightbox-close {
+    all: unset;
+    position: absolute;
+    top: -0.75rem;
+    right: -0.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: #f8fafc;
+    background: rgba(15, 17, 21, 0.9);
+    border: 1px solid rgba(248, 250, 252, 0.25);
+    cursor: pointer;
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+/* =========================================================================
+   Lightbox
+   ------------------------------------------------------------------------- */
+
+/* Markdown body images are lightbox targets. */
+.body img {
+    cursor: zoom-in;
+}
+
+/* Full-screen overlay. */
+.lightbox-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.86);
+}
+
+/* Invisible full-screen close target behind the dialog.
+   Important: reset native button styles, otherwise browsers may paint a white
+   button across the whole viewport. */
+.lightbox-backdrop-close {
+    all: unset;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    cursor: zoom-out;
+    background: transparent;
+}
+
+/* Dialog sits above the invisible backdrop-close button. */
+.lightbox-dialog {
+    position: relative;
+    z-index: 1;
+
+    max-width: min(96vw, 1200px);
+    max-height: 92vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Preview image. */
+.lightbox-image {
+    display: block;
+    max-width: 100%;
+    max-height: 82vh;
+    object-fit: contain;
+    cursor: zoom-out;
+    border-radius: 0.75rem;
+    background: var(--bg-0);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+    animation: lightbox-image-fade 140ms ease;
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+    contain: paint;
+}
+
+@keyframes lightbox-image-fade {
+    from {
+        opacity: 0;
+        transform: scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Optional caption from alt/title. */
+.lightbox-caption {
+    max-width: 80ch;
+    margin: 0;
+
+    color: #f8fafc;
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Close button. */
+.lightbox-close {
+    all: unset;
+    position: absolute;
+    top: -0.75rem;
+    right: -0.75rem;
+    z-index: 2;
+
+    width: 2.75rem;
+    height: 2.75rem;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    border-radius: 999px;
+    color: #f8fafc;
+    background: rgba(15, 17, 21, 0.92);
+    border: 1px solid rgba(248, 250, 252, 0.25);
+
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.lightbox-close:hover,
+.lightbox-close:focus-visible {
+    background: rgba(31, 41, 55, 0.96);
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.lightbox-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+
+    margin-top: 0.35rem;
+}
+
+/* Counter */
+.lightbox-counter {
+    min-width: 5.5rem;
+
+    text-align: center;
+
+    color: rgba(255, 255, 255, 0.92);
+
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1;
+
+    letter-spacing: 0.04em;
+}
+
+/* Shared nav button */
+.lightbox-nav {
+    all: unset;
+
+    width: 3rem;
+    height: 3rem;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    cursor: pointer;
+    user-select: none;
+
+    color: #ffffff;
+
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.14),
+        rgba(255, 255, 255, 0.08)
+    );
+
+    border: 1px solid rgba(255, 255, 255, 0.16);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    transition:
+        transform 140ms ease,
+        background 140ms ease,
+        box-shadow 140ms ease,
+        opacity 140ms ease;
+
+    opacity: 0.9;
+}
+
+.lightbox-nav:hover {
+    opacity: 1;
+
+    transform: scale(1.06);
+
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.18),
+        rgba(255, 255, 255, 0.12)
+    );
+
+    box-shadow:
+        0 12px 36px rgba(0, 0, 0, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.lightbox-nav:active {
+    transform: scale(0.95);
+}
+
+.lightbox-nav:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+}
+
+/* Arrow glyphs */
+.lightbox-nav::before {
+    font-size: 1.8rem;
+    line-height: 1;
+    font-weight: 300;
+}
+
+.lightbox-prev::before {
+    content: "‹";
+}
+
+.lightbox-next::before {
+    content: "›";
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .lightbox-footer {
+        gap: 0.75rem;
+    }
+
+    .lightbox-nav {
+        width: 2.75rem;
+        height: 2.75rem;
+
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .lightbox-nav::before {
+        font-size: 1.55rem;
+    }
+
+    .lightbox-counter {
+        min-width: 4.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Scroll lock toggled by the lightbox FFI. */
+html.lightbox-open,
+body.lightbox-open {
+    overflow: hidden;
+}

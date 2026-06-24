@@ -94,13 +94,14 @@ pub type Config {
     /// Optional display string for aratafetch's "maintained" row.
     /// Example: Some("since 2026-06-21")
     aratafetch_maintained_for: Option(String),
+    lightbox_enabled: Bool,
   )
 }
 
 /// Hardcoded default site metadata used by the build pipeline and SPA runtime.
 pub fn site_meta() -> SiteMeta {
   SiteMeta(
-    base_url: "https://yonzilch.github.io/arata",
+    base_url: "https://yonzilch.github.io",
     title: "Arata",
     description: "Arata is a modern and minimalistic blog theme powered by Gleam and Lustre.",
     analytics: AnalyticsDisabled,
@@ -137,7 +138,7 @@ pub fn default() -> Config {
     // base URL prefix instead of relying on a relative path.
     socials: default_socials(rss_enabled),
     logo: None,
-    favicon: Some("/images/arata-logo.avif"),
+    favicon: Some("images/arata-logo.avif"),
     rss_enabled:,
     fonts: Fonts(
       text: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
@@ -157,6 +158,7 @@ pub fn default() -> Config {
     floating_buttons_enabled: True,
     aratafetch_enabled: True,
     aratafetch_maintained_for: Some("since 2026-06-21"),
+    lightbox_enabled: True,
   )
 }
 

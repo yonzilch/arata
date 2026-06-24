@@ -19,6 +19,7 @@ import data/search.{type SearchResult}
 import data/site.{type SiteMeta}
 import effect/analytics as analytics_effect
 import effect/codeblock as codeblock_effect
+import effect/lightbox as lightbox_effect
 import effect/note as note_effect
 import effect/script as script_effect
 import effect/search as search_effect
@@ -43,6 +44,7 @@ import view/cards
 import view/header
 import view/home as home_view
 import view/layout
+import view/lightbox
 import view/links as links_view
 import view/page as page_view
 import view/post as post_view
@@ -86,6 +88,7 @@ pub type Model {
     search: SearchState,
     mobile_menu_open: Bool,
     toc_overlay_open: Bool,
+    lightbox: lightbox.State,
   )
 }
 
@@ -131,6 +134,7 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       ),
       mobile_menu_open: False,
       toc_overlay_open: False,
+      lightbox: lightbox.Closed,
     )
 
   let nav_effect =
@@ -149,6 +153,12 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
 
   let content_eff = effect.map(content_runtime.load(), content_msg_to_msg)
 
+  let lightbox_events = case model.config.lightbox_enabled {
+    True -> effect.map(lightbox_effect.observe(), LightboxEventReceived)
+
+    False -> effect.none()
+  }
+
   // Do not run post effects here.
   //
   // On deep-link refresh, the route may already be `Post(slug)`, but the post
@@ -162,6 +172,7 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       search_keys,
       analytics_eff,
       content_eff,
+      lightbox_events,
     ])
 
   #(model, effects)
@@ -187,6 +198,12 @@ pub type Msg {
   UserToggledTocOverlay
   UserScrolledToTop
   UserEnteredPageJump(page: String)
+  LightboxOpened(src: String, alt: String)
+  LightboxGalleryOpened(srcs: List(String), alts: List(String), index: Int)
+  LightboxPrevious
+  LightboxNext
+  LightboxClosed
+  LightboxEventReceived(event: lightbox_effect.Event)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
@@ -199,6 +216,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           active_heading: option.None,
           mobile_menu_open: False,
           toc_overlay_open: False,
+          lightbox: lightbox.Closed,
         )
 
       let route_effects = case new_model.content_state {
@@ -212,7 +230,13 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         ContentLoading | ContentFailed -> effect.none()
       }
 
-      #(new_model, route_effects)
+      #(
+        new_model,
+        effect.batch([
+          route_effects,
+          lightbox_scroll_lock(False),
+        ]),
+      )
     }
 
     TocActiveHeadingChanged(id) -> #(
@@ -348,8 +372,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           route: target_route,
           search: closed_search(),
           active_heading: option.None,
-          mobile_menu_open: False,
-          toc_overlay_open: False,
+          lightbox: lightbox.Closed,
         ),
         effect.batch([
           modem.push(route.href_url(target_route), option.None, option.None),
@@ -358,6 +381,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             is_effective_dark(model.theme, model.system_prefers_dark),
             model.config.mathjax_enabled,
           ),
+          lightbox_scroll_lock(False),
         ]),
       )
     }
@@ -393,6 +417,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               route: target_route,
               mobile_menu_open: False,
               toc_overlay_open: False,
+              lightbox: lightbox.Closed,
             ),
             effect.batch([
               modem.push(route.href_url(target_route), option.None, option.None),
@@ -401,12 +426,153 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
                 is_effective_dark(model.theme, model.system_prefers_dark),
                 model.config.mathjax_enabled,
               ),
+              lightbox_scroll_lock(False),
             ]),
           )
         }
 
         _ -> #(model, effect.none())
       }
+
+    LightboxEventReceived(event) ->
+      case event {
+        lightbox_effect.ImageClicked(srcs, alts, index) ->
+          update(model, LightboxGalleryOpened(srcs, alts, index))
+
+        lightbox_effect.EscapePressed -> update(model, LightboxClosed)
+
+        lightbox_effect.PreviousPressed -> update(model, LightboxPrevious)
+
+        lightbox_effect.NextPressed -> update(model, LightboxNext)
+      }
+
+    LightboxOpened(src, alt) -> {
+      update(model, LightboxGalleryOpened([src], [alt], 0))
+    }
+
+    LightboxGalleryOpened(srcs, alts, index) -> {
+      case model.config.lightbox_enabled {
+        True -> {
+          let images = lightbox_images(srcs, alts)
+
+          case images {
+            [] -> #(
+              Model(..model, lightbox: lightbox.Closed),
+              lightbox_scroll_lock(False),
+            )
+
+            _ -> #(
+              Model(
+                ..model,
+                lightbox: lightbox.Open(
+                  images: images,
+                  index: clamp_index(index, list.length(images)),
+                ),
+              ),
+              lightbox_scroll_lock(True),
+            )
+          }
+        }
+
+        False -> #(
+          Model(..model, lightbox: lightbox.Closed),
+          lightbox_scroll_lock(False),
+        )
+      }
+    }
+
+    LightboxPrevious -> #(
+      Model(..model, lightbox: lightbox_previous(model.lightbox)),
+      effect.none(),
+    )
+
+    LightboxNext -> #(
+      Model(..model, lightbox: lightbox_next(model.lightbox)),
+      effect.none(),
+    )
+
+    LightboxClosed -> #(
+      Model(..model, lightbox: lightbox.Closed),
+      lightbox_scroll_lock(False),
+    )
+  }
+}
+
+fn lightbox_scroll_lock(locked: Bool) -> effect.Effect(Msg) {
+  effect.map(lightbox_effect.set_scroll_lock(locked), fn(_) { NoOp })
+}
+
+fn lightbox_images(
+  srcs: List(String),
+  alts: List(String),
+) -> List(lightbox.Image) {
+  case srcs, alts {
+    [], _ -> []
+
+    [src, ..rest_srcs], [alt, ..rest_alts] -> [
+      lightbox.Image(src: src, alt: alt),
+      ..lightbox_images(rest_srcs, rest_alts)
+    ]
+
+    [src, ..rest_srcs], [] -> [
+      lightbox.Image(src: src, alt: ""),
+      ..lightbox_images(rest_srcs, [])
+    ]
+  }
+}
+
+fn clamp_index(index: Int, total: Int) -> Int {
+  case total <= 0 {
+    True -> 0
+
+    False -> int.max(0, int.min(index, total - 1))
+  }
+}
+
+fn lightbox_previous(state: lightbox.State) -> lightbox.State {
+  case state {
+    lightbox.Closed -> lightbox.Closed
+
+    lightbox.Open(images, index) -> {
+      let total = list.length(images)
+
+      case total <= 1 {
+        True -> state
+
+        False ->
+          lightbox.Open(images: images, index: previous_index(index, total))
+      }
+    }
+  }
+}
+
+fn lightbox_next(state: lightbox.State) -> lightbox.State {
+  case state {
+    lightbox.Closed -> lightbox.Closed
+
+    lightbox.Open(images, index) -> {
+      let total = list.length(images)
+
+      case total <= 1 {
+        True -> state
+
+        False -> lightbox.Open(images: images, index: next_index(index, total))
+      }
+    }
+  }
+}
+
+fn previous_index(index: Int, total: Int) -> Int {
+  case index <= 0 {
+    True -> total - 1
+    False -> index - 1
+  }
+}
+
+fn next_index(index: Int, total: Int) -> Int {
+  case index >= total - 1 {
+    True -> 0
+    False -> index + 1
   }
 }
 
@@ -574,6 +740,7 @@ fn handle_search_key(
               route: target_route,
               search: closed_search(),
               active_heading: option.None,
+              lightbox: lightbox.Closed,
             ),
             effect.batch([
               modem.push(route.href_url(target_route), option.None, option.None),
@@ -582,6 +749,7 @@ fn handle_search_key(
                 is_effective_dark(model.theme, model.system_prefers_dark),
                 model.config.mathjax_enabled,
               ),
+              lightbox_scroll_lock(False),
             ]),
           )
         }
@@ -670,6 +838,14 @@ fn view(model: Model) -> Element(Msg) {
       ],
       [search_modal_el],
       toc_fab_els,
+      [
+        lightbox.view(
+          model.lightbox,
+          LightboxClosed,
+          LightboxPrevious,
+          LightboxNext,
+        ),
+      ],
     ]),
   )
 }
