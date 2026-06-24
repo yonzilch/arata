@@ -8,7 +8,7 @@ tags = ["docs", "deployment"]
 
 # Deployment
 
-arata builds to a static site in `dist/` that can be deployed to any static host (GitHub Pages, Cloudflare Pages, Netlify, etc.).
+Arata builds to a static site in `dist/` that can be deployed to any static host (GitHub Pages, Cloudflare Pages, Netlify, etc.).
 
 ## Build
 

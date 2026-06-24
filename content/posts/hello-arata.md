@@ -8,7 +8,7 @@ draft = false
 tldr = "arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app with client-side routing and a hand-ported CSS design system."
 +++
 
-**arata** is a blog theme built with [Gleam](https://gleam.run) and [Lustre](https://hexdocs.pm/lustre). It reproduces the minimal, typography-driven aesthetic of the [apollo](https://github.com/not-matthias/apollo) Zola theme as a client-side single-page application.
+**Arata** is a blog theme built with [Gleam](https://gleam.run) and [Lustre](https://hexdocs.pm/lustre). It reproduces the minimal, typography-driven aesthetic of the [apollo](https://github.com/not-matthias/apollo) Zola theme as a client-side single-page application.
 
 ## Why Gleam?
 

@@ -7,7 +7,7 @@ tags = ["css", "design"]
 draft = false
 +++
 
-apollo's styles are written in SCSS with variables, `@use`, and `darken()`/`lighten()` helpers. arata ports them by hand to a single plain-CSS file to avoid pulling a Sass toolchain into the build.
+Apollo's styles are written in SCSS with variables, `@use`, and `darken()`/`lighten()` helpers. arata ports them by hand to a single plain-CSS file to avoid pulling a Sass toolchain into the build.
 
 ## Variables
 
@@ -15,6 +15,6 @@ SCSS `$variables` become CSS custom properties on `:root` (light defaults) and `
 
 ## Breakpoints
 
-apollo has seven breakpoints (1365, 1024, 992, 768, 720, 640, 600, 576). Each `@media` block is ported verbatim — the responsive behaviour must match exactly.
+Apollo has seven breakpoints (1365, 1024, 992, 768, 720, 640, 600, 576). Each `@media` block is ported verbatim — the responsive behaviour must match exactly.
 
 > The only `transition` in the whole stylesheet is on `.note-toggle`. No keyframes, no fade-ins — apollo's aesthetic is deliberately still.

@@ -8,7 +8,7 @@ tags = ["docs", "content"]
 
 # Content Authoring
 
-arata's content is authored as markdown files with TOML frontmatter in:
+Arata's content is authored as markdown files with TOML frontmatter in:
 
 ```txt
 content/

@@ -7,7 +7,7 @@ tags = ["docs", "shortcodes"]
 
 # Shortcode Reference
 
-arata supports four shortcodes, mirroring apollo's `templates/shortcodes/`. In the current implementation, shortcodes are Gleam functions in `src/shortcodes/` that return HTML strings for embedding in post bodies. The markdown pipeline expands `{{ note(...) }}`-style syntax by calling these functions.
+Arata supports four shortcodes, mirroring apollo's `templates/shortcodes/`. In the current implementation, shortcodes are Gleam functions in `src/shortcodes/` that return HTML strings for embedding in post bodies. The markdown pipeline expands `{{ note(...) }}`-style syntax by calling these functions.
 
 ## note
 

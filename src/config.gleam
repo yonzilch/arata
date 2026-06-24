@@ -100,7 +100,7 @@ pub type Config {
 /// Hardcoded default site metadata used by the build pipeline and SPA runtime.
 pub fn site_meta() -> SiteMeta {
   SiteMeta(
-    base_url: "https://yonzilch.github.io/",
+    base_url: "https://yonzilch.github.io/arata",
     title: "Arata",
     description: "Arata is a modern and minimalistic blog theme powered by Gleam and Lustre.",
     analytics: AnalyticsDisabled,
