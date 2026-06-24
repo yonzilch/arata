@@ -14,6 +14,115 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [v1.3.0] — 2026-06-24
+
+### Added
+
+- Added GitHub Pages deployment workflow.
+  - Builds the site with the existing static build pipeline.
+  - Runs the test suite in CI.
+  - Uploads `dist/` as a GitHub Pages artifact.
+  - Deploys with GitHub's Pages deployment action.
+
+- Added support for non-root deployments.
+  - Arata can now be deployed under a subdirectory such as a GitHub Pages project site:
+    ```txt
+    https://yonzilch.github.io/arata/
+    ```
+  - `Config.base_path` is derived from `SiteMeta.base_url`.
+  - Root-domain deployments still resolve to an empty base path.
+  - Subdirectory deployments derive the expected runtime prefix, such as:
+    ```txt
+    /arata
+    ```
+
+- Added base-path-aware route test coverage.
+  - Tests now cover href generation with the configured base path.
+  - Tests now cover parsing URLs that include the configured base path.
+  - Round-trip route tests continue to verify:
+    ```txt
+    parse_route(href_url(route)) == route
+    ```
+
+### Changed
+
+- Updated routing to support configured deployment base paths.
+  - `route.parse_route` now strips the configured `base_path` before matching internal routes.
+  - `route.href_url` now prefixes generated internal URLs with the configured `base_path`.
+  - Deep links such as `/arata/posts/configuration` now resolve correctly to the internal post route.
+
+- Updated runtime content loading for subdirectory deployments.
+  - `content/runtime.gleam` now fetches `content_index.json` through the configured base path.
+  - Requests such as:
+    ```txt
+    /content_index.json
+    ```
+    now correctly become:
+    ```txt
+    /arata/content_index.json
+    ```
+    when deployed under `/arata`.
+
+- Updated generated HTML shell asset paths.
+  - `index.html` and `404.html` now resolve `app.mjs`, favicon, Atom, and RSS links through the configured base path.
+  - This prevents root-relative asset requests from breaking under GitHub Pages project-site deployments.
+
+- Updated header asset and social URL resolution.
+  - Header icons now resolve through the configured base path.
+  - RSS/social feed links now resolve correctly under subdirectory deployments.
+  - External URLs remain unchanged.
+  - Already-prefixed local URLs are not double-prefixed.
+
+- Updated configuration documentation.
+  - Expanded the `base_url` section.
+  - Documented how `Config.base_path` is derived from `SiteMeta.base_url`.
+  - Added examples for:
+    - root-domain deployments
+    - subdirectory deployments
+    - GitHub Pages project sites
+  - Clarified that config paths should remain logical root-relative paths, while arata applies `base_path` at the output/runtime layer.
+
+- Simplified the gleeunit entrypoint.
+  - Removed the placeholder `hello_world_test`.
+  - Kept `test/arata_test.gleam` focused on running the test suite.
+
+- Formatted code.
+
+### Fixed
+
+- Fixed GitHub Pages project-site deployments.
+  - Previously, deploying under `/arata` caused root-relative requests like:
+    ```txt
+    /app.mjs
+    /content_index.json
+    /rss.xml
+    /icons/social/rss.svg
+    ```
+    to resolve from the domain root instead of the repository subdirectory.
+  - These now resolve correctly as:
+    ```txt
+    /arata/app.mjs
+    /arata/content_index.json
+    /arata/rss.xml
+    /arata/icons/social/rss.svg
+    ```
+
+- Fixed SPA route resolution under non-root paths.
+  - Content could load successfully while routes still failed because `/arata/posts/...` did not match the internal `/posts/...` route shape.
+  - The router now strips the configured base path before route matching.
+
+- Fixed internal navigation under non-root deployments.
+  - Generated route hrefs now stay under the configured base path.
+  - Navbar links, post links, tag links, and standalone page links no longer jump to root-level paths.
+
+### Tests
+
+- Updated route href tests to expect the configured base path.
+- Added route parsing tests for configured base-path URLs.
+- Preserved route round-trip tests for base-path-aware hrefs.
+- Verified the test suite passes after enabling non-root deployment support.
+
+---
 
 ## [v1.2.0] — 2026-06-24
 
