@@ -15,6 +15,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v1.4.0] — 2026-06-24
+
+### Added
+
+- Added a built-in Lustre-managed gallery lightbox for Markdown body images.
+  - Clicking images inside rendered Markdown content now opens a fullscreen preview overlay.
+  - The overlay is rendered by Gleam/Lustre and controlled by the app model.
+  - JavaScript FFI is limited to observing DOM events from `unsafe_raw_html` content and forwarding typed events back into the update loop.
+
+- Added page-local gallery navigation.
+  - Supports previous/next navigation.
+  - Supports keyboard controls:
+    - `Escape` closes the lightbox.
+    - `ArrowLeft` moves to the previous image.
+    - `ArrowRight` moves to the next image.
+  - Includes image counter and caption display.
+
+- Added mobile-friendly lightbox controls.
+  - Larger touch targets for previous/next navigation.
+  - Backdrop click closes the overlay.
+  - Clicking the image itself does not close the overlay.
+
+- Added lightbox scroll locking.
+  - Opening the lightbox locks page scrolling.
+  - Closing the lightbox or navigating away restores scrolling.
+
+- Added `lightbox_enabled` configuration.
+  - Enabled by default.
+  - Can be disabled from `src/config.gleam`.
+  - When disabled, Markdown images render normally and no lightbox event listeners are subscribed.
+
+- Added `data-no-lightbox` opt-out support.
+  - Individual images or wrappers can opt out of lightbox behavior with:
+    ```html
+    <img data-no-lightbox ...>
+    ```
+    or:
+    ```html
+    <span data-no-lightbox>
+      <img ...>
+    </span>
+    ```
+
+### Changed
+
+- Updated configuration documentation.
+  - Documented `lightbox_enabled`.
+  - Documented lightbox behavior, keyboard controls, gallery navigation, scroll locking, and event boundaries.
+  - Clarified that only Markdown body images matching `.body img` are observed.
+  - Clarified that header icons, social icons, project card images, search icons, and theme toggle icons are excluded.
+
+### Notes
+
+- The lightbox is intentionally model-driven:
+  - Gleam owns state.
+  - Lustre renders the overlay.
+  - FFI observes raw Markdown DOM events only.
+
+- Known limitation:
+  - During rapid gallery navigation between partially-loaded responsive images, some browsers may temporarily reuse the previously-decoded bitmap until the next image finishes decoding.
+
+---
+
 ## [v1.3.1] — 2026-06-24
 
 ### Changed
