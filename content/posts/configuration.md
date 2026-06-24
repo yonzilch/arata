@@ -382,6 +382,97 @@ Umami(website_id: "xxx", host_url: "https://analytics.example.com")
 
 Google Analytics is intentionally not supported.
 
+### `lightbox_enabled`
+
+arata includes an optional built-in image lightbox for Markdown body images.
+
+When enabled, clicking images inside rendered post/page Markdown opens a
+fullscreen overlay managed entirely by the Lustre application model.
+
+The lightbox supports:
+
+* fullscreen image preview
+* page-local image galleries
+* previous/next navigation
+* keyboard navigation
+  * `Escape` closes
+  * `ArrowLeft` navigates to the previous image
+  * `ArrowRight` navigates to the next image
+* backdrop click to close
+* body scroll locking while the overlay is open
+* image captions derived from `alt` or `title`
+* mobile/touch navigation controls
+
+Example configuration:
+
+```gleam
+Config(
+  // ...
+  lightbox_enabled: True,
+)
+```
+
+Disable it with:
+
+```gleam
+lightbox_enabled: False,
+```
+
+When disabled:
+
+* Markdown images render normally.
+* No lightbox overlay DOM is emitted.
+* No lightbox event listeners are subscribed.
+* No scroll locking behavior is enabled.
+
+The lightbox only observes images rendered inside Markdown content bodies:
+
+```
+.body img
+```
+
+
+This intentionally excludes:
+
+* header icons
+* social icons
+* project cards
+* theme toggle icons
+* search UI icons
+* other non-content decorative images
+
+Individual images or wrappers may opt out of lightbox behavior with:
+
+```html
+<img data-no-lightbox ...>
+```
+
+or:
+
+```html
+<span data-no-lightbox>
+  <img ...>
+</span>
+```
+
+The lightbox overlay itself is rendered by Lustre/Gleam rather than imperative
+JavaScript DOM mutation.
+
+The JavaScript FFI layer is intentionally limited to:
+
+* observing Markdown image clicks
+* observing keyboard events
+* collecting page-local image galleries
+* forwarding typed events back into the app update loop
+* toggling scroll lock classes on `<html>` and `<body>`
+
+This separation keeps lightbox rendering deterministic and fully model-driven.
+
+> The current gallery implementation prioritizes correctness and simplicity over
+> aggressive image preloading optimizations. During rapid navigation between
+> partially-loaded responsive images, some browsers may temporarily reuse the
+> previously-decoded bitmap frame until the next image finishes decoding.
+
 ## Site Metadata
 
 `SiteMeta` is defined in `src/data/site.gleam`, but its default value is
