@@ -1,7 +1,7 @@
 +++
 title = "CHANGELOG"
 date = "2026-06-21"
-updated = "2026-06-24"
+updated = "2026-06-25"
 description = "Comprehensive CHANGELOG of arata project"
 tags = ["docs"]
 +++
@@ -15,23 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.4.1] — 2026-06-24
+## [v1.4.1] — 2026-06-26
 
 ### Added
 
-- Added an optional homepage latest-posts section rendered above aratafetch.
+- Added an optional homepage latest-posts section rendered between the homepage Markdown body and aratafetch.
 - Added `latest_posts_enabled` and `latest_posts_count` configuration options.
-- Added a compact editorial-style homepage post list layout.
+- Added a compact editorial-style homepage post listing for surfacing recent content directly from the runtime content model.
 
-### Changed
+### Improved
 
-- Refined homepage latest-posts styling toward a cleaner minimalist presentation.
-- Limited homepage post hover interaction to titles only for reduced visual noise.
-- Improved homepage latest-posts accessibility semantics by making only post titles interactive links.
+- Refined homepage latest-posts presentation toward a cleaner editorial aesthetic.
+- Reduced visual noise by limiting interaction to post titles only.
+- Replaced inline text separators with CSS-generated markers.
+- Improved homepage typography, spacing, subtitle hierarchy, and content rhythm.
+- Enhanced homepage information density without turning the homepage into a full archive view.
 
 ### Documentation
 
-- Documented homepage latest-posts configuration and behavior.
+- Documented the built-in Markdown image lightbox gallery feature.
+- Documented homepage latest-posts configuration, behavior, and usage examples.
 
 ---
 
