@@ -271,6 +271,28 @@ When `False`:
 * search UI is omitted.
 * global search shortcut is not subscribed to.
 
+### `navbar_fixed`
+
+A `Bool`.
+
+Controls whether the site header (navbar) stays pinned to the top of the
+viewport while scrolling.
+
+When `True`:
+
+* the `<nav>` element receives the `.navbar-fixed` class.
+* the navbar uses `position: sticky` and stays visible at the top.
+* scrolling the page does not move the navbar.
+
+When `False`:
+
+* the `<nav>` element receives the `.navbar-static` class.
+* the navbar participates in normal document flow (`position: static`).
+* scrolling the page moves the navbar out of view with the content.
+
+Use `False` if you prefer a more traditional scrolling layout or want to
+maximize vertical reading space on long posts.
+
 ### `mathjax_enabled`
 
 A `Bool`.
