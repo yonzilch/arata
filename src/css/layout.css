@@ -11,192 +11,209 @@
  * of `body`. The `body` keeps only the base font/color/background from section 1.
  */
 .arata-shell {
-  display: flex;
-  flex-grow: 1;
-  padding: 0.9rem;
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
-  min-height: calc(100vh - 150px);
+    display: flex;
+    flex-grow: 1;
+    padding: 0.9rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    min-height: calc(100vh - 150px);
 }
 
 @media (min-width: 992px) {
-  .arata-shell {
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-  }
+    .arata-shell {
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+    }
 }
 
 .arata-shell .content {
-  width: 100%;
-  max-width: var(--page-width);
-  flex-shrink: 0;
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
-  word-wrap: break-word;
+    width: 100%;
+    max-width: var(--page-width);
+    flex-shrink: 0;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    word-wrap: break-word;
 }
 
 .arata-shell .left-content {
-  width: 100%;
+    width: 100%;
 }
 
 @media (min-width: 992px) {
-  .arata-shell .left-content {
-    flex: 1 1 0;
-    min-width: 0;
-  }
+    .arata-shell .left-content {
+        flex: 1 1 0;
+        min-width: 0;
+    }
 }
 
 .arata-shell .right-content {
-  width: 100%;
+    width: 100%;
 }
 
 @media (min-width: 992px) {
-  .arata-shell .right-content {
-    flex: 1 1 0;
-    min-width: 0;
-    /* Don't move this to the TOC, it won't work — FIXME: find a workaround. */
-    position: sticky;
-    top: 60px;
-    padding: 1em;
-    overflow-y: auto;
-    max-height: calc(100vh - 100px);
-  }
+    .arata-shell .right-content {
+        flex: 1 1 0;
+        min-width: 0;
+        /* Don't move this to the TOC, it won't work — FIXME: find a workaround. */
+        position: sticky;
+        top: 60px;
+        padding: 1em;
+        overflow-y: auto;
+        max-height: calc(100vh - 100px);
+    }
 }
 /* =========================================================================
    4. Header / nav  (sass/parts/_header.scss)
    ------------------------------------------------------------------------- */
 
 nav {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  padding: 0;
-  /* Fix 2 — sticky header navbar: keep the header pinned to the top of the
-     viewport while scrolling. `background: var(--bg-0)` prevents page content
-     from showing through the (otherwise transparent) header on scroll. */
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg-0);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+
+    /* Slightly smaller navbar shell. */
+    padding: 0.15rem 0;
+
+    z-index: 100;
+    background: var(--bg-0);
+}
+
+/* Configurable navbar position.
+      `view/header.gleam` adds exactly one of these classes based on
+      `Config.navbar_fixed`.
+
+      - .navbar-fixed preserves the current behavior: the navbar stays pinned
+        while scrolling.
+      - .navbar-static makes the navbar part of normal document flow, so it
+        scrolls away with the page. */
+nav.navbar-fixed {
+    position: sticky;
+    top: 0;
+}
+
+nav.navbar-static {
+    position: static;
+    top: auto;
 }
 
 @media (max-width: 600px) {
-  /* Keep the nav as a row on small screens so the hamburger button stays
-     pinned to the right of the site title. The dropdown is handled by
-     `.right-nav.mobile-open` below. */
-  nav {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-  }
+    /* Keep the nav as a row on small screens so the hamburger button stays
+        pinned to the right of the site title. The dropdown is handled by
+        `.right-nav.mobile-open` below. */
+    nav {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+    }
 }
 
 /* title and socials */
 nav .left-nav {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  font-size: 1.75rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.45rem;
 }
 
 nav .left-nav .socials {
-  /* flex-container */
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: flex-end;
-  gap: 10px;
+    /* flex-container */
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-end;
+    gap: 8px;
 }
 
 nav .left-nav .socials .social {
-  padding: 2px;
-  display: inline-flex;
-  align-items: center;
+    padding: 1px;
+    display: inline-flex;
+    align-items: center;
 }
 
 nav .left-nav .socials .social img {
-  width: 28px;
-  height: 28px;
+    width: 24px;
+    height: 24px;
 }
 
 /* Don't display background on hover */
 nav .left-nav .socials a:hover {
-  background-color: transparent;
+    background-color: transparent;
 }
 
 /* navigation + theme toggle */
 nav .right-nav {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  font-size: 1.1rem;
-  gap: 0.25rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 1rem;
+    gap: 0.2rem;
 }
 
 nav .right-nav a {
-  padding: 0.25rem 0.4rem;
+    padding: 0.2rem 0.35rem;
 }
 
 nav .right-nav #dark-mode-toggle {
-  /* Plain icon button: no rounded "pill"/oval background. Icons are shown
-     as-is (no brightness/invert filter), and the button communicates hover
-     via opacity rather than a background fill. `appearance: none` overrides
-     the user-agent default button styling (which on some browsers paints a
-     rounded native background even when `background`/`border-radius` are
-     reset) — the real fix for the residual oval. */
-  appearance: none;
-  -webkit-appearance: none;
-  background: none;
-  border: none;
-  border-radius: 0;
-  padding: 4px;
-  margin-left: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s ease;
+    /* Plain icon button: no rounded "pill"/oval background. Icons are shown
+        as-is (no brightness/invert filter), and the button communicates hover
+        via opacity rather than a background fill. `appearance: none` overrides
+        the user-agent default button styling (which on some browsers paints a
+        rounded native background even when `background`/`border-radius` are
+        reset) — the real fix for the residual oval. */
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 3px;
+    margin-left: 0.35rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
 }
 
 nav .right-nav #dark-mode-toggle > img {
-  width: 24px;
-  height: 24px;
-  /* No filter — show the SVG icons as-is. */
+    width: 22px;
+    height: 22px;
+    /* No filter — show the SVG icons as-is. */
 }
 
 nav .right-nav #dark-mode-toggle:hover {
-  opacity: 0.7;
+    opacity: 0.7;
 }
 
 /* Active nav item highlighting.
-   apollo does not highlight the active menu item; this is an arata addition
-   for wayfinding. The `active` class is added by view/header.gleam via
-   `attribute.classes([#("active", is_active(...))])` when the menu item's URL
-   matches the current route. */
+      apollo does not highlight the active menu item; this is an arata addition
+      for wayfinding. The `active` class is added by view/header.gleam via
+      `attribute.classes([#("active", is_active(...))])` when the menu item's URL
+      matches the current route. */
 nav .right-nav a.active {
-  color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 /* TODO: Is this still used? */
 .logo {
-  border-bottom: unset;
-  background-image: unset;
+    border-bottom: unset;
+    background-image: unset;
 }
 
 .logo > img {
-  border: unset;
-  width: auto;
-  height: 24px;
-  vertical-align: middle;
+    border: unset;
+    width: auto;
+    height: 24px;
+    vertical-align: middle;
 }
 
 .logo:hover {
-  background-color: transparent;
+    background-color: transparent;
 }
 
 /* =========================================================================
@@ -210,93 +227,93 @@ nav .right-nav a.active {
    which re-displays the right-nav as an absolute-positioned dropdown below
    the navbar containing all the same items vertically. */
 .mobile-menu-btn {
-  display: none;
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0.25rem 0.6rem;
-  color: var(--text-0);
-  align-self: center;
-  margin-left: auto;
+    display: none;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem 0.6rem;
+    color: var(--text-0);
+    align-self: center;
+    margin-left: auto;
 }
 
 .mobile-menu-btn:hover {
-  background-color: transparent;
-  color: var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
 }
 
 @media (max-width: 991px) {
-  /* Show the hamburger button on mobile. */
-  .mobile-menu-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
+    /* Show the hamburger button on mobile. */
+    .mobile-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-  /* Hide the inline right-nav by default. */
-  nav .right-nav {
-    display: none;
-  }
+    /* Hide the inline right-nav by default. */
+    nav .right-nav {
+        display: none;
+    }
 
-  /* When toggled open, re-display right-nav as a vertical dropdown. */
-  nav .right-nav.mobile-open {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 0.25rem;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    min-width: 200px;
-    background: var(--bg-0);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 0.75rem;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    font-size: 1rem;
-  }
+    /* When toggled open, re-display right-nav as a vertical dropdown. */
+    nav .right-nav.mobile-open {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 0.25rem;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        min-width: 200px;
+        background: var(--bg-0);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 0.75rem;
+        z-index: 100;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        font-size: 1rem;
+    }
 
-  /* Make each dropdown item a full-width tap target. */
-  nav .right-nav.mobile-open > a,
-  nav .right-nav.mobile-open > button {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 0.5rem 0.5rem;
-    margin-right: 0 !important;
-    margin-left: 0 !important;
-  }
+    /* Make each dropdown item a full-width tap target. */
+    nav .right-nav.mobile-open > a,
+    nav .right-nav.mobile-open > button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.5rem 0.5rem;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
 
-  /* Reset the inline `margin-right` set on menu <a> tags by view_menu. */
-  nav .right-nav.mobile-open > a {
-    border-bottom: none;
-  }
+    /* Reset the inline `margin-right` set on menu <a> tags by view_menu. */
+    nav .right-nav.mobile-open > a {
+        border-bottom: none;
+    }
 
-  nav .right-nav.mobile-open > a:hover,
-  nav .right-nav.mobile-open > button:hover {
-    background-color: var(--bg-2);
-    color: var(--text-0);
-  }
+    nav .right-nav.mobile-open > a:hover,
+    nav .right-nav.mobile-open > button:hover {
+        background-color: var(--bg-2);
+        color: var(--text-0);
+    }
 
-  /* Theme toggle: drop the desktop-only left margin so it lines up with the
+    /* Theme toggle: drop the desktop-only left margin so it lines up with the
      other items in the dropdown. */
-  nav .right-nav.mobile-open #dark-mode-toggle {
-    margin-left: 0;
-  }
+    nav .right-nav.mobile-open #dark-mode-toggle {
+        margin-left: 0;
+    }
 
-  /* The `.toc` rule in toc.css hides the TOC below 1365px. On mobile we
+    /* The `.toc` rule in toc.css hides the TOC below 1365px. On mobile we
      instead surface the tags + ToC in the right-content sidebar, which
      stacks below the main content. Re-display the TOC there. */
-  .toc {
-    display: block;
-  }
+    .toc {
+        display: block;
+    }
 
-  /* Fix 1 — Tags/ToC sidebar display on desktop + mobile:
+    /* Fix 1 — Tags/ToC sidebar display on desktop + mobile:
      On desktop (>= 992px) the rule above sticks `.right-content` to the
      viewport as a sidebar. On mobile (< 992px) the sidebar is NOT hidden
      (the dropdown menu above only contains nav links/search/theme toggle);
@@ -305,11 +322,11 @@ nav .right-nav a.active {
      and verified working — no extra rules are needed for the mobile menu
      dropdown to also surface tags/ToC, since they live in `.right-content`,
      not `.right-nav`. */
-  .arata-shell .right-content {
-    display: block;
-    position: static;
-    max-height: none;
-    overflow: visible;
-    padding: 0 0 1.5rem 0;
-  }
+    .arata-shell .right-content {
+        display: block;
+        position: static;
+        max-height: none;
+        overflow: visible;
+        padding: 0 0 1.5rem 0;
+    }
 }

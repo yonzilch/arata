@@ -69,6 +69,12 @@ pub type Config {
     /// button is omitted from the header, the search modal is not rendered,
     /// and the Cmd/Ctrl+K keyboard shortcut is not subscribed to.
     search_enabled: Bool,
+    /// Whether the navbar stays pinned while the page scrolls.
+    ///
+    /// When `True`, the header receives `.navbar-fixed`.
+    /// When `False`, the header receives `.navbar-static` and should scroll
+    /// away with the document. Defaults to `True` to preserve existing behavior.
+    navbar_fixed: Bool,
     /// Analytics provider for the SPA runtime. Defaults to `AnalyticsDisabled`;
     /// set to `GoatCounter` or `Umami` to inject the provider's script at boot.
     /// This mirrors `SiteMeta.analytics` so analytics can be configured from
@@ -103,7 +109,7 @@ pub type Config {
 /// Hardcoded default site metadata used by the build pipeline and SPA runtime.
 pub fn site_meta() -> SiteMeta {
   SiteMeta(
-    base_url: "https://yonzilch.github.io/arata",
+    base_url: "https://yonzilch.github.io",
     title: "Arata",
     description: "Arata is a modern and minimalistic blog theme powered by Gleam and Lustre.",
     analytics: AnalyticsDisabled,
@@ -154,6 +160,7 @@ pub fn default() -> Config {
       code: "ui-monospace, \"Cascadia Code\", \"Source Code Pro\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace",
     ),
     search_enabled: True,
+    navbar_fixed: True,
     analytics: AnalyticsDisabled,
     mathjax_enabled: True,
     sidebar_enabled: True,

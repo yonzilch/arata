@@ -27,6 +27,12 @@ import route.{type Route, Home, Links, Page, Post, Posts, Projects, Tag, Tags}
 ///
 /// `on_toggle_menu` is wired to the mobile hamburger button. `mobile_menu_open`
 /// adds a `mobile-open` class to `.right-nav` so the dropdown shows on mobile.
+///
+/// `site_config.navbar_fixed` controls whether the nav stays pinned while the
+/// page scrolls. The CSS layer owns the actual positioning behavior:
+///
+///   True  -> `.navbar-fixed`
+///   False -> `.navbar-static`
 pub fn view(
   site_config: Config,
   current_route: Route,
@@ -37,54 +43,69 @@ pub fn view(
   on_toggle_menu: Attribute(msg),
   mobile_menu_open: Bool,
 ) -> Element(msg) {
-  html.nav([], [
-    html.div([attribute.class("left-nav")], [
-      view_site_title(site_config),
-      html.div(
-        [attribute.class("socials")],
-        view_socials(site_config, site_config.socials),
-      ),
-    ]),
-    html.button(
-      [
-        attribute.class("mobile-menu-btn"),
-        attribute.type_("button"),
-        attribute.attribute("aria-label", "Toggle menu"),
-        attribute.attribute("aria-expanded", bool_to_attr(mobile_menu_open)),
-        on_toggle_menu,
-      ],
-      [html.text("☰")],
-    ),
-    html.div(
-      [
-        attribute.classes([
-          #("right-nav", True),
-          #("mobile-open", mobile_menu_open),
-        ]),
-      ],
-      list.flatten([
-        view_menu(site_config.menu, current_route, site_config.base_path),
-        case site_config.search_enabled {
-          True -> [view_search_button(site_config, on_open_search)]
-          False -> []
-        },
-        [
-          view_theme_toggle(
-            site_config,
-            current_theme,
-            effective_dark,
-            on_toggle_theme,
-          ),
-        ],
+  html.nav(
+    [
+      attribute.classes([
+        #("navbar-fixed", site_config.navbar_fixed),
+        #("navbar-static", bool_negate(site_config.navbar_fixed)),
       ]),
-    ),
-  ])
+    ],
+    [
+      html.div([attribute.class("left-nav")], [
+        view_site_title(site_config),
+        html.div(
+          [attribute.class("socials")],
+          view_socials(site_config, site_config.socials),
+        ),
+      ]),
+      html.button(
+        [
+          attribute.class("mobile-menu-btn"),
+          attribute.type_("button"),
+          attribute.attribute("aria-label", "Toggle menu"),
+          attribute.attribute("aria-expanded", bool_to_attr(mobile_menu_open)),
+          on_toggle_menu,
+        ],
+        [html.text("☰")],
+      ),
+      html.div(
+        [
+          attribute.classes([
+            #("right-nav", True),
+            #("mobile-open", mobile_menu_open),
+          ]),
+        ],
+        list.flatten([
+          view_menu(site_config.menu, current_route, site_config.base_path),
+          case site_config.search_enabled {
+            True -> [view_search_button(site_config, on_open_search)]
+            False -> []
+          },
+          [
+            view_theme_toggle(
+              site_config,
+              current_theme,
+              effective_dark,
+              on_toggle_theme,
+            ),
+          ],
+        ]),
+      ),
+    ],
+  )
 }
 
 fn bool_to_attr(b: Bool) -> String {
   case b {
     True -> "true"
     False -> "false"
+  }
+}
+
+fn bool_negate(b: Bool) -> Bool {
+  case b {
+    True -> False
+    False -> True
   }
 }
 
