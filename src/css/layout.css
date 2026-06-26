@@ -100,13 +100,16 @@ nav.navbar-static {
 }
 
 @media (max-width: 600px) {
-    /* Keep the nav as a row on small screens so the hamburger button stays
-        pinned to the right of the site title. The dropdown is handled by
-        `.right-nav.mobile-open` below. */
-    nav {
-        flex-direction: row;
-        flex-wrap: nowrap;
+    nav .right-nav.mobile-open {
         align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    nav .right-nav.mobile-open a,
+    nav .right-nav.mobile-open button {
+        justify-content: center;
+        text-align: center;
     }
 }
 
@@ -258,16 +261,19 @@ nav .right-nav a.active {
         display: none;
     }
 
-    /* When toggled open, re-display right-nav as a vertical dropdown. */
+    /* When toggled open, re-display right-nav as a centered vertical dropdown. */
     nav .right-nav.mobile-open {
         display: flex;
         flex-direction: column;
         flex-wrap: nowrap;
-        align-items: stretch;
+        align-items: center;
+        justify-content: center;
         gap: 0.25rem;
+
         position: absolute;
         top: 100%;
         right: 0;
+
         min-width: 200px;
         background: var(--bg-0);
         border: 1px solid var(--border-color);
@@ -276,14 +282,18 @@ nav .right-nav a.active {
         z-index: 100;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         font-size: 1rem;
+        text-align: center;
     }
 
-    /* Make each dropdown item a full-width tap target. */
+    /* Make each dropdown item a full-width centered tap target. */
     nav .right-nav.mobile-open > a,
     nav .right-nav.mobile-open > button {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
         width: 100%;
-        text-align: left;
+        text-align: center;
         padding: 0.5rem 0.5rem;
         margin-right: 0 !important;
         margin-left: 0 !important;
