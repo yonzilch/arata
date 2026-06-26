@@ -1,7 +1,7 @@
 +++
 title = "CHANGELOG"
 date = "2026-06-21"
-updated = "2026-06-25"
+updated = "2026-06-26"
 description = "Comprehensive CHANGELOG of arata project"
 tags = ["docs"]
 +++
@@ -15,7 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## v1.4.3
+## [v1.4.3-fix] — 2026-06-26
+
+### Fixed
+
+- Corrected XML escaping test expectations.
+  - Feed tests now use raw string inputs when validating XML escaping.
+  - Keeps test behavior aligned with the intended `xml_escape` semantics:
+    escape raw text once for valid XML output.
+
+---
+
+## [v1.4.3] — 2026-06-26
 
 ### Added
 
@@ -32,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hid the URL scheme in aratafetch's `base_url` row for cleaner terminal-style
   output, while preserving the canonical configured URL for feeds, sitemap, and
   other build outputs.
+
+- Updated the default `base_url` to use the custom domain
+  `https://arata.yon.im`.
+  - This matches the CNAME setup pointing `arata.yon.im` to GitHub Pages.
+  - The site is treated as a root deployment, so `base_path` derives to `""`.
 
 - Updated the build pipeline to emit feed XSL stylesheets when RSS is enabled.
   - `dist/atom.xsl`
