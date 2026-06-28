@@ -41,12 +41,27 @@ jobs:
           should_run=true
           is_deploy_ref=false
 
+          find_v_tags_for_sha() {
+            git fetch --force --tags origin '+refs/tags/*:refs/tags/*'
+
+            git for-each-ref \
+              --format='%(refname:short) %(objectname) %(*objectname)' \
+              'refs/tags/v*' |
+              awk -v sha="${GITHUB_SHA}" '
+                $2 == sha || $3 == sha {
+                  print $1
+                }
+              '
+          }
+
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             should_run=true
             is_deploy_ref=false
+
           elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             should_run=true
             is_deploy_ref=true
+
           elif [ "${GITHUB_REF_TYPE}" = "branch" ]; then
             case "${GITHUB_REF_NAME}" in
               main|master)
@@ -57,16 +72,22 @@ jobs:
                 ;;
             esac
 
-            git fetch --force --tags
+            if [ "${is_deploy_ref}" = "true" ]; then
+              # When pushing a branch and a tag at nearly the same time, the
+              # branch workflow may start before the tag ref is visible.
+              # Give the remote ref advertisement a short chance to settle so
+              # the tag workflow can own deploys for tagged commits.
+              sleep 10
 
-            tags_for_sha="$(git tag --points-at "${GITHUB_SHA}" || true)"
+              tags_for_sha="$(find_v_tags_for_sha || true)"
 
-            if [ -n "${tags_for_sha}" ]; then
-              echo "Current branch commit ${GITHUB_SHA} already has tag(s):"
-              echo "${tags_for_sha}"
-              echo "Skipping branch run so the tag run owns this commit."
-              should_run=false
-              is_deploy_ref=false
+              if [ -n "${tags_for_sha}" ]; then
+                echo "Current branch commit ${GITHUB_SHA} already has v* tag(s):"
+                echo "${tags_for_sha}"
+                echo "Skipping branch run so the tag run owns this commit."
+                should_run=false
+                is_deploy_ref=false
+              fi
             fi
           fi
 
@@ -81,6 +102,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Gleam
         uses: erlef/setup-beam@v1
