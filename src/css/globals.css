@@ -1,0 +1,33 @@
+/* =========================================================================
+   globals.css — document-level defaults and responsive root scaling.
+   ========================================================================= */
+
+html {
+    background-color: var(--bg-0);
+    color: var(--body-text);
+    font-family: var(--text-font);
+    line-height: var(--line-height);
+    font-weight: 400;
+}
+
+@media (max-width: 992px) {
+    html {
+        font-size: calc(var(--font-size-base) * 0.97);
+    }
+}
+
+@media (max-width: 768px) {
+    html {
+        font-size: calc(var(--font-size-base) * 0.95);
+    }
+}
+
+@media (max-width: 576px) {
+    html {
+        font-size: calc(var(--font-size-base) * 0.92);
+    }
+}
+
+.primary-color {
+    color: var(--primary-color);
+}

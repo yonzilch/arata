@@ -66,7 +66,10 @@ pub fn view(
 /// with its own header.
 pub fn view_items(posts: List(Post)) -> Element(msg) {
   html.main([attribute.class("post-list")], [
-    html.ul([], list.map(posts, view_list_item)),
+    html.ul(
+      [attribute.class("post-list-items")],
+      list.map(posts, view_list_item),
+    ),
   ])
 }
 

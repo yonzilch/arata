@@ -1,0 +1,51 @@
+/* =========================================================================
+   fonts.css — bundled font face declarations.
+   ========================================================================= */
+
+/*
+   JetBrains Mono @font-face blocks are intentionally not declared here.
+
+   The monospace CSS variables default to the system monospace stack in
+   theme.css. The bundled JetBrains Mono files may remain on disk for users
+   who explicitly configure them, but browsers do not load them by default.
+*/
+
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 400;
+    src: url("/fonts/SpaceGrotesk/SpaceGrotesk-Regular.ttf") format("truetype");
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 700;
+    src: url("/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf") format("truetype");
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "ZedTextFtl";
+    src: url("/fonts/zed-fonts/ZedTextL-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "ZedTextFtl";
+    src: url("/fonts/zed-fonts/ZedTextL-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "ZedDisplayFtl";
+    src: url("/fonts/zed-fonts/ZedDisplayL-Heavy.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}

@@ -1,0 +1,90 @@
+/* =========================================================================
+   theme.css — theme variables and dark-mode overrides.
+
+   Light theme is the default on :root.
+   Dark theme is activated by adding .dark to the documentElement.
+   ========================================================================= */
+
+:root {
+    /* Fonts */
+    --font-size-base: 18.5px;
+
+    --mono-text-font:
+        ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
+        monospace;
+    --text-font: "ZedTextFtl";
+    --header-font: "ZedDisplayFtl", "Space Grotesk", "Helvetica", sans-serif;
+    --code-font:
+        ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
+        monospace;
+
+    /* Body copy */
+    --body-text: #151515de;
+
+    /* Layout and type scale */
+    --line-height: 1.5;
+    --page-width: 920px;
+
+    /* Light palette */
+    --bg-0: #ffffff;
+    --bg-1: #f7f7f7;
+    --bg-2: #e5e7eb;
+
+    --text-0: #111827;
+    --text-1: #1f2937;
+    --text-2: #4b5563;
+
+    /* Compatibility aliases */
+    --text-color: var(--text-0);
+    --text-color-muted: var(--text-2);
+    --bg-primary: var(--bg-1);
+
+    --border-color: #d1d5db;
+
+    --primary-color: #2f4fa3;
+    --hover-color: #f3f4f6;
+
+    --icon-filter: none;
+
+    /* Code-block label text color */
+    --label-color: #f8fafc;
+
+    /* Note shortcode */
+    --note-header-bg: var(--bg-2);
+    --note-header-color: var(--text-0);
+    --note-content-bg: var(--bg-1);
+}
+
+:root.dark {
+    /* Dark palette */
+    --bg-0: #0f1115;
+    --bg-1: #171a21;
+    --bg-2: #242936;
+
+    --text-0: #f8fafc;
+    --text-1: #e5e7eb;
+    --text-2: #a1a1aa;
+
+    --body-text: #f8fafce0;
+
+    --text-color: var(--text-0);
+    --text-color-muted: var(--text-2);
+    --bg-primary: var(--bg-1);
+
+    --border-color: #374151;
+
+    --primary-color: #5f7eea;
+    --hover-color: #1f2937;
+
+    --icon-filter: invert(1);
+
+    /* Note shortcode */
+    --note-header-bg: var(--bg-2);
+    --note-header-color: var(--text-0);
+    --note-content-bg: var(--bg-1);
+}
+
+:root.dark .social > img,
+:root.dark .search-button > img {
+    filter: invert(1);
+}

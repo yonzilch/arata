@@ -22,15 +22,42 @@
 .body {
     font-weight: 420;
 }
+
 blockquote {
+    box-sizing: border-box;
+
+    margin: 1.25rem 0;
+    padding: 0.85rem 1rem 0.85rem 1.05rem;
+
+    color: var(--text-1);
+    background: var(--bg-1);
+
     border-left: 3px solid var(--primary-color);
-    /* Fix 10: lifted the blockquote text color from the muted #737373 to a
-     brighter #BAC2DE so quoted text reads as part of the page rather than
-     fading into the background. */
-    color: #3555b3;
-    margin: 0;
-    padding-left: 1em;
+    border-radius: 0 8px 8px 0;
+
+    line-height: 1.65;
 }
+
+blockquote > :first-child {
+    margin-top: 0;
+}
+
+blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+blockquote p {
+    margin: 0.45rem 0;
+}
+
+blockquote a {
+    color: var(--primary-color);
+}
+
+blockquote code {
+    background: var(--bg-2);
+}
+
 /* =========================================================================
    8. tl;dr box  (class name from page.html, _misc.scss has no rule)
       Plain block style — apollo relies on default block formatting.

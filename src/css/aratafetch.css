@@ -1,0 +1,71 @@
+/* =========================================================================
+   aratafetch.css — neofetch-style homepage summary.
+   ========================================================================= */
+
+.aratafetch {
+    display: flex;
+    justify-content: flex-start;
+    max-width: 100%;
+    margin: 2rem 0;
+}
+
+.aratafetch-pre {
+    box-sizing: border-box;
+
+    /*
+     * Keep aratafetch visually aligned with compact latest-post cards:
+     * stable width on desktop, full available width on small screens.
+     */
+    display: block;
+    width: min(100%, 42rem);
+    max-width: 100%;
+    min-width: 0;
+
+    margin: 0;
+    padding: 0.95rem 1.05rem;
+
+    overflow-x: auto;
+    white-space: pre;
+
+    font-family: var(--code-font);
+    font-size: 0.92rem;
+    line-height: 1.45;
+
+    color: var(--text-0);
+    background: var(--bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08);
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.aratafetch-pre::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .aratafetch {
+        margin: 1.5rem 0;
+    }
+
+    .aratafetch-pre {
+        width: 100%;
+        max-width: 100%;
+
+        padding: 0.85rem 0.9rem;
+        font-size: 0.82rem;
+        line-height: 1.4;
+
+        /*
+         * The aratafetch output stacks ASCII art above stats, so small
+         * screens can safely wrap long values without breaking layout.
+         */
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+}

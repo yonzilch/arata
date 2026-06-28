@@ -1,0 +1,36 @@
+/* =========================================================================
+   pagination.css — Prev / Next pagination and page-jump input.
+   ========================================================================= */
+
+.pagination {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 0;
+    margin: 1rem 0 0 0;
+}
+
+/* Page-jump input: small number input rendered alongside Prev/Next links. */
+.page-jump {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.page-jump input {
+    width: 48px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-1);
+    color: var(--text-0);
+    font-size: 0.9rem;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.page-jump input:focus {
+    border-color: var(--primary-color);
+}

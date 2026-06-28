@@ -1,0 +1,140 @@
+/* =========================================================================
+   typography.css — headings, links, selection, inline primitives, and
+   content-level overflow helpers.
+   ========================================================================= */
+
+/* =========================================================================
+   Headings
+   ========================================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--header-font);
+    font-size: 1.2rem;
+    margin-top: 2em;
+}
+
+h1::before {
+    color: var(--primary-color);
+    content: "# ";
+}
+
+h2::before {
+    color: var(--primary-color);
+    content: "## ";
+}
+
+h3::before {
+    color: var(--primary-color);
+    content: "### ";
+}
+
+h4::before {
+    color: var(--primary-color);
+    content: "#### ";
+}
+
+h5::before {
+    color: var(--primary-color);
+    content: "##### ";
+}
+
+h6::before {
+    color: var(--primary-color);
+    content: "###### ";
+}
+
+/* =========================================================================
+   Selection / separators
+   ========================================================================= */
+
+::-moz-selection {
+    background: var(--primary-color);
+    color: var(--hover-color);
+    text-shadow: none;
+}
+
+::selection {
+    background: var(--primary-color);
+    color: var(--hover-color);
+}
+
+hr {
+    color: #6c7086;
+    background: none;
+    margin: 1.2rem auto;
+}
+
+/* =========================================================================
+   Links
+   ========================================================================= */
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Colored global hover. Component/page styles may override this. */
+a:hover {
+    background-color: var(--primary-color);
+    color: var(--hover-color);
+}
+
+/* Hover link with child elements, for example inline code. */
+a:hover > code {
+    background-color: var(--primary-color);
+    color: var(--hover-color);
+    border: none;
+    padding: 0 0.2em;
+}
+
+/* Disable colored hovering for video in /talks. */
+a.talk-video:hover {
+    background-color: transparent;
+    color: inherit;
+}
+
+/* Only have colored links inside the text. */
+main a {
+    border-bottom: 2px solid var(--primary-color);
+    position: relative;
+    z-index: 1;
+}
+
+/* Disable colored links in known component/link containers. */
+main .meta a,
+main .talks-grid a,
+main .cards a,
+main .post-header a {
+    border-bottom: none;
+}
+
+/* Do not display border on Zola-style internal header anchors. */
+main .zola-anchor {
+    border-bottom: none;
+}
+
+/* =========================================================================
+   Inline primitives
+   ========================================================================= */
+
+time {
+    color: var(--text-1);
+}
+
+del {
+    text-decoration-color: var(--primary-color);
+    text-decoration-thickness: 3px;
+}
+
+/* MathJax display containers — allow horizontal scroll on small screens. */
+.MathJax_Display,
+.MJXc-display,
+.MathJax_SVG_Display {
+    overflow-x: auto;
+    overflow-y: hidden;
+}

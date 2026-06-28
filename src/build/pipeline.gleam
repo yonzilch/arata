@@ -42,15 +42,22 @@ const dist_dir = "dist"
 /// follow the dependency order so cascade specificity resolves as intended.
 /// The `<link>` tags in `index.html` reference each file in this same order.
 const css_modules = [
-  "src/css/base.css",
+  "src/css/fonts.css",
+  "src/css/theme.css",
+  "src/css/globals.css",
+  "src/css/typography.css",
+  "src/css/home.css",
   "src/css/layout.css",
   "src/css/components.css",
+  "src/css/pagination.css",
   "src/css/post.css",
   "src/css/cards.css",
   "src/css/links.css",
   "src/css/search.css",
   "src/css/toc.css",
   "src/css/syntax.css",
+  "src/css/lightbox.css",
+  "src/css/aratafetch.css",
   "src/css/accessibility.css",
 ]
 
