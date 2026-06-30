@@ -479,8 +479,8 @@ One of:
 
 ```gleam
 AnalyticsDisabled
-GoatCounter(user: "your-user", host: "goatcounter.com")
-Umami(website_id: "xxx", host_url: "https://analytics.example.com")
+GoatCounter(data_goatcounter: "https://goatcounter.com/count", src: "//goatcounter.com/count.js")
+Umami(website_id: "your_website_id", src: "https://umami.com/script.js")
 ```
 
 Google Analytics is intentionally not supported.
