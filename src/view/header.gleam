@@ -303,7 +303,7 @@ fn view_search_button(
 fn view_theme_toggle(
   site_config: Config,
   current_theme: theme_effect.Theme,
-  _effective_dark: Bool,
+  effective_dark: Bool,
   on_toggle: Attribute(msg),
 ) -> Element(msg) {
   let #(icon_path, icon_id, icon_alt) = case current_theme {
@@ -328,16 +328,15 @@ fn view_theme_toggle(
         attribute.id(icon_id),
         attribute.alt(icon_alt),
         attribute.style("display", "block"),
-        attribute.style("filter", theme_icon_filter(current_theme)),
+        attribute.style("filter", theme_icon_filter(effective_dark)),
       ]),
     ],
   )
 }
 
-fn theme_icon_filter(theme: theme_effect.Theme) -> String {
-  case theme {
-    theme_effect.Light -> "none"
-    theme_effect.Dark -> "invert(1)"
-    theme_effect.Auto -> "invert(1)"
+fn theme_icon_filter(effective_dark: Bool) -> String {
+  case effective_dark {
+    True -> "invert(1)"
+    False -> "none"
   }
 }
