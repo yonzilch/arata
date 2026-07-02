@@ -31,11 +31,61 @@ export function inject_goatcounter(data_goatcounter, src) {
   if (analytics_already_injected()) return;
   if (!src || !data_goatcounter) return;
 
+  // GoatCounter SPA integration reference:
+  // https://www.goatcounter.com/help/spa
+  // GoatCounter's official SPA example is designed for hash-based routing.
+  // It sets `no_onload: true` and listens to the `hashchange` event.
+  // But arata does not use hash routing.
+  // This implementation adapts the official GoatCounter SPA idea to normal
+  // path routing by hooking into the browser History API:
+  //
+  //   - `history.pushState` for normal client-side navigations
+  //   - `history.replaceState` for route replacements
+  //   - `popstate` for browser back/forward navigation
+
+  window.goatcounter = { no_onload: true };
+
+  let lastPath = "";
+
+  function count() {
+    if (!window.goatcounter || typeof window.goatcounter.count !== "function") {
+      return;
+    }
+
+    const path = location.pathname + location.search + location.hash;
+
+    if (path === lastPath) {
+      return;
+    }
+
+    lastPath = path;
+
+    window.goatcounter.count({ path });
+  }
+
+  window.addEventListener("popstate", count);
+
+  const pushState = history.pushState;
+  history.pushState = function () {
+    const result = pushState.apply(this, arguments);
+    count();
+    return result;
+  };
+
+  const replaceState = history.replaceState;
+  history.replaceState = function () {
+    const result = replaceState.apply(this, arguments);
+    count();
+    return result;
+  };
+
   const script = document.createElement("script");
   script.id = "arata-analytics";
   script.setAttribute("data-goatcounter", data_goatcounter);
   script.async = true;
   script.src = src;
+
+  script.addEventListener("load", count);
 
   document.head.appendChild(script);
 }
