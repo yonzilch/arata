@@ -70,10 +70,12 @@ No file system access happens in the browser.
 - **Analytics**: GoatCounter, Umami (Google Analytics intentionally not supported).
 - **Comments**: Giscus, Utterances.
 - **Inline CSS shell** — CSS modules are inlined into `index.html` and `404.html` to remove render-blocking stylesheet requests; `dist/css/` is still emitted for inspection/debugging.
-- **Accent color** `#3555b3` (deep dark blue), editable in a single CSS variable.
 - **Config toggles** — `sidebar_enabled`, `floating_buttons_enabled`, `search_enabled`, `rss_enabled`, `mathjax_enabled`, and `aratafetch_enabled` let you turn features on or off without touching view code.
 - **Configurable logo and favicon** — both are configured from `src/config.gleam`.
 - **Build pipeline**: `gleam run -m build/pipeline` → complete static site in `dist/` (no Erlang/OTP required).
+
+- **Theme-Aware Accent Color** — switch by one botton between light <img src="https://placehold.co/15x15/5f7eea/5f7eea.png" width="15" height="15" alt="#5f7eea"> `#5f7eea` (Cornflower Blue) and dark <img src="https://placehold.co/15x15/2f4fa3/2f4fa3.png" width="15" height="15" alt="#2f4fa3"> `#2f4fa3` (Royal Azure).
+
 
 ## Quick start
 
@@ -100,10 +102,40 @@ At runtime, the SPA fetches `/content_index.json` once on boot (`rsvp`), decodes
 
 ```txt
 arata/
+├── content/                   # file-based content (authored Markdown)
+│   ├── posts/*.md             # blog posts
+│   │   ├── CHANGEGLOG.md      # CHANGELOG of Arata project (Only in demo site)
+│   │   ├── ROADMAP.md         # v1.0.0 ROADMAP of Arata project (Future plans not included)
+│   │   └── ...                # Other demo site content (markdown-test.md, deployment.md etc.)
+│   ├── pages/*.md             # standalone pages (incl. home.md, about.md)
+│   ├── links/*.md             # friend-link cards
+│   └── projects/*.md          # project showcase cards
 ├── src/
 │   ├── arata.gleam            # entry point (boots Lustre)
 │   ├── route.gleam            # URL <-> Route mapping (modem)
 │   ├── config.gleam           # Config defaults + SiteMeta defaults
+│   ├── build/                 # content -> dist/ pipeline + feeds + crawler files
+│   │   ├── pipeline.gleam     # orchestrator
+│   │   ├── feeds.gleam        # atom.xml, rss.xml, sitemap.xml
+│   │   ├── robots.gleam       # robots.txt
+│   │   └── llms.gleam         # llms.txt
+│   ├── content/
+│   │   ├── loader.gleam       # build-time .md reader (simplifile + tom + mork)
+│   │   └── runtime.gleam      # browser-side content_index.json fetch (rsvp)
+│   │── css/                   # 13 CSS modules (inlined into HTML shell at build time)
+│   │   ├── base.css           # theme vars, html/body, headings, links
+│   │   ├── layout.css         # .arata-shell, .content, nav, .logo
+│   │   ├── components.css     # .page-header, .post-list, tags, icon buttons, sidebar post tags
+│   │   ├── pagination.css     # pagination links and page-jump input
+│   │   ├── post.css           # blockquote, .tldr, img/figure, table, code, labels
+│   │   ├── cards.css          # .cards, .card-*, project cards
+│   │   ├── links.css          # friend-link avatars
+│   │   ├── search.css         # search button/modal/results
+│   │   ├── toc.css            # table of contents
+│   │   ├── syntax.css         # giallo light/dark syntax highlighting
+│   │   ├── lightbox.css       # Markdown image lightbox overlay
+│   │   ├── aratafetch.css     # homepage neofetch-style summary
+│   │   └── accessibility.css  # :focus-visible outlines + .skip-link
 │   ├── data/                  # content models + shared metadata types
 │   │   ├── site.gleam         # SiteMeta, Analytics, CommentsConfig types
 │   │   ├── post.gleam         # Post type
@@ -111,39 +143,12 @@ arata/
 │   │   ├── link.gleam         # Link type
 │   │   ├── page.gleam         # Page type
 │   │   └── markdown.gleam     # mork -> HTML wrapper with extension options
-│   ├── content/
-│   │   ├── loader.gleam       # build-time .md reader (simplifile + tom + mork)
-│   │   └── runtime.gleam      # browser-side content_index.json fetch (rsvp)
-│   ├── view/                  # page + component views
-│   │   ├── aratafetch.gleam   # homepage ASCII summary component
-│   │   └── ...
 │   ├── effect/                # managed side effects (FFI)
 │   ├── ffi/                   # JavaScript FFI
-│   ├── shortcodes/            # note, character, image, mermaid
-│   ├── build/                 # content -> dist/ pipeline + feeds + crawler files
-│   │   ├── pipeline.gleam     # orchestrator
-│   │   ├── feeds.gleam        # atom.xml, rss.xml, sitemap.xml
-│   │   ├── robots.gleam       # robots.txt
-│   │   └── llms.gleam         # llms.txt
-│   └── css/                   # 13 CSS modules (inlined into HTML shell at build time)
-│       ├── base.css           # theme vars, html/body, headings, links
-│       ├── layout.css         # .arata-shell, .content, nav, .logo
-│       ├── components.css     # .page-header, .post-list, tags, icon buttons, sidebar post tags
-│       ├── pagination.css     # pagination links and page-jump input
-│       ├── post.css           # blockquote, .tldr, img/figure, table, code, labels
-│       ├── cards.css          # .cards, .card-*, project cards
-│       ├── links.css          # friend-link avatars
-│       ├── search.css         # search button/modal/results
-│       ├── toc.css            # table of contents
-│       ├── syntax.css         # giallo light/dark syntax highlighting
-│       ├── lightbox.css       # Markdown image lightbox overlay
-│       ├── aratafetch.css     # homepage neofetch-style summary
-│       └── accessibility.css  # :focus-visible outlines + .skip-link
-├── content/                   # file-based content (authored Markdown)
-│   ├── posts/*.md             # blog posts
-│   ├── pages/*.md             # standalone pages (incl. home.md, about.md)
-│   ├── links/*.md             # friend-link cards
-│   └── projects/*.md          # project showcase cards
+│   │── shortcodes/            # note, character, image, mermaid
+│   ├── view/                  # page + component views
+│   │   ├── aratafetch.gleam   # homepage ASCII summary component
+│   └── └── ...                # remaining view components
 ├── static/                    # fonts, icons, images, vendored CSS
 ├── test/                      # unit tests
 ├── gleam.toml
@@ -254,7 +259,7 @@ Highlights:
 * **`aratafetch_maintained_for`** (`Option(String)`) — optional display string for aratafetch's `maintained` row, for example `Some("since 2024-06-23")`.
 * **`fonts`** — a `Fonts(text, header, code)` record of CSS `font-family` declarations. Defaults to system font stacks.
 * **`analytics`** — `AnalyticsDisabled`, `GoatCounter(user, host)`, or `Umami(website_id, host_url)`. Google Analytics is intentionally not supported.
-* **Accent color** — edit `--primary-color` in `src/css/theme.css` to recolor accent surfaces. Arata defines separate light and dark accent values in `:root` and `:root.dark` for better contrast across themes.
+* **Accent/Primary color** — edit `--primary-color` in `src/css/theme.css` to recolor accent surfaces. Arata defines separate light and dark accent values in `:root` and `:root.dark` for better contrast across themes.
 
 See [configuration.md](content/posts/configuration.md) for the full configuration guide.
 

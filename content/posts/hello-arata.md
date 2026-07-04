@@ -2,7 +2,7 @@
 title = "Hello, arata"
 date = "2026-06-21"
 updated = "2026-06-22"
-description = "Introducing arata — a faithful reimplementation of the apollo blog theme in Gleam and Lustre."
+description = "Introducing Arata — a faithful reimplementation of the apollo blog theme in Gleam and Lustre."
 tags = ["gleam", "lustre"]
 draft = false
 tldr = "arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app with client-side routing and a hand-ported CSS design system."
