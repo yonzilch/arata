@@ -1,7 +1,7 @@
 +++
 title = "CHANGELOG"
 date = "2026-06-21"
-updated = "2026-06-29"
+updated = "2026-07-04"
 description = "Comprehensive CHANGELOG of arata project"
 tags = ["docs"]
 +++
@@ -12,6 +12,48 @@ All notable changes to arata are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+This changelog generally follows the Keep a Changelog structure, but the section
+names and grouping may be adjusted when needed to better reflect the actual
+changes in arata.
+
+For example, project-specific sections such as `Internal`,
+`Documentation`, `CI`, or `Contributors` may be used when they make a release
+easier to understand.
+
+---
+
+## v1.6.0 — [2026-07-04]
+
+### Added
+
+- Added GoatCounter SPA tracking support for history-based routes.
+  - GoatCounter page views are now tracked when navigating between client-side routes.
+  - This improves analytics accuracy for deployments using arata as a single-page application.
+
+### Fixed
+
+- Fixed analytics script injection for Umami and GoatCounter.
+  - Resolved rendering issues that could prevent analytics scripts from being emitted correctly.
+  - Normalized analytics script output to make generated HTML more reliable.
+- Fixed an invisible theme icon in automatic theme mode.
+  - The theme toggle icon now remains visible when the site is using auto/system theme mode.
+
+### Documentation
+
+- Updated analytics configuration instructions.
+- Clarified analytics setup behavior for supported providers.
+
+### CI
+
+- Updated GitHub Pages deployment behavior so tag deployments can own tagged commits.
+
+### Contributors
+
+- [@atp-gh](https://github.com/atp-gh) contributed analytics fixes and GoatCounter SPA tracking support.
+- [@not-matthias](https://github.com/not-matthias) fixed the invisible icon issue in auto theme mode.
+
+---
 
 ## v1.5.0 — [2026-06-29]
 
