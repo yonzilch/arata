@@ -23,7 +23,20 @@ easier to understand.
 
 ---
 
-## v1.6.2
+## v1.6.2-fix - [2026-07-05]
+
+A follow-up patch to v1.6.2 tightening up local build reproducibility.
+
+### Fixed
+- `preview` script now runs a full clean before rebuilding, preventing stale `build/` artifacts from affecting the previewed output.
+
+### Changed
+- Restructured `deployment.md` to lead with local setup, hot reload, and deploy steps, moving pipeline internals to an appendix.
+- Updated deployment docs to reflect current `package.json` scripts and added guidance for git-push-based PaaS deploys that require committing `dist/`.
+
+---
+
+## v1.6.2 - [2026-07-05]
 
 A small but remarkable release focused on developer experience, project reproducibility, and brand asset cleanup.
 
@@ -43,7 +56,7 @@ This release makes local development smoother, CI feedback clearer, and brand as
 
 ---
 
-## [1.6.1] - 2026-07-04
+## [1.6.1] - [2026-07-04]
 
 ### Changed
 
