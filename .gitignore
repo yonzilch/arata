@@ -1,8 +1,49 @@
+# Added automatically by Lustre Dev Tools
+/.lustre
 *.beam
 *.ez
-/build
+build/
+dist/
 erl_crash.dump
-node_modules/
 
-#Added automatically by Lustre Dev Tools
-/.lustre
+# Erlang / OTP
+*.plt
+.rebar/
+_build/
+.erlang.mk/
+ebin/
+
+# Gleam
+*.gleam.cache
+.gleam/
+
+# Bun / Node
+node_modules/
+bun.lockb
+.bun/
+npm-debug.log*
+yarn-error.log*
+
+# Nix / direnv
+.direnv/
+.envrc.local
+result
+result-*
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
