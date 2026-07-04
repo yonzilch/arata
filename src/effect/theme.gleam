@@ -48,6 +48,8 @@ pub fn init_theme() -> Effect(ThemeMsg) {
     subscribe_to_system_changes(fn(prefers_dark) {
       dispatch(SystemPrefersDarkChanged(prefers_dark:))
     })
+  // Seed the current value; the change listener above only fires on flips.
+  dispatch(SystemPrefersDarkChanged(prefers_dark: get_system_prefers_dark()))
   dispatch(ThemeLoaded(theme:))
 }
 
@@ -88,3 +90,6 @@ fn apply_theme(mode: String) -> Nil
 
 @external(javascript, "../ffi/theme.ffi.mjs", "subscribe_to_system_changes")
 fn subscribe_to_system_changes(dispatch: fn(Bool) -> Nil) -> fn() -> Nil
+
+@external(javascript, "../ffi/theme.ffi.mjs", "get_system_prefers_dark")
+fn get_system_prefers_dark() -> Bool
