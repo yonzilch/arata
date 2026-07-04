@@ -1,8 +1,9 @@
 /// <reference types="bun" />
 
-const PORT = Number(Bun.env.PORT ?? "3000");
+const PORT = Number(Bun.env.PORT ?? "3333");
 const DIST_DIR = Bun.env.DIST_DIR ?? "dist";
 const BUILD_MODULE = Bun.env.BUILD_MODULE ?? "build/pipeline";
+const DEBUG = Bun.env.DEBUG === "1";
 
 const WATCH_PATTERNS = [
   "src/**/*",
@@ -12,6 +13,10 @@ const WATCH_PATTERNS = [
 ];
 
 const IGNORED_PREFIXES = [".git/", "build/", "dist/", "node_modules/"];
+
+// Directories that actually exist under DIST_DIR after a build.
+// Anything under these should never fall back to index.html.
+const STATIC_ASSET_PREFIXES = ["/css/", "/fonts/", "/icons/", "/images/"];
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -33,14 +38,17 @@ const MIME_TYPES: Record<string, string> = {
 type Snapshot = Map<string, string>;
 
 type SseClient = {
-  controller: ReadableStreamDefaultController<string>;
+  controller: ReadableStreamDefaultController<Uint8Array>;
   heartbeat: ReturnType<typeof setInterval>;
 };
 
+const encoder = new TextEncoder();
 const clients = new Set<SseClient>();
 
 let building = false;
 let pendingBuild = false;
+let scanning = false;
+let watchTimer: ReturnType<typeof setTimeout> | null = null;
 let lastSnapshot: Snapshot = new Map();
 
 function log(message: string) {
@@ -49,6 +57,10 @@ function log(message: string) {
 
 function warn(message: string) {
   console.warn(`[arata-dev] ${message}`);
+}
+
+function debug(message: string) {
+  if (DEBUG) console.log(`[arata-dev:debug] ${message}`);
 }
 
 function now() {
@@ -176,17 +188,13 @@ function findSnapshotChange(before: Snapshot, after: Snapshot): string | null {
   return null;
 }
 
-function snapshotChanged(before: Snapshot, after: Snapshot): boolean {
-  return findSnapshotChange(before, after) !== null;
-}
-
 function closeClient(client: SseClient) {
   clearInterval(client.heartbeat);
   clients.delete(client);
 }
 
 function broadcast(event: "reload" | "error") {
-  const payload = `event: ${event}\ndata: ${now()}\n\n`;
+  const payload = encoder.encode(`event: ${event}\ndata: ${now()}\n\n`);
 
   for (const client of clients) {
     try {
@@ -274,7 +282,7 @@ function normalizeRequestPath(pathname: string): string | null {
 }
 
 function shouldFallbackToIndex(pathname: string): boolean {
-  if (pathname.startsWith("/assets/")) {
+  if (STATIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return false;
   }
 
@@ -343,11 +351,11 @@ async function serveFile(req: Request, filePath: string): Promise<Response> {
 function createEventStream(): Response {
   let client: SseClient;
 
-  const stream = new ReadableStream<string>({
+  const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const heartbeat = setInterval(() => {
         try {
-          controller.enqueue(`: ping ${now()}\n\n`);
+          controller.enqueue(encoder.encode(`: ping ${now()}\n\n`));
         } catch {
           closeClient(client);
         }
@@ -359,7 +367,7 @@ function createEventStream(): Response {
       };
 
       clients.add(client);
-      controller.enqueue(`event: open\ndata: ${now()}\n\n`);
+      controller.enqueue(encoder.encode(`event: open\ndata: ${now()}\n\n`));
     },
 
     cancel() {
@@ -379,63 +387,101 @@ function createEventStream(): Response {
 }
 
 async function handleRequest(req: Request): Promise<Response> {
-  const url = new URL(req.url);
+  try {
+    const url = new URL(req.url);
 
-  if (url.pathname === "/__arata_events") {
-    return createEventStream();
-  }
-
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    return new Response("Method Not Allowed\n", {
-      status: 405,
-      headers: {
-        allow: "GET, HEAD",
-      },
-    });
-  }
-
-  const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
-
-  const normalizedPath = normalizeRequestPath(requestedPath);
-
-  if (normalizedPath === null) {
-    return new Response("Forbidden\n", { status: 403 });
-  }
-
-  const filePath = joinPath(DIST_DIR, normalizedPath);
-
-  if (await fileExists(filePath)) {
-    return serveFile(req, filePath);
-  }
-
-  if (shouldFallbackToIndex(requestedPath)) {
-    const indexPath = joinPath(DIST_DIR, "index.html");
-
-    if (await fileExists(indexPath)) {
-      return serveFile(req, indexPath);
+    if (url.pathname === "/__arata_events") {
+      return createEventStream();
     }
-  }
 
-  return new Response("Not Found\n", { status: 404 });
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      return new Response("Method Not Allowed\n", {
+        status: 405,
+        headers: {
+          allow: "GET, HEAD",
+        },
+      });
+    }
+
+    const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
+
+    const normalizedPath = normalizeRequestPath(requestedPath);
+
+    if (normalizedPath === null) {
+      return new Response("Forbidden\n", { status: 403 });
+    }
+
+    const filePath = joinPath(DIST_DIR, normalizedPath);
+
+    if (await fileExists(filePath)) {
+      return await serveFile(req, filePath);
+    }
+
+    if (shouldFallbackToIndex(requestedPath)) {
+      const indexPath = joinPath(DIST_DIR, "index.html");
+
+      if (await fileExists(indexPath)) {
+        return await serveFile(req, indexPath);
+      }
+    }
+
+    return new Response("Not Found\n", { status: 404 });
+  } catch (error) {
+    // Guard against races (e.g. a rebuild deleting dist/ mid-request) so a
+    // thrown exception can never leave the connection hanging without a
+    // response.
+    warn(
+      `request error: ${error instanceof Error ? error.message : String(error)}`,
+    );
+
+    return new Response("Internal Server Error\n", { status: 500 });
+  }
 }
 
-async function watchLoop() {
-  setInterval(async () => {
+// Self-rescheduling loop instead of setInterval: the next scan is only
+// scheduled after the current one (scan + possible build) has fully
+// finished. This prevents overlapping Glob scans / builds from piling up
+// and starving the single JS thread that also has to service HTTP
+// requests, which is what caused the dev server to become unresponsive.
+function scheduleNextScan(delayMs: number) {
+  watchTimer = setTimeout(() => {
+    void watchTick();
+  }, delayMs);
+}
+
+async function watchTick() {
+  if (scanning) {
+    scheduleNextScan(500);
+    return;
+  }
+
+  scanning = true;
+  const startedAt = now();
+
+  try {
     const nextSnapshot = await createSnapshot();
     const change = findSnapshotChange(lastSnapshot, nextSnapshot);
 
-    if (change === null) {
-      return;
+    if (change !== null) {
+      log(`detected change: ${change}`);
+      lastSnapshot = nextSnapshot;
+      await runBuild("file changed");
+      lastSnapshot = await createSnapshot();
+    } else {
+      debug(`scan clean in ${now() - startedAt}ms`);
     }
+  } catch (error) {
+    warn(
+      `watch scan error: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  } finally {
+    scanning = false;
+    scheduleNextScan(500);
+  }
+}
 
-    log(`detected change: ${change}`);
-
-    lastSnapshot = nextSnapshot;
-
-    await runBuild("file changed");
-
-    lastSnapshot = await createSnapshot();
-  }, 500);
+function startWatchLoop() {
+  scheduleNextScan(500);
 }
 
 const server = Bun.serve({
@@ -453,4 +499,9 @@ await runBuild("initial");
 
 lastSnapshot = await createSnapshot();
 
-await watchLoop();
+startWatchLoop();
+
+process.on("SIGINT", () => {
+  if (watchTimer) clearTimeout(watchTimer);
+  process.exit(0);
+});
