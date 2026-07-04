@@ -23,6 +23,26 @@ easier to understand.
 
 ---
 
+## v1.6.2
+
+A small but remarkable release focused on developer experience, project reproducibility, and brand asset cleanup.
+
+This release makes local development smoother, CI feedback clearer, and brand assets easier to reuse.
+
+### Added
+
+- A Bun-powered hot reload dev server for instant rebuilds with automatic browser refresh during local development
+- Nix flake support for reproducible development environments.
+- SVG versions of the Arata logo, including a black-white variant.
+
+### Changed
+
+- Reordered links page entries.
+- Replaced the existing `arata-logo` asset with the new logo version.
+- Decoupled GitHub Pages deployment results from the main CI status.
+
+---
+
 ## [1.6.1] - 2026-07-04
 
 ### Changed
