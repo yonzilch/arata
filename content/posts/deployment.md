@@ -8,114 +8,147 @@ tags = ["docs", "deployment"]
 
 # Deployment
 
-Arata builds to a static site in `dist/` that can be deployed to any static host (GitHub Pages, Cloudflare Pages, Netlify, etc.).
+Arata builds to a static site in `dist/` that can be deployed to any static
+host — GitHub Pages, Cloudflare Pages, Netlify, or anything else that can
+serve a folder of files.
 
-## Build
+## Local setup
+
+The fastest path is [**Nix**](https://github.com/nixos/nix) + [**direnv**](https://github.com/direnv/direnv)
+
+For Arata project, `flake.nix` with a `devshell` provides the exact [Bun](https://github.com/oven-sh/bun) and [Gleam](https://github.com/gleam-lang/gleam) on both x86 and ARM.
 
 ```sh
-# Build the complete static site in one command:
-gleam run -m build/pipeline
+direnv allow
 ```
 
-This produces everything in `dist/`:
+That's it — `bun` and `gleam` are now on your `PATH` inside the project
+directory, with nothing installed globally and nothing to keep in sync
+manually.
 
-- `index.html` — the SPA shell with FOUC-prevention theme classes and a
-  loading indicator inside `<div id="app">`.
-- `404.html` — **identical** SPA shell (same payload as `index.html`).
-  Static hosts that serve `404.html` for unknown paths (GitHub Pages,
-  Cloudflare Pages, Netlify) load the SPA directly on a deep-link refresh —
-  modem reads the URL from the address bar and routes to the right post, so
-  the URL is preserved verbatim. **No redirect is needed.**
-- `app.mjs` — the minified SPA JavaScript bundle (bundled via `bun build`).
-- `css/` — the **10 CSS modules** under `dist/css/` (one file per module:
-  `base.css`, `layout.css`, `components.css`, `post.css`, `cards.css`,
-  `links.css`, `search.css`, `toc.css`, `syntax.css`, `accessibility.css`).
-  Each page loads only the modules it needs.
-- `content_index.json` — the content tree (posts, pages, links, projects,
-  homepage) fetched by the SPA at runtime.
-- `search_index.json` — the search corpus (consumed when `search_enabled`
-  is `True`).
-- `atom.xml` / `rss.xml` — Atom 1.0 and RSS 2.0 feeds (written when
-  `rss_enabled` is `True`).
-- `sitemap.xml` — sitemap.
-- `robots.txt`  — the robots exclusion protocol
-- `llms.txt`  — content for llms. (See https://llmstxt.org )
-- `fonts/`, `icons/`, `images/` — static assets (copied from `static/`).
+If you'd rather not use Nix, just make sure you have Gleam
+`>= 1.14` and Bun `>= 1.0` installed yourself.
 
-### What the pipeline does
+## Local development (hot reload)
 
-1. Emits the JSON content index, search index, feeds, sitemap, `index.html`,
-   and `404.html` (`index.html` and `404.html` are byte-identical SPA
-   shells — the only difference is the filename the host serves).
-2. Concatenates the 10 CSS modules under `src/css/` in dependency order and
-   writes each one to `dist/css/`. The page templates link only the modules
-   that page needs, so a post page loads `post.css` + `toc.css` but the
-   projects page does not.
-3. Copies all static assets from `static/` (`fonts/`, `icons/`, `images/`)
-   to `dist/`.
-4. Compiles the Gleam JavaScript and bundles it into `dist/app.mjs` via
-   `bun build` (replacing `lustre/dev build`, which requires Erlang/OTP).
-
-### All asset paths are absolute
-
-`index.html` and `404.html` reference the SPA bundle and stylesheet links
-with **absolute** paths:
-
-```html
-<script type="module" src="/app.mjs"></script>
-<link rel="stylesheet" href="/css/base.css" />
-<link rel="stylesheet" href="/css/layout.css" />
-<!-- …etc… -->
+```sh
+bun run dev
 ```
 
-This is what makes deep-link refreshes work. A relative `./app.mjs` would
-resolve to `/posts/app.mjs` on `/posts/markdown` (a 404), so the SPA would
-never boot. Absolute paths resolve from the site root on every route, so
-`/posts/markdown`, `/tags/gleam`, and `/` all load the bundle correctly.
+This starts a dev server at `http://localhost:3333` that:
+
+- runs an initial build of the full site,
+- watches `src/`, `content/`, `static/`, and `gleam.toml`,
+- rebuilds automatically on any change, and
+- pushes a live-reload signal to your browser tab — no manual refresh.
+
+Use this while writing posts or working on templates/styles.
+
+## Building for production
+
+```sh
+bun run rebuild
+```
+
+This is a clean build: it removes any existing `dist/`, then runs the
+Gleam pipeline (`gleam run -m build/pipeline`) to regenerate everything
+from scratch. Use this before deploying, and use it as the build command
+in CI.
+
+Want to sanity-check the production build locally before pushing it
+anywhere? `bun run preview` does a clean rebuild and then serves `dist/`
+at `http://localhost:3333` — this is the closest local approximation of
+what your static host will actually serve.
+
+| Script            | What it does                                   |
+| ----------------- | ----------------------------------------------- |
+| `bun run dev`      | Hot-reload dev server                          |
+| `bun run build`    | Build once (no cleanup)                        |
+| `bun run rebuild`  | Clean build (`rm -rf dist` + build) — use this for deploys |
+| `bun run preview`  | Clean build + serve, to check the prod output locally |
+| `bun run check`    | `gleam check` + `gleam test`                   |
+| `bun run clean`    | Remove `dist/` and `build/`                    |
+
+## Deploying
+
+### GitHub Pages
+
+1. Push the repo to GitHub.
+2. Add a GitHub Action that runs `bun run rebuild` and publishes `dist/`
+   to GitHub Pages.
+3. Done — GitHub Pages serves `404.html` for unknown paths automatically,
+   so deep-link refreshes (e.g. `/posts/foo`) load the SPA and resolve to
+   the right page with the URL untouched. No redirect rule needed.
+
+### Cloudflare Pages
+
+1. Connect the repo to Cloudflare Pages.
+2. Build command: `bun run rebuild`. Output directory: `dist/`.
+3. Same `404.html`-as-SPA-shell behavior as GitHub Pages — deep links
+   work out of the box.
+
+### Netlify
+
+1. Connect the repo to Netlify.
+2. Build command: `bun run rebuild`. Publish directory: `dist/`.
+3. Same as above: Netlify serves `404.html` for unknown paths.
+
+### Custom domain
+
+Set `base_url` in `src/data/config.gleam` to your domain before building.
+It's used in feeds, the sitemap, and OpenGraph meta tags.
+
+### If your host deploys straight from `git push` (no build step)
+
+`dist/` is gitignored by default, since it's a build artifact regenerated
+by CI on every deploy. If your target platform instead deploys whatever
+you push to a branch **without running a build step** (some PaaS setups
+work this way), you'll need to commit `dist/` for that branch specifically:
+
+```sh
+git add -f dist
+```
+
+Keep this to a dedicated deploy branch rather than committing build
+output on `main` — it's easy to forget to regenerate it and ship a stale
+`dist/`.
+
+---
+
+## Appendix: the build pipeline in detail
 
 ### Prerequisites
 
 - **Gleam** >= 1.14
-- **Bun** >= 1.0 (for the SPA bundle step — `bun build --outfile dist/app.mjs
-  --minify --target=browser`)
-- **Erlang/OTP is NOT required** — the pipeline uses `bun build` instead of
-  `lustre/dev build`, so no Erlang runtime is needed on the build machine.
+- **Bun** >= 1.0 (used for the SPA bundle step and the dev server)
+- **Erlang/OTP is not required** — the pipeline uses `bun build` instead
+  of `lustre/dev build`, so there's no Erlang runtime to install.
 
-## GitHub Pages
+### What `gleam run -m build/pipeline` does
 
-1. Push the repo to GitHub.
-2. Set up a GitHub Action that runs `gleam run -m build/pipeline` and
-   publishes `dist/` to GitHub Pages.
-3. GitHub Pages automatically serves `404.html` for unknown paths. Because
-   `404.html` **is** the SPA shell (not a redirect), a refresh of
-   `/posts/foo` loads the SPA directly, modem reads the URL from the address
-   bar, and the correct post renders — the URL is preserved and no redirect
-   occurs.
+1. Generates `index.html` and `404.html` — byte-identical SPA shells;
+   the only difference is which filename the host serves for unknown
+   paths.
+2. Builds the 10 CSS modules from `src/css/` into `dist/css/`. Each page
+   links only the modules it needs (a post loads `post.css` + `toc.css`;
+   the projects page doesn't).
+3. Copies static assets (`fonts/`, `icons/`, `images/`) from `static/`
+   into `dist/`.
+4. Bundles the Gleam-compiled JS into `dist/app.mjs` via `bun build
+   --minify`.
+5. Writes `content_index.json`, `search_index.json`, `atom.xml`,
+   `rss.xml`, `sitemap.xml`, `robots.txt`, and `llms.txt`.
 
-## Cloudflare Pages
+### Why asset paths are absolute
 
-1. Connect the repo to Cloudflare Pages.
-2. Set the build command to `gleam run -m build/pipeline`.
-3. Set the output directory to `dist/`.
-4. Cloudflare Pages automatically serves `404.html` for unknown paths, so
-   deep links work out of the box — same behaviour as GitHub Pages (SPA
-   shell, no redirect, URL preserved).
+`index.html` / `404.html` reference assets with absolute paths:
 
-## Netlify
+```html
+<script type="module" src="/app.mjs"></script>
+<link rel="stylesheet" href="/css/base.css" />
+```
 
-1. Connect the repo to Netlify.
-2. Set the build command to `gleam run -m build/pipeline`.
-3. Set the publish directory to `dist/`.
-4. Netlify serves `404.html` for unknown paths, so deep-link refreshes load
-   the SPA shell and the URL is preserved.
-
-## Custom domain
-
-Set `base_url` in `src/data/site.gleam` to your domain before building — this
-is used in the feeds, sitemap, and OpenGraph meta tags.
-
-## Environment requirements
-
-- **Gleam** >= 1.14
-- **Bun** >= 1.0 (for the SPA bundle)
-- **Erlang/OTP** — not required.
+This is required for deep links to work: a relative `./app.mjs` would
+resolve to `/posts/app.mjs` on a route like `/posts/markdown` — a 404,
+and the SPA would never boot. Absolute paths always resolve from the
+site root, regardless of which route served the shell.
