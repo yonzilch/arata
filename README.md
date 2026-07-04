@@ -159,18 +159,22 @@ arata/
 
 ## Content authoring
 
-All content lives under `content/` in four subdirectories. Each Markdown file uses **TOML frontmatter** delimited by `+++ … +++`:
+All content lives under `content/` in four subdirectories. Each Markdown file uses **TOML frontmatter** delimited by `+++ ... +++`.
+
+Only the required fields need to be present. Fields such as `description`, `tags`, `draft`, and `tldr` are optional and may be omitted when they are not needed.
 
 ```toml
 +++
-title = "Hello, arata"
+title = "Hello, Arata"
 date = "2026-06-21"
-description = "Introducing arata project"
+description = "Introducing Arata"
 tags = ["gleam", "lustre"]
+draft = false
+tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app with client-side routing and a hand-ported CSS design system."
 +++
 
 Body in Markdown — parsed by mork at build time.
-```
+``
 
 | Directory               | Type    | Frontmatter                                                                                                   |
 | ----------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
