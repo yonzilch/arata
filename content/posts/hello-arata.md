@@ -1,7 +1,7 @@
 +++
 title = "Hello, Arata"
 date = "2026-06-21"
-updated = "2026-06-22"
+updated = "2026-07-04"
 description = "Introducing Arata — a faithful reimplementation of the apollo blog theme in Gleam and Lustre."
 tags = ["gleam", "lustre"]
 draft = false
