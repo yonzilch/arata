@@ -13,97 +13,18 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  deployments: read
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.event.pull_request.number) || 'pages-deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  preflight:
-    runs-on: ubuntu-latest
-
-    outputs:
-      should_run: ${{ steps.decision.outputs.should_run }}
-      is_deploy_ref: ${{ steps.decision.outputs.is_deploy_ref }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Decide whether this workflow should run
-        id: decision
-        shell: bash
-        run: |
-          set -eu
-
-          should_run=true
-          is_deploy_ref=false
-
-          find_v_tags_for_sha() {
-            git fetch --force --tags origin '+refs/tags/*:refs/tags/*'
-
-            git for-each-ref \
-              --format='%(refname:short) %(objectname) %(*objectname)' \
-              'refs/tags/v*' |
-              awk -v sha="${GITHUB_SHA}" '
-                $2 == sha || $3 == sha {
-                  print $1
-                }
-              '
-          }
-
-          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
-            should_run=true
-            is_deploy_ref=false
-
-          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            should_run=true
-            is_deploy_ref=true
-
-          elif [ "${GITHUB_REF_TYPE}" = "branch" ]; then
-            case "${GITHUB_REF_NAME}" in
-              main|master)
-                is_deploy_ref=true
-                ;;
-              *)
-                is_deploy_ref=false
-                ;;
-            esac
-
-            if [ "${is_deploy_ref}" = "true" ]; then
-              # When pushing a branch and a tag at nearly the same time, the
-              # branch workflow may start before the tag ref is visible.
-              # Give the remote ref advertisement a short chance to settle so
-              # the tag workflow can own deploys for tagged commits.
-              sleep 10
-
-              tags_for_sha="$(find_v_tags_for_sha || true)"
-
-              if [ -n "${tags_for_sha}" ]; then
-                echo "Current branch commit ${GITHUB_SHA} already has v* tag(s):"
-                echo "${tags_for_sha}"
-                echo "Skipping branch run so the tag run owns this commit."
-                should_run=false
-                is_deploy_ref=false
-              fi
-            fi
-          fi
-
-          echo "should_run=${should_run}" >> "${GITHUB_OUTPUT}"
-          echo "is_deploy_ref=${is_deploy_ref}" >> "${GITHUB_OUTPUT}"
-
   build:
     runs-on: ubuntu-latest
-    needs: preflight
-    if: needs.preflight.outputs.should_run == 'true'
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Gleam
         uses: erlef/setup-beam@v1
@@ -125,23 +46,58 @@ jobs:
         run: gleam run -m build/pipeline
 
       - name: Upload Pages artifact
-        if: needs.preflight.outputs.is_deploy_ref == 'true'
+        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
+  check-deployment:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+    outputs:
+      already_deployed: ${{ steps.check.outputs.already_deployed }}
+    steps:
+      - name: Check if this commit is already deployed
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          sha="${GITHUB_SHA}"
+          repo="${GITHUB_REPOSITORY}"
+
+          echo "Looking up github-pages deployments for ${sha}..."
+          deployment_ids=$(gh api \
+            "repos/${repo}/deployments?sha=${sha}&environment=github-pages&per_page=100" \
+            --jq '.[].id' 2>/dev/null || true)
+
+          already_deployed=false
+          for id in ${deployment_ids}; do
+            state=$(gh api \
+              "repos/${repo}/deployments/${id}/statuses?per_page=100" \
+              --jq '.[-1].state // empty' 2>/dev/null || true)
+            echo "deployment ${id} latest state: ${state}"
+            if [ "${state}" = "success" ]; then
+              already_deployed=true
+              break
+            fi
+          done
+
+          echo "already_deployed=${already_deployed}" >> "${GITHUB_OUTPUT}"
+
   deploy:
     runs-on: ubuntu-latest
     needs:
-      - preflight
       - build
-    if: always() && needs.preflight.outputs.should_run == 'true' && needs.preflight.outputs.is_deploy_ref == 'true' && needs.build.result == 'success'
-
+      - check-deployment
+    if: >
+      github.event_name == 'push' &&
+      needs.check-deployment.outputs.already_deployed != 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
