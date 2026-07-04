@@ -23,6 +23,21 @@ easier to understand.
 
 ---
 
+## [1.6.1] - 2026-07-04
+
+### Changed
+
+- Refined the "Hello, Arata" introductory post and clarified that frontmatter fields such as `description`, `tags`, `draft`, and `tldr` are optional.
+- Rewrote the accent color documentation and polished the project layout section in the README.
+- Set the project version metadata to `0.0.0`.
+
+### Fixed
+
+- Improved CI deployment reliability by replacing timing-based tag guesswork with deployment state checks.
+- Tightened deployment serialization and isolated PR Pages concurrency groups to avoid unnecessary queue blocking.
+
+---
+
 ## v1.6.0 — [2026-07-04]
 
 ### Added
