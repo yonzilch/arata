@@ -14,7 +14,7 @@ tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app w
 
 The point was never to just copy the look. What this project is really after is retelling a much-loved static theme in a typed, functional way — without losing what made the original work: its restraint, its clarity, the focus feeling you get reading it.
 
-## Why Arata comes out
+## Why Arata
 
 Most blog themes, if you're honest about it, are templates, partials, and scattered bits of state stitched together. That's fine while the theme is small. But once it needs to keep growing over time, the cracks or issues start to show.
 
