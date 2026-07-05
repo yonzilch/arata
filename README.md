@@ -7,6 +7,7 @@
 
 [![License](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
+[![Lastest Tag](https://img.shields.io/github/v/tag/yonzilch/arata)]()
 [![Gleam](https://img.shields.io/badge/Gleam-ffaff3?logo=gleam&labelColor=292d3e&color=ffaff3)](https://gleam.run)
 
 </div>
@@ -15,9 +16,24 @@ Arata reproduces apollo's minimal, typography-driven aesthetic as a client-side 
 
 Content is authored in Markdown, parsed at build time by [MÖRK](https://hex.pm/packages/mork) (a pure-Gleam CommonMark + GFM parser)
 
-And served to a [Lustre](https://github.com/lustre-labs/lustre) SPA that fetches a single `content_index.json` at runtime.
+And served as a [Lustre](https://github.com/lustre-labs/lustre) SPA that fetches a single `content_index.json` at runtime.
 
-No file system access happens in the browser.
+> Load once, then everything done in client-side browser.
+>
+> The tech structure bring a remarkable performance experience.
+
+```mermaid
+flowchart TD
+    subgraph Build["Build Time (once)"]
+        M["Markdown Content"] --> P["MÖRK Parser"]
+        P --> J["content_index.json"]
+    end
+
+    U["User visits site<br/>in browser"] --> S["Load Lustre SPA"]
+    S --> F["Fetch content_index.json<br/>(once)"]
+    J -.deploy.-> F
+    F --> R["Client-side rendering<br/>(zero further requests)"]
+```
 
 ## Stack
 
@@ -28,9 +44,43 @@ No file system access happens in the browser.
 - **HTTP:** rsvp (browser `fetch` for `content_index.json`)
 - **Frontmatter / files:** tom (TOML parser), simplifile (build-time file I/O)
 - **JSON:** gleam_json
-- **Build/dev:** `bun build` (no Erlang/OTP required); `lustre_dev_tools` (dev)
+- **Build/dev:** `bun run build` (no Erlang/OTP required); `bun run dev` (dev)
+
+## Features
+
+- **File-based content model** — posts, pages, links, and projects are `.md` files under `content/` with TOML frontmatter
+- **Markdown rendering** — Markdown bodies are parsed at build time and stored as pre-rendered HTML in `content_index.json`
+- **GFM Markdown extensions** — tables, task lists, emoji shortcodes, autolinks, and footnotes are enabled through mork options
+- **9 routes**: `/`, `/posts`, `/posts/{slug}`, `/projects`, `/links`, `/tags`, `/tags/{name}`, `/{slug}` (standalone pages), and a 404 page
+- **3-state theme toggle** (Light / Dark / Auto) with `localStorage` persistence and `prefers-color-scheme` reactivity
+- **Cmd/Ctrl+K search** modal with keyboard navigation (toggle with `search_enabled`)
+- **Table of contents** with scroll-driven `IntersectionObserver` highlighting
+- **Floating ToC + Tags button** visible on **all screen sizes** — opens an overlay with the ToC tree and a Tags list for quick navigation
+- **Fancy code blocks** with copy button + language label
+- **4 shortcodes**: `note`, `character`, `image`, `mermaid`
+- **MathJax Rendering** toggle with `mathjax_enabled`
+- **Post cards** — each post on `/posts` is wrapped in a bordered card with a hover effect, with clickable tag pills between the title and content
+- **Page-jump input** — type a page number in the pagination bar and press Enter to jump straight to that page
+- **CJK-aware** slugify (punctuation-denylist, sequential fallback IDs) and word count (multi-byte characters counted as individual words)
+- **Weighted friend links** — `/links` supports Zola-style `weight`; lower values appear earlier, with deterministic lowercase-title fallback ordering
+- **Zola-compatible friend link fields** — links can use `[extra].link_to` and `[extra].remote_image`
+- **Multi-platform Git hosting** — the `Project` type has `github`, `gitlab`, `codeberg`, and `forgejo` fields so projects hosted on any of those platforms link correctly from the card footer
+- **SEO** meta, OpenGraph, Atom/RSS feeds, sitemap, `robots.txt`, and `llms.txt`
+- **Analytics**: GoatCounter, Umami (Google Analytics intentionally not supported)
+- **Comments**: Giscus, Utterances
+- **Inline CSS shell** — CSS modules are inlined into `index.html` and `404.html` to remove render-blocking stylesheet requests; `dist/css/` is still emitted for inspection/debugging
+- **Config toggles** — `sidebar_enabled`, `floating_buttons_enabled`, `search_enabled`, `rss_enabled`, `mathjax_enabled`, and `aratafetch_enabled` let you turn features on or off without touching view code
+- **Configurable logo and favicon** — both are configured from `src/config.gleam`
+- **Build pipeline**: `gleam run -m build/pipeline` → complete static site in `dist/` (no Erlang/OTP required)
+
+- **aratafetch** — optional neofetch-style ASCII site summary showing site title, published post count, total word count, unique tag count, friend link count, project count, and optional maintenance string
+
+- **Theme-Aware Accent Color** — switch by one botton between light <img src="https://placehold.co/15x15/5f7eea/5f7eea.png" width="15" height="15" alt="#5f7eea"> `#5f7eea` (Cornflower Blue) and dark <img src="https://placehold.co/15x15/2f4fa3/2f4fa3.png" width="15" height="15" alt="#2f4fa3"> `#2f4fa3` (Royal Azure).
 
 ### Dependencies
+
+- [Bun](https://bun.com/)
+- [Gleam](https://gleam.run/)
 
 | Package              | Version constraint            | Purpose |
 |----------------------|-------------------------------|---------|
@@ -44,57 +94,29 @@ No file system access happens in the browser.
 | `tom`                | `>= 2.1.0 and < 3.0.0`         | TOML frontmatter parser |
 | `rsvp`               | `>= 2.0.0 and < 3.0.0`         | HTTP (content index fetch) |
 | `gleeunit` *(dev)*   | `>= 1.0.0 and < 2.0.0`         | unit tests |
-| `lustre_dev_tools` *(dev)* | `>= 2.3.6 and < 3.0.0`    | dev server tooling |
-
-## Features
-
-- **File-based content model** — posts, pages, links, and projects are `.md` files under `content/` with TOML frontmatter.
-- **mork markdown rendering** — Markdown bodies are parsed at build time and stored as pre-rendered HTML in `content_index.json`.
-- **GFM Markdown extensions** — tables, task lists, emoji shortcodes, autolinks, and footnotes are enabled through mork options.
-- **9 routes**: `/`, `/posts`, `/posts/{slug}`, `/projects`, `/links`, `/tags`, `/tags/{name}`, `/{slug}` (standalone pages), and a 404.
-- **3-state theme toggle** (Light / Dark / Auto) with `localStorage` persistence and `prefers-color-scheme` reactivity.
-- **Cmd/Ctrl+K search** modal with keyboard navigation (toggle with `search_enabled`).
-- **Table of contents** with scroll-driven `IntersectionObserver` highlighting.
-- **Floating ToC + Tags button** visible on **all screen sizes** — opens an overlay with the ToC tree and a Tags list for quick navigation.
-- **Fancy code blocks** with copy button + language label.
-- **4 shortcodes**: `note`, `character`, `image`, `mermaid`.
-- **MathJax + Mermaid** rendering with theme-aware re-rendering (toggle with `mathjax_enabled`).
-- **Post cards** — each post on `/posts` is wrapped in a bordered card with a hover effect, with clickable tag pills between the title and content.
-- **Page-jump input** — type a page number in the pagination bar and press Enter to jump straight to that page.
-- **aratafetch homepage summary** — optional neofetch-style ASCII site summary showing site title, published post count, total word count, unique tag count, friend link count, project count, and optional maintenance string.
-- **CJK-aware** slugify (punctuation-denylist, sequential fallback IDs) and word count (multi-byte characters counted as individual words).
-- **Weighted friend links** — `/links` supports Zola-style `weight`; lower values appear earlier, with deterministic lowercase-title fallback ordering.
-- **Zola-compatible friend link fields** — links can use `[extra].link_to` and `[extra].remote_image`.
-- **Multi-platform Git hosting** — the `Project` type has `github`, `gitlab`, `codeberg`, and `forgejo` fields so projects hosted on any of those platforms link correctly from the card footer.
-- **SEO** meta, OpenGraph, Atom/RSS feeds, sitemap, `robots.txt`, and `llms.txt`.
-- **Analytics**: GoatCounter, Umami (Google Analytics intentionally not supported).
-- **Comments**: Giscus, Utterances.
-- **Inline CSS shell** — CSS modules are inlined into `index.html` and `404.html` to remove render-blocking stylesheet requests; `dist/css/` is still emitted for inspection/debugging.
-- **Config toggles** — `sidebar_enabled`, `floating_buttons_enabled`, `search_enabled`, `rss_enabled`, `mathjax_enabled`, and `aratafetch_enabled` let you turn features on or off without touching view code.
-- **Configurable logo and favicon** — both are configured from `src/config.gleam`.
-- **Build pipeline**: `gleam run -m build/pipeline` → complete static site in `dist/` (no Erlang/OTP required).
-
-- **Theme-Aware Accent Color** — switch by one botton between light <img src="https://placehold.co/15x15/5f7eea/5f7eea.png" width="15" height="15" alt="#5f7eea"> `#5f7eea` (Cornflower Blue) and dark <img src="https://placehold.co/15x15/2f4fa3/2f4fa3.png" width="15" height="15" alt="#2f4fa3"> `#2f4fa3` (Royal Azure).
-
 
 ## Quick start
 
 ```sh
-# Type-check and compile the project.
+# Type-check and compile the project
 gleam build
 
-# Run the test suite.
+# Run the test suite
 gleam test
 
-# Build a complete static site into dist/.
+# Build a complete static site into dist/
 gleam run -m build/pipeline
 
-# Serve dist/ locally and open it in a browser.
-# Use a static server that supports SPA deep-link fallback.
-nix run nixpkgs#http-server -- -p 8080 dist
+# Serve dist/ directory locally
+bun run dev
+
+# open in browser
+
+http://localhost:3333/
+
 ````
 
-The build pipeline is self-contained: it reads the `.md` files under `content/`, parses the TOML frontmatter with `tom`, renders the Markdown bodies with `mork`, serializes everything to `dist/content_index.json` and `dist/search_index.json`, emits feeds, sitemap, `robots.txt`, and `llms.txt`, writes `index.html` and `404.html` with inline CSS, copies `static/` to `dist/`, and bundles the SPA into `dist/app.mjs` via `bun build`.
+The build pipeline is self-contained: it reads the `.md` files under `content/`, parses the TOML frontmatter with `tom`, renders the Markdown bodies with `mork`, serializes everything to `dist/content_index.json` and `dist/search_index.json`, emits feeds, sitemap, `robots.txt`, and `llms.txt`, writes `index.html` and `404.html` with inline CSS, copies `static/` to `dist/`, and bundles the SPA into `dist/app.mjs` via `bun run build`.
 
 At runtime, the SPA fetches `/content_index.json` once on boot (`rsvp`), decodes it with `gleam/dynamic/decode`, and hands the typed content tree to the Lustre view layer. The browser never touches the file system.
 
@@ -174,20 +196,22 @@ tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app w
 +++
 
 Body in Markdown — parsed by mork at build time.
-``
+```
 
-| Directory               | Type    | Frontmatter                                                                                                   |
-| ----------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| `content/posts/*.md`    | Post    | `title`, `date`, `updated`?, `description`, `tags`?, `draft`?, `tldr`?                                        |
-| `content/pages/*.md`    | Page    | `title`, `subtitle`?                                                                                          |
-| `content/links/*.md`    | Link    | `title`, `url` or `[extra].link_to`, `description`, `image` or `[extra].remote_image`?, `weight`?             |
-| `content/projects/*.md` | Project | `title`, `description`, `link_to`?, `image`?, `github`?, `gitlab`?, `codeberg`?, `forgejo`?, `demo`?, `tags`? |
+| Directory               | Type    | Frontmatter                                                                                                 |
+| ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| `content/posts/*.md`    | Post    | `title`, `date`, `updated`, `description`, `tags`, `draft`, `tldr`                                          |
+| `content/pages/*.md`    | Page    | `title`, `subtitle`                                                                                         |
+| `content/links/*.md`    | Link    | `title`, `url` or `[extra].link_to`, `description`, `image` or `[extra].remote_image`, `weight`             |
+| `content/projects/*.md` | Project | `title`, `description`, `link_to`, `image`, `github`, `gitlab`, `codeberg`, `forgejo`, `demo`, `tags`       |
 
 The Markdown body is rendered to HTML by mork at build time and stored in `content_index.json`. The SPA fetches this JSON once at boot — there is no Markdown parsing in the browser.
 
+See [content-authoring.md](content/posts/content-authoring.md) for the full content authoring guide.
+
 ### Markdown support
 
-arata enables mork's extended options for:
+Arata enables mork's extended options for:
 
 * GFM tables
 * task list items
@@ -217,13 +241,13 @@ Arata also supports Zola-style fields:
 
 ```toml
 +++
-title = "Friend Blog"
+title = "A Friend's Blog"
 description = "A short description."
 weight = 6
 
 [extra]
 link_to = "https://friend.example.com"
-remote_image = "https://friend.example.com/avatar.png"
+remote_image = "https://friend.example.com/avatar.avif"
 +++
 ```
 
@@ -353,38 +377,29 @@ dist/
 └── images/
 ```
 
-`atom.xml` and `rss.xml` are only emitted when RSS is enabled. `sitemap.xml`, `robots.txt`, and `llms.txt` are emitted independently of RSS.
+`atom.xml` and `rss.xml` are only emitted when RSS is enabled.
 
-## Local preview
+`sitemap.xml`, `robots.txt`, and `llms.txt` are emitted independently of RSS.
 
-Use a static server that supports SPA deep-link fallback:
+## Local development
+
+Hot reload is supported:
 
 ```sh
-nix run nixpkgs#http-server -- -p 8080 dist
+bun run dev
 ```
 
 Then open:
 
 ```txt
-http://0.0.0.0:8080/
+http://localhost:3333/
 ```
 
-Avoid using Python's built-in static server for deep-link refresh testing:
-
-```sh
-python -m http.server --directory dist
-```
-
-It does not provide SPA fallback for routes such as `/posts/configuration`, `/about`, or `/tags/gleam`, and may return a server-level 404 before the SPA start.
+Write or update some content, the dev site of arata would automatically send refresh signal to browser.
 
 ## Deployment
 
-Serve `dist/` with any static file host (GitHub Pages, Cloudflare Pages, Netlify, Deno Deploy static hosting, etc.). Static hosts that serve `404.html` for unknown paths load the SPA shell directly on a deep-link refresh — modem reads the URL from the address bar and routes to the right post, so the URL is preserved verbatim and no redirect is needed.
-
-For SPA deep links, the host must either:
-
-1. serve `index.html` or `404.html` as a fallback for unknown paths, or
-2. provide actual route shell files for each route.
+Serve `dist/` with any static file host (Cloudflare Pages, Deno Deploy, Netlify, Vercel etc.)
 
 See [deployment.md](content/posts/deployment.md) for the full deployment guide.
 
@@ -400,8 +415,12 @@ The test suite covers routing, card behavior, feeds, data helpers, link weight o
 
 ## Origin
 
-`arata` reproduces the design and feature set of the `apollo` Zola theme as a Gleam/Lustre SPA. See [ROADMAP.md](ROADMAP.md) for the full mapping from apollo's templates and SCSS to Lustre views and plain CSS.
+Arata reproduces the design and feature set of the [apollo](https://github.com/not-matthias/apollo) Zola theme as a Gleam/Lustre SPA.
+
+See [ROADMAP.md](content/posts/ROADMAP.md) for the full mapping from apollo's templates and SCSS to Lustre views and plain CSS.
+
+BTW, you could trace latest version changes from [CHANGELOG.md](content/posts/CHANGELOG.md)
 
 ## License
 
-MIT
+This project is licensed under the **MIT license**. See [LICENSE](LICENSE) for more information.
