@@ -30,8 +30,11 @@
             bun
             gleam
           ];
+          bash.interactive = ''
+            export PS1='\[\033[38;5;14m\][arata]\[\033[0m\]\$ '
+          '';
           motd = ''
-            {202}Arata devshell{reset}
+            {14}Arata devshell{reset}
             {244}Bun + Gleam development environment{reset}
             {14}Toolchain{reset}
               bun $(${pkgs.bun}/bin/bun --version)
