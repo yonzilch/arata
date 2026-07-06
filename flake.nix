@@ -34,8 +34,8 @@
             {202}Arata devshell{reset}
             {244}Bun + Gleam development environment{reset}
             {14}Toolchain{reset}
-              bun     $(${pkgs.bun}/bin/bun --version)
-              gleam   $(${pkgs.gleam}/bin/gleam --version | head -n 1)
+              bun $(${pkgs.bun}/bin/bun --version)
+              $(${pkgs.gleam}/bin/gleam --version)
             {14}Available Bun scripts{reset}
             $(${pkgs.bun}/bin/bun --silent --eval '
               const { scripts = {} } = await Bun.file("package.json").json();
