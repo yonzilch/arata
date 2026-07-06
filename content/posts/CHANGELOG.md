@@ -23,6 +23,29 @@ easier to understand.
 
 ---
 
+## v1.6.3 - [2026-07-07]
+
+### Added
+
+- Add `README_zh-CN.md` for Simplified Chinese readers.
+
+### Changed
+
+- Improve the local development environment by simplifying the Nix devshell:
+  - The devshell now acts primarily as a Bun and Gleam toolchain provider.
+  - Available Bun scripts from `package.json` are displayed when entering the shell.
+  - Duplicated devshell project commands were removed in favor of `package.json` as the single source of truth.
+  - Toolchain version output and prompt styling were cleaned up.
+- Refine Gleam dependency version constraints.
+- Improve README and deployment documentation.
+- Rewrite the deployment guide's deployment section for clearer instructions.
+
+### Fixed
+
+- Fix the flake output argument pattern to accept implicit flake inputs.
+
+---
+
 ## v1.6.2-fix - [2026-07-05]
 
 A follow-up patch to v1.6.2 tightening up local build reproducibility.
