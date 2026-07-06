@@ -2,11 +2,12 @@
   "type": "module",
   "scripts": {
     "build": "gleam run -m build/pipeline",
-    "rebuild": "rm -rf dist && bun run build",
-    "serve": "bunx serve dist -l 3000",
+    "check": "gleam check && gleam test",
+    "clean": "rm -rf dist build",
     "dev": "bun run scripts/dev.ts",
     "preview": "bun run clean && bun run rebuild && bun run serve",
-    "check": "gleam check && gleam test",
-    "clean": "rm -rf dist build"
+    "rebuild": "rm -rf dist && bun run build",
+    "serve": "bunx serve dist -l 3000",
+    "test": "gleam test"
   }
 }
