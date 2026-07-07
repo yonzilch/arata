@@ -175,7 +175,7 @@ arata/
 ├── test/                      # unit tests
 ├── flake.nix                  # provide reproduceable development environment
 ├── gleam.toml                 # declare dependencies and metadata of project
-└── package.json               # declare all commands using in development
+└── package.json               # declare commands using in development
 
 ```
 

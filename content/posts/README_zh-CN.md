@@ -1,8 +1,8 @@
 +++
 title = "README_zh-CN"
-description = "Arata 中文版本 README（同时用于测试 HTML 与 CJK 渲染）； 此 README 可能无法反映项目最新变动情况"
+description = "Arata 中文版本 README（同时用于测试部分 HTML 与 CJK 渲染）； 此 README 可能无法反映项目最新变动情况"
 date = "2026-07-05"
-updated = "2026-07-05"
+updated = "2026-07-08"
 +++
 
 <div align="center">
@@ -180,10 +180,9 @@ arata/
 │   └── └── ...                # 其余视图组件
 ├── static/                    # 字体、图标、图片、第三方 CSS
 ├── test/                      # 单元测试
-├── gleam.toml
-├── manifest.toml
-├── ROADMAP.md
-└── CHANGELOG.md
+├── flake.nix                  # 提供可复现的开发环境
+├── gleam.toml                 # 声明项目依赖与元数据
+└── package.json               # 声明了开发过程使用的命令
 ```
 
 ## 内容编写
@@ -431,3 +430,21 @@ Arata 以 Gleam/Lustre SPA 的形式，复刻了 [apollo](https://github.com/not
 ## 许可协议
 
 本项目基于 **MIT 协议**开源，详情请参见 [LICENSE](https://github.com/yonzilch/arata/blob/main/LICENSE)。
+
+## Acknowledgments
+
+感谢原始上游 [apollo](https://github.com/not-matthias/apollo) 以及它的 fork [archie-zola](https://github.com/XXXMrG/archie-zola/)
+
+感谢 [archie-zola](https://github.com/XXXMrG/archie-zola/) 以及它的 fork [archie](https://github.com/athul/archie)
+
+感谢 [archie](https://github.com/athul/archie) 以及它的 fork [ezhil](https://github.com/vividvilla/ezhil)
+
+感谢 [Gleam Lang](https://github.com/gleam-lang/) 与闪耀 ✨ 的社区！
+
+Arata 的诞生离不开这些出色的仓库与项目！
+
+---
+
+<div align="center">
+  怀着热爱 ♥️ 和您的支持 🌟 进行开发
+</div>
