@@ -431,7 +431,7 @@ Arata 以 Gleam/Lustre SPA 的形式，复刻了 [apollo](https://github.com/not
 
 本项目基于 **MIT 协议**开源，详情请参见 [LICENSE](https://github.com/yonzilch/arata/blob/main/LICENSE)。
 
-## Acknowledgments
+## 致谢
 
 感谢原始上游 [apollo](https://github.com/not-matthias/apollo) 以及它的 fork [archie-zola](https://github.com/XXXMrG/archie-zola/)
 
