@@ -424,3 +424,21 @@ BTW, you could trace latest version changes from [CHANGELOG.md](content/posts/CH
 ## License
 
 This project is licensed under the **MIT license**. See [LICENSE](LICENSE) for more information.
+
+## Acknowledgments
+
+Thanks to original upstream [apollo](https://github.com/not-matthias/apollo) and its fork [archie-zola](https://github.com/XXXMrG/archie-zola/)
+
+Thanks to [archie-zola](https://github.com/XXXMrG/archie-zola/) and its fork [archie](https://github.com/athul/archie)
+
+Thanks to [archie](https://github.com/athul/archie) and its fork [ezhil](https://github.com/vividvilla/ezhil)
+
+Thanks to [Gleam Lang](https://github.com/gleam-lang/) and shine ✨ community!
+
+Arata can not born without these fantastic repositories and projects!
+
+---
+
+<div align="center">
+  Developing with ♥️ and your support 🌟
+</div>
