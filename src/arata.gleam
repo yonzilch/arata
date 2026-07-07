@@ -992,7 +992,7 @@ fn toc_fab_elements(model: Model) -> List(Element(Msg)) {
 
 fn view_loading() -> Element(Msg) {
   html.main([attribute.class("page-header")], [
-    html.div([], [html.text("Loading…")]),
+    // html.div([], [html.text("Loading…")]),
   ])
 }
 
