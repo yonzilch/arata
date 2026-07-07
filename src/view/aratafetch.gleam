@@ -123,15 +123,15 @@ fn render(stats: Stats) -> String {
         "    /_/    \\_\\",
         "",
       ],
+      optional_row("maintain", stats.maintain_for),
       positive_row("links", stats.link_count),
       positive_row("posts", stats.post_count),
       positive_row("words", stats.word_count),
       positive_row("projects", stats.project_count),
       positive_row("tags", stats.tag_count),
-      text_row("site_title", stats.site_title),
-      text_row("base_url", display_base_url(stats.base_url)),
+      text_row("site", stats.site_title),
+      text_row("url", display_base_url(stats.base_url)),
       text_row("description", stats.description),
-      optional_row("maintain", stats.maintain_for),
     ]),
     "\n",
   )
@@ -165,7 +165,6 @@ fn optional_row(label: String, value: Option(String)) -> List(String) {
 fn repeat(chunk: String, times: Int) -> String {
   case times <= 0 {
     True -> ""
-
     False -> chunk <> repeat(chunk, times - 1)
   }
 }
