@@ -1,7 +1,7 @@
 +++
 title = "CHANGELOG"
 date = "2026-06-21"
-updated = "2026-07-04"
+updated = "2026-07-08"
 description = "Comprehensive CHANGELOG of arata project"
 tags = ["docs"]
 +++
@@ -17,13 +17,22 @@ This changelog generally follows the Keep a Changelog structure, but the section
 names and grouping may be adjusted when needed to better reflect the actual
 changes in arata.
 
-For example, project-specific sections such as `Internal`,
-`Documentation`, `CI`, or `Contributors` may be used when they make a release
-easier to understand.
+For example, project-specific sections such as 
+`CI`, `Contributors`, `Documentation`, or `Internal` may be used when they make a release easier to understand.
 
 ---
 
-## v1.6.3 - [2026-07-07]
+## [1.6.4] — 2026-07-08
+
+### Changed
+
+- Update README and Simplified Chinese README documentation.
+- Remove the loading hint from the page header.
+- Adjust `aratafetch` output elements order.
+
+---
+
+## [v1.6.3] — 2026-07-07
 
 ### Added
 
@@ -46,7 +55,7 @@ easier to understand.
 
 ---
 
-## v1.6.2-fix - [2026-07-05]
+## [v1.6.2-fix] — 2026-07-05
 
 A follow-up patch to v1.6.2 tightening up local build reproducibility.
 
@@ -59,7 +68,7 @@ A follow-up patch to v1.6.2 tightening up local build reproducibility.
 
 ---
 
-## v1.6.2 - [2026-07-05]
+## [v1.6.2] — 2026-07-05
 
 A small but remarkable release focused on developer experience, project reproducibility, and brand asset cleanup.
 
@@ -79,7 +88,7 @@ This release makes local development smoother, CI feedback clearer, and brand as
 
 ---
 
-## [1.6.1] - [2026-07-04]
+## [1.6.1] — 2026-07-04
 
 ### Changed
 
@@ -94,7 +103,7 @@ This release makes local development smoother, CI feedback clearer, and brand as
 
 ---
 
-## v1.6.0 — [2026-07-04]
+## [v1.6.0] — 2026-07-04
 
 ### Added
 
@@ -126,7 +135,7 @@ This release makes local development smoother, CI feedback clearer, and brand as
 
 ---
 
-## v1.5.0 — [2026-06-29]
+## [v1.5.0] — 2026-06-29
 
 ### Changed
 
