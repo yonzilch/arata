@@ -3,7 +3,7 @@ title = ""
 subtitle = "Welcome to demo site of arata"
 +++
 
-> Arata is a modern and minimalistic blog theme powered by Gleam and Lustre.
+> Arata is a modern and minimalistic blog theme powered by Gleam and Lustre
 
 ## Features
 
@@ -28,8 +28,8 @@ subtitle = "Welcome to demo site of arata"
 
 1. **Prepare environment**
 
-- [Gleam](https://github.com/gleam-lang/gleam)
-- [Bun](https://github.com/oven-sh/bun)
+- [Gleam](https://gleam.run/)
+- [Bun](https://bun.com/)
 
 2. **Clone the project**
 
@@ -39,10 +39,10 @@ git clone https://github.com/yonzilch/arata.git
 cd arata
 ```
 
-3. **Build the site**
+3. **Develop the site**
 
 ```shell
-gleam run -m build/pipeline
+bun run dev
 ```
 
 4. **Write content as markdown files in**
