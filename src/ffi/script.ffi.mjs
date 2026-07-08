@@ -15,6 +15,7 @@
 // - Runtime asset URLs come from config.gleam via effect/script.gleam.
 // - Local fallback URLs are used only when old callers pass no URL.
 // - Script load/render failures must not crash the SPA.
+// - MathJax must not be loaded on posts without TeX.
 // - Mermaid source must be stored per DOM node, not globally by index.
 // - Mermaid source extraction must use textContent and decode HTML entities.
 // - Mermaid rendering must be idempotent across route changes and theme changes.
@@ -100,6 +101,65 @@ function configure_mathjax() {
       typeset: false,
     },
   };
+}
+
+function get_math_scan_root() {
+  return (
+    document.querySelector("article") ||
+    document.querySelector("main") ||
+    document.querySelector(".content") ||
+    document.body
+  );
+}
+
+function text_without_skipped_math_nodes(root) {
+  if (!root) return "";
+
+  const clone = root.cloneNode(true);
+
+  clone
+    .querySelectorAll(
+      [
+        "script",
+        "noscript",
+        "style",
+        "textarea",
+        "pre",
+        "code",
+        ".mermaid",
+        "[data-arata-mermaid='true']",
+      ].join(","),
+    )
+    .forEach((node) => node.remove());
+
+  return clone.textContent || "";
+}
+
+function has_likely_inline_dollar_math(text) {
+  const matches = text.match(/\$([^\s$][^$\n]*?[^\s$])\$/g);
+
+  if (!matches) return false;
+
+  return matches.some((match) => {
+    const body = match.slice(1, -1);
+
+    if (/^\d+(\.\d+)?$/.test(body.trim())) return false;
+
+    return /[\\^_=+\-*/{}()[\]]/.test(body);
+  });
+}
+
+function has_math_content() {
+  const root = get_math_scan_root();
+  const text = text_without_skipped_math_nodes(root);
+
+  if (text.trim().length === 0) return false;
+
+  if (/\$\$[\s\S]+?\$\$/.test(text)) return true;
+  if (/\\\([\s\S]+?\\\)/.test(text)) return true;
+  if (/\\\[[\s\S]+?\\\]/.test(text)) return true;
+
+  return has_likely_inline_dollar_math(text);
 }
 
 function remove_stale_mathjax_script(target_url) {
@@ -199,6 +259,8 @@ export function typeset_math(mathjax_url = DEFAULT_MATHJAX_URL) {
   const url = normalize_url(mathjax_url, DEFAULT_MATHJAX_URL);
 
   after_dom_patch(() => {
+    if (!has_math_content()) return;
+
     load_mathjax(url)
       .then(run_mathjax_typeset)
       .catch((error) => {
@@ -310,6 +372,7 @@ function normalize_legacy_mermaid_containers() {
   const containers = Array.from(
     document.querySelectorAll("pre.mermaid, div.mermaid"),
   );
+
   let normalized_count = 0;
 
   for (const container of containers) {
@@ -330,14 +393,12 @@ function normalize_legacy_mermaid_containers() {
 }
 
 function collect_mermaid_blocks() {
-  const normalized_code_count = normalize_mermaid_code_nodes();
-  const normalized_legacy_count = normalize_legacy_mermaid_containers();
+  normalize_mermaid_code_nodes();
+  normalize_legacy_mermaid_containers();
 
-  const blocks = Array.from(document.querySelectorAll(".mermaid")).filter(
+  return Array.from(document.querySelectorAll(".mermaid")).filter(
     (block) => get_mermaid_source(block).trim().length > 0,
   );
-
-  return blocks;
 }
 
 function reset_mermaid_block(block) {
@@ -371,6 +432,28 @@ function load_mermaid(mermaid_url) {
   });
 
   return mermaid_module_promise;
+}
+
+function resolve_mermaid_api(module) {
+  const candidates = [
+    module && module.default,
+    module,
+    module && module.mermaid,
+    module && module.default && module.default.default,
+    typeof window !== "undefined" && window.mermaid,
+  ];
+
+  for (const candidate of candidates) {
+    if (
+      candidate &&
+      typeof candidate.initialize === "function" &&
+      typeof candidate.render === "function"
+    ) {
+      return candidate;
+    }
+  }
+
+  throw new Error("Loaded Mermaid module does not expose initialize/render");
 }
 
 async function render_mermaid_block(mermaid, block, theme) {
@@ -421,7 +504,7 @@ async function render_mermaid_now(is_dark, mermaid_url) {
   }
 
   const module = await load_mermaid(mermaid_url);
-  const mermaid = module.default || module;
+  const mermaid = resolve_mermaid_api(module);
   const theme = is_dark ? "dark" : "neutral";
 
   mermaid.initialize({
