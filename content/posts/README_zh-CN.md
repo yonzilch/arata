@@ -433,11 +433,11 @@ Arata 以 Gleam/Lustre SPA 的形式，复刻了 [apollo](https://github.com/not
 
 ## 致谢
 
-感谢原始上游 [apollo](https://github.com/not-matthias/apollo) 以及它的 fork [archie-zola](https://github.com/XXXMrG/archie-zola/)
+感谢原始上游 [apollo](https://github.com/not-matthias/apollo) 及其最初的 fork 分支 [archie-zola](https://github.com/XXXMrG/archie-zola/)
 
-感谢 [archie-zola](https://github.com/XXXMrG/archie-zola/) 以及它的 fork [archie](https://github.com/athul/archie)
+感谢 [archie-zola](https://github.com/XXXMrG/archie-zola/) 及其最初的 fork 分支 [archie](https://github.com/athul/archie)
 
-感谢 [archie](https://github.com/athul/archie) 以及它的 fork [ezhil](https://github.com/vividvilla/ezhil)
+感谢 [archie](https://github.com/athul/archie) 及其最初的 fork 分支 [ezhil](https://github.com/vividvilla/ezhil)
 
 感谢 [Gleam Lang](https://github.com/gleam-lang/) 与闪耀 ✨ 的社区！
 

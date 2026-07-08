@@ -427,11 +427,11 @@ This project is licensed under the **MIT license**. See [LICENSE](LICENSE) for m
 
 ## Acknowledgments
 
-Thanks to original upstream [apollo](https://github.com/not-matthias/apollo) and its fork [archie-zola](https://github.com/XXXMrG/archie-zola/)
+Thanks to original upstream [apollo](https://github.com/not-matthias/apollo) and its initial fork [archie-zola](https://github.com/XXXMrG/archie-zola/)
 
-Thanks to [archie-zola](https://github.com/XXXMrG/archie-zola/) and its fork [archie](https://github.com/athul/archie)
+Thanks to [archie-zola](https://github.com/XXXMrG/archie-zola/) and its initial fork [archie](https://github.com/athul/archie)
 
-Thanks to [archie](https://github.com/athul/archie) and its fork [ezhil](https://github.com/vividvilla/ezhil)
+Thanks to [archie](https://github.com/athul/archie) and its initial fork [ezhil](https://github.com/vividvilla/ezhil)
 
 Thanks to [Gleam Lang](https://github.com/gleam-lang/) and shine ✨ community!
 
