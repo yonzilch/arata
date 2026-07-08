@@ -1,27 +1,29 @@
 // arata — script FFI: runtime enhancement for MathJax and Mermaid.
 //
-// This module intentionally does not hard-code public CDN URLs as defaults.
-// Runtime asset URLs should come from config.gleam. If an older Gleam caller
-// still invokes these functions without arguments, the fallback is local static
-// assets under /js/, not an external CDN.
+// Runtime enhancement responsibilities:
+// - MathJax: typeset inline/block TeX after the SPA has patched the DOM.
+// - Mermaid: render native fenced Markdown code blocks and legacy shortcode
+//   containers after the SPA has patched the DOM.
 //
-// Supported inputs:
-// - MathJax: inline/block TeX already present in rendered post HTML.
-// - Mermaid: native fenced Markdown code blocks rendered as
-//   <pre><code class="language-mermaid">...</code></pre>.
-// - Mermaid legacy shortcode output that already produces .mermaid.
+// Supported Mermaid inputs:
+// - <pre><code class="language-mermaid">...</code></pre>
+// - <code class="language-mermaid">...</code>
+// - <pre class="mermaid">...</pre>
+// - <div class="mermaid">...</div>
 //
 // Important invariants:
-// - CDN or local script load failures must not crash the SPA.
-// - MathJax must run after the SPA has patched the post DOM.
-// - Mermaid source must be read from textContent, not innerHTML.
-// - Mermaid original source is stored per DOM node, not by global array index.
-// - Re-rendering for dark/light theme must be deterministic and idempotent.
+// - Runtime asset URLs come from config.gleam via effect/script.gleam.
+// - Local fallback URLs are used only when old callers pass no URL.
+// - Script load/render failures must not crash the SPA.
+// - Mermaid source must be stored per DOM node, not globally by index.
+// - Mermaid source extraction must use textContent and decode HTML entities.
+// - Mermaid rendering must be idempotent across route changes and theme changes.
 
 const DEFAULT_MATHJAX_URL = "/js/tex-mml-chtml.js";
 const DEFAULT_MERMAID_URL = "/js/mermaid.esm.min.mjs";
 
 const MATHJAX_SCRIPT_ID = "MathJax-script";
+const MERMAID_OBSERVE_TIMEOUT_MS = 1500;
 
 let mathjax_loading_promise = null;
 let mathjax_loading_url = null;
@@ -29,6 +31,8 @@ let mathjax_loading_url = null;
 let mermaid_module_promise = null;
 let mermaid_module_url = null;
 let mermaid_render_counter = 0;
+let mermaid_observer = null;
+let mermaid_observer_timer = null;
 
 function normalize_url(url, fallback) {
   if (typeof url !== "string") return fallback;
@@ -57,11 +61,18 @@ function after_dom_patch(callback) {
   });
 }
 
-function log_debug(message, value) {
-  if (typeof console === "undefined") return;
+function decode_html_entities(value) {
+  if (typeof document === "undefined") return value;
+  if (typeof value !== "string" || value.length === 0) return value;
 
-  console.debug(`[arata] ${message}`, value);
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = value;
+  return textarea.value;
 }
+
+// -----------------------------------------------------------------------------
+// MathJax
+// -----------------------------------------------------------------------------
 
 function configure_mathjax() {
   const existing = window.MathJax || {};
@@ -120,8 +131,6 @@ function remove_stale_mathjax_script(target_url) {
 function load_mathjax(mathjax_url) {
   const url = normalize_url(mathjax_url, DEFAULT_MATHJAX_URL);
 
-  log_debug("MathJax requested URL:", url);
-
   if (window.MathJax && window.MathJax.typesetPromise) {
     return Promise.resolve(window.MathJax);
   }
@@ -161,7 +170,6 @@ function load_mathjax(mathjax_url) {
     script.src = url;
 
     script.onload = () => {
-      log_debug("MathJax loaded from:", script.src);
       resolve(window.MathJax);
     };
 
@@ -199,13 +207,47 @@ export function typeset_math(mathjax_url = DEFAULT_MATHJAX_URL) {
   });
 }
 
-function is_mermaid_code_block(code) {
-  if (!code || !code.classList) return false;
+// -----------------------------------------------------------------------------
+// Mermaid
+// -----------------------------------------------------------------------------
 
-  return (
-    code.classList.contains("language-mermaid") ||
-    code.classList.contains("mermaid")
-  );
+function get_code_language(code) {
+  if (!code) return "";
+
+  const data_lang = code.getAttribute("data-lang");
+
+  if (data_lang && data_lang.trim() !== "") {
+    return data_lang.trim().toLowerCase();
+  }
+
+  for (const class_name of code.classList || []) {
+    if (class_name === "mermaid") return "mermaid";
+
+    if (class_name.startsWith("language-")) {
+      return class_name.slice("language-".length).trim().toLowerCase();
+    }
+  }
+
+  return "";
+}
+
+function is_mermaid_code_node(node) {
+  if (!node || !node.classList) return false;
+
+  if (node.classList.contains("mermaid")) return true;
+  if (node.classList.contains("language-mermaid")) return true;
+
+  return get_code_language(node) === "mermaid";
+}
+
+function is_legacy_mermaid_container(node) {
+  if (!node || !node.classList) return false;
+
+  if (!node.classList.contains("mermaid")) return false;
+
+  const tag = node.tagName ? node.tagName.toLowerCase() : "";
+
+  return tag === "pre" || tag === "div";
 }
 
 function get_mermaid_source(element) {
@@ -215,9 +257,13 @@ function get_mermaid_source(element) {
     return element.dataset.arataMermaidSource;
   }
 
-  // textContent decodes escaped HTML entities from the rendered Markdown.
-  // Example: "--&gt;" becomes "-->", which Mermaid can parse correctly.
-  return element.textContent || "";
+  const raw = element.textContent || "";
+
+  // mork/CommonMark code output can preserve author-written entities.
+  // Decode Mermaid source so diagrams copied from escaped README HTML still work:
+  //   --&gt;      -> -->
+  //   &lt;br/&gt; -> <br/>
+  return decode_html_entities(raw);
 }
 
 function set_mermaid_source(element, source) {
@@ -226,16 +272,21 @@ function set_mermaid_source(element, source) {
   element.dataset.arataMermaidSource = source;
 }
 
-function normalize_mermaid_code_blocks() {
-  const code_blocks = Array.from(document.querySelectorAll("pre > code"));
+function normalize_mermaid_code_nodes() {
+  const code_nodes = Array.from(
+    document.querySelectorAll("code.language-mermaid, code.mermaid, pre code"),
+  );
 
-  for (const code of code_blocks) {
-    if (!is_mermaid_code_block(code)) continue;
+  let normalized_count = 0;
 
-    const pre = code.parentElement;
-    if (!pre) continue;
+  for (const code of code_nodes) {
+    if (!is_mermaid_code_node(code)) continue;
 
+    const pre = code.closest("pre");
     const source = get_mermaid_source(code).trim();
+
+    if (source.length === 0) continue;
+
     const container = document.createElement("div");
 
     container.className = "mermaid";
@@ -243,32 +294,50 @@ function normalize_mermaid_code_blocks() {
     set_mermaid_source(container, source);
     container.textContent = source;
 
-    pre.replaceWith(container);
-  }
-}
-
-function normalize_existing_mermaid_blocks() {
-  const blocks = Array.from(document.getElementsByClassName("mermaid"));
-
-  for (const block of blocks) {
-    if (!block.dataset) continue;
-
-    if (!block.dataset.arataMermaidSource) {
-      const source = get_mermaid_source(block).trim();
-      set_mermaid_source(block, source);
+    if (pre) {
+      pre.replaceWith(container);
+    } else {
+      code.replaceWith(container);
     }
 
-    block.dataset.arataMermaid = "true";
+    normalized_count += 1;
   }
+
+  return normalized_count;
+}
+
+function normalize_legacy_mermaid_containers() {
+  const containers = Array.from(
+    document.querySelectorAll("pre.mermaid, div.mermaid"),
+  );
+  let normalized_count = 0;
+
+  for (const container of containers) {
+    if (!is_legacy_mermaid_container(container)) continue;
+    if (!container.dataset) continue;
+
+    if (!container.dataset.arataMermaidSource) {
+      const source = get_mermaid_source(container).trim();
+      set_mermaid_source(container, source);
+      container.textContent = source;
+    }
+
+    container.dataset.arataMermaid = "true";
+    normalized_count += 1;
+  }
+
+  return normalized_count;
 }
 
 function collect_mermaid_blocks() {
-  normalize_mermaid_code_blocks();
-  normalize_existing_mermaid_blocks();
+  const normalized_code_count = normalize_mermaid_code_nodes();
+  const normalized_legacy_count = normalize_legacy_mermaid_containers();
 
-  return Array.from(document.getElementsByClassName("mermaid")).filter(
+  const blocks = Array.from(document.querySelectorAll(".mermaid")).filter(
     (block) => get_mermaid_source(block).trim().length > 0,
   );
+
+  return blocks;
 }
 
 function reset_mermaid_block(block) {
@@ -285,8 +354,6 @@ function reset_mermaid_block(block) {
 
 function load_mermaid(mermaid_url) {
   const url = normalize_url(mermaid_url, DEFAULT_MERMAID_URL);
-
-  log_debug("Mermaid requested URL:", url);
 
   if (
     mermaid_module_promise &&
@@ -339,8 +406,79 @@ async function render_mermaid_block(mermaid, block, theme) {
     block.dataset.arataMermaidError = "true";
     block.textContent = source;
 
-    console.warn("[arata] Mermaid render failed:", error);
+    console.warn("[arata] Mermaid render failed:", {
+      error,
+      source,
+    });
   }
+}
+
+async function render_mermaid_now(is_dark, mermaid_url) {
+  const blocks = collect_mermaid_blocks();
+
+  if (blocks.length === 0) {
+    return 0;
+  }
+
+  const module = await load_mermaid(mermaid_url);
+  const mermaid = module.default || module;
+  const theme = is_dark ? "dark" : "neutral";
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme,
+    securityLevel: "loose",
+    flowchart: {
+      htmlLabels: true,
+    },
+  });
+
+  for (const block of blocks) {
+    await render_mermaid_block(mermaid, block, theme);
+  }
+
+  return blocks.length;
+}
+
+function stop_mermaid_observer() {
+  if (mermaid_observer) {
+    mermaid_observer.disconnect();
+    mermaid_observer = null;
+  }
+
+  if (mermaid_observer_timer) {
+    window.clearTimeout(mermaid_observer_timer);
+    mermaid_observer_timer = null;
+  }
+}
+
+function observe_until_mermaid_blocks_exist(is_dark, mermaid_url) {
+  stop_mermaid_observer();
+
+  mermaid_observer = new MutationObserver(() => {
+    render_mermaid_now(is_dark, mermaid_url)
+      .then((count) => {
+        if (count > 0) {
+          stop_mermaid_observer();
+        }
+      })
+      .catch((error) => {
+        console.warn("[arata] Mermaid render failed:", error);
+        stop_mermaid_observer();
+      });
+  });
+
+  mermaid_observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  mermaid_observer_timer = window.setTimeout(() => {
+    render_mermaid_now(is_dark, mermaid_url).catch((error) => {
+      console.warn("[arata] Mermaid render failed:", error);
+    });
+    stop_mermaid_observer();
+  }, MERMAID_OBSERVE_TIMEOUT_MS);
 }
 
 export function render_mermaid(is_dark, mermaid_url = DEFAULT_MERMAID_URL) {
@@ -349,26 +487,14 @@ export function render_mermaid(is_dark, mermaid_url = DEFAULT_MERMAID_URL) {
   const url = normalize_url(mermaid_url, DEFAULT_MERMAID_URL);
 
   after_dom_patch(() => {
-    const blocks = collect_mermaid_blocks();
-    if (blocks.length === 0) return;
+    render_mermaid_now(is_dark, url)
+      .then((count) => {
+        if (count > 0) return;
 
-    load_mermaid(url)
-      .then(async (module) => {
-        const mermaid = module.default || module;
-        const theme = is_dark ? "dark" : "neutral";
-
-        mermaid.initialize({
-          startOnLoad: false,
-          theme,
-          securityLevel: "strict",
-        });
-
-        for (const block of blocks) {
-          await render_mermaid_block(mermaid, block, theme);
-        }
+        observe_until_mermaid_blocks_exist(is_dark, url);
       })
       .catch((error) => {
-        console.warn("[arata] Mermaid load failed:", error);
+        console.warn("[arata] Mermaid load/render failed:", error);
       });
   });
 }

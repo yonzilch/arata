@@ -4,7 +4,22 @@
 // This enhancer is intentionally idempotent and timing-tolerant. Lustre route
 // effects can run before unsafe_raw_html has been patched into the DOM, so this
 // module schedules enhancement after paint and also observes DOM mutations
-// briefly until `pre > code` nodes appear.
+// briefly until enhanceable `pre > code` nodes appear.
+//
+// Mermaid fenced blocks are intentionally skipped here. A Markdown block like:
+//
+//   ```mermaid
+//   graph TD
+//     A --> B
+//   ```
+//
+// is initially rendered as:
+//
+//   <pre><code class="language-mermaid">...</code></pre>
+//
+// That block must remain untouched for `script.ffi.mjs` to normalize and render
+// with Mermaid. Adding copy buttons or language labels before Mermaid runs can
+// create route/theme rerender races and pollute the diagram source.
 
 const copyIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M10 1.5a.5.5 0 0 1 .5-.5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h2a.5.5 0 0 1 .5.5V3h3V1.5zM6.5 3V2h3v1h-3zm4 0v1h2a1 1 0 0 0-1-1h-2V3zm-5 0H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H5.5V3z"/></svg>`;
 const successIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M13.485 1.85a.5.5 0 0 1 1.065.02.75.75 0 0 1-.02 1.065L5.82 12.78a.75.75 0 0 1-1.106.02L1.476 9.346a.75.75 0 1 1 1.05-1.07l2.74 2.742L12.44 2.92a.75.75 0 0 1 1.045-.07z"/></svg>`;
@@ -17,6 +32,8 @@ let observer = null;
 let observerTimer = null;
 
 export function enhance_code_blocks() {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
   if (scheduled) return;
   scheduled = true;
 
@@ -24,9 +41,8 @@ export function enhance_code_blocks() {
     scheduled = false;
 
     const enhanced = enhanceNow();
-    const hasBlocks = document.querySelector("pre code") !== null;
 
-    if (enhanced > 0 || hasBlocks) {
+    if (enhanced > 0 || hasEnhanceableCodeBlocks()) {
       stopObserver();
       return;
     }
@@ -36,8 +52,8 @@ export function enhance_code_blocks() {
 }
 
 function afterPaint(callback) {
-  requestAnimationFrame(() => {
-    requestAnimationFrame(callback);
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(callback);
   });
 }
 
@@ -46,9 +62,8 @@ function observeUntilCodeBlocksExist() {
 
   observer = new MutationObserver(() => {
     const enhanced = enhanceNow();
-    const hasBlocks = document.querySelector("pre code") !== null;
 
-    if (enhanced > 0 || hasBlocks) {
+    if (enhanced > 0 || hasEnhanceableCodeBlocks()) {
       stopObserver();
     }
   });
@@ -76,6 +91,18 @@ function stopObserver() {
   }
 }
 
+function hasEnhanceableCodeBlocks() {
+  return Array.from(document.querySelectorAll("pre code")).some((codeBlock) => {
+    const pre = codeBlock.parentElement;
+
+    if (!pre) return false;
+    if (isMermaidCodeBlock(codeBlock, pre)) return false;
+    if (pre.dataset.arataCodeEnhanced === "true") return false;
+
+    return true;
+  });
+}
+
 function enhanceNow() {
   const blocks = document.querySelectorAll("pre code");
   let enhancedCount = 0;
@@ -83,6 +110,8 @@ function enhanceNow() {
   blocks.forEach((codeBlock) => {
     const pre = codeBlock.parentElement;
     if (!pre) return;
+
+    if (isMermaidCodeBlock(codeBlock, pre)) return;
 
     if (pre.dataset.arataCodeEnhanced === "true") return;
     if (pre.querySelector(".clipboard-button")) {
@@ -116,7 +145,7 @@ function enhanceNow() {
 
     pre.appendChild(copyBtn);
 
-    const lang = codeBlock.getAttribute("data-lang") || "default";
+    const lang = getCodeLanguage(codeBlock);
     const safeLang = normalizeLanguageClass(lang);
 
     const label = document.createElement("span");
@@ -131,6 +160,40 @@ function enhanceNow() {
   });
 
   return enhancedCount;
+}
+
+function isMermaidCodeBlock(codeBlock, pre) {
+  const lang = getCodeLanguage(codeBlock);
+
+  if (normalizeLanguageClass(lang) === "mermaid") return true;
+
+  if (codeBlock.classList.contains("language-mermaid")) return true;
+  if (codeBlock.classList.contains("mermaid")) return true;
+  if (pre.classList.contains("mermaid")) return true;
+  if (pre.dataset.arataMermaid === "true") return true;
+  if (codeBlock.dataset.arataMermaid === "true") return true;
+
+  return false;
+}
+
+function getCodeLanguage(codeBlock) {
+  const dataLang = codeBlock.getAttribute("data-lang");
+
+  if (dataLang && dataLang.trim() !== "") {
+    return dataLang.trim();
+  }
+
+  for (const className of codeBlock.classList) {
+    if (className.startsWith("language-")) {
+      const lang = className.slice("language-".length).trim();
+
+      if (lang !== "") {
+        return lang;
+      }
+    }
+  }
+
+  return "default";
 }
 
 function pinOnHorizontalScroll(pre, copyBtn, label) {
