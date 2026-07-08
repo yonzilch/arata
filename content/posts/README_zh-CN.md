@@ -64,8 +64,9 @@ flowchart TD
 - **目录（ToC）** —— 基于滚动位置的 `IntersectionObserver` 高亮
 - **悬浮式目录 + 标签按钮**，在**所有屏幕尺寸**下均可见 —— 打开一个包含目录树和标签列表的浮层，方便快速导航
 - **精美代码块**，带有复制按钮和语言标签
-- **4 种短代码**：`note`、`character`、`image`、`mermaid`
+- **4 种短代码**：`note`、`character`、`image`
 - **MathJax 渲染**开关，通过 `mathjax_enabled` 控制
+- **Mermaid 图表** — 使用原生 Markdown 带围栏的代码块，并采用 `mermaid` 语言进行客户端渲染
 - **文章卡片** —— `/posts` 页面上每篇文章都包裹在带悬浮效果的边框卡片中，标题与正文之间是可点击的标签胶囊
 - **页码跳转输入框** —— 在分页栏中输入页码并按下回车即可直接跳转到该页
 - **CJK 友好**的 slugify（标点符号黑名单、连续编号的 ID 兜底方案）以及字数统计（多字节字符按单个词计算）
@@ -174,7 +175,7 @@ arata/
 │   │   └── markdown.gleam     # mork -> HTML 包装器，附带扩展选项
 │   ├── effect/                # 受控的副作用（FFI）
 │   ├── ffi/                   # JavaScript FFI
-│   │── shortcodes/            # note、character、image、mermaid
+│   │── shortcodes/            # note、character、image
 │   ├── view/                  # 页面与组件视图
 │   │   ├── aratafetch.gleam   # 首页 ASCII 摘要组件
 │   └── └── ...                # 其余视图组件
