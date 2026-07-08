@@ -80,16 +80,24 @@ pub type Config {
     /// This mirrors `SiteMeta.analytics` so analytics can be configured from
     /// `config.gleam` rather than only from `data/site.gleam`.
     analytics: Analytics,
-    /// Whether MathJax typesetting runs on post pages. When `False`, the
-    /// MathJax typeset effect is skipped (no MathJax script injection/queue
-    /// on post navigation) — useful when no post uses LaTeX. Defaults to
-    /// `False` to avoid loading MathJax unless explicitly opted in.
+    /// Whether MathJax typesetting is allowed on post pages. When `False`, the
+    /// MathJax typeset effect is skipped entirely. When `True`, the JavaScript
+    /// FFI still lazy-loads MathJax only if the rendered post content contains
+    /// likely TeX delimiters, avoiding unnecessary runtime cost on posts without
+    /// math. Defaults to `False` unless LaTeX rendering is needed.
     mathjax_enabled: Bool,
-    /// CDN URL used by the MathJax runtime enhancement. This is passed to the
+    /// Runtime asset URL used by the MathJax enhancement. This is passed to the
     /// JavaScript FFI so users can replace jsDelivr with another CDN or a
     /// vendored local asset.
     mathjax_cdn_url: String,
+    /// Whether Mermaid diagram rendering is allowed on post pages. When `True`,
+    /// Arata renders native Markdown fenced code blocks such as ```mermaid and
+    /// keeps compatibility with legacy Mermaid shortcode output. When `False`,
+    /// no Mermaid runtime module is imported.
     mermaid_enabled: Bool,
+    /// Runtime asset URL used by the Mermaid enhancement. This must point to a
+    /// browser-importable ESM bundle exposing Mermaid's `initialize` and
+    /// `render` APIs, such as jsDelivr's `mermaid.esm.min.mjs`.
     mermaid_cdn_url: String,
     /// Whether the right sidebar (Tags + ToC) is rendered on post pages.
     /// When `False`, `view_tags_and_toc` is omitted so the post body takes
