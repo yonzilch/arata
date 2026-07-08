@@ -22,6 +22,43 @@ For example, project-specific sections such as
 
 ---
 
+## [v1.6.5] - 2026-07-08
+
+### Added
+
+- Added native Mermaid diagram rendering via Markdown fenced code blocks:
+
+  ```mermaid
+  flowchart TD
+    A --> B
+  ```
+
+* Added configurable runtime asset URLs for MathJax and Mermaid:
+  * `mathjax_cdn_url`
+  * `mermaid_cdn_url`
+
+* Added `mermaid_enabled` to control Mermaid runtime loading.
+
+### Changed
+
+* Mermaid diagrams are now a first-class Markdown feature instead of a shortcode feature.
+* MathJax is now lazy-loaded only when rendered post content appears to contain TeX.
+* Runtime script loading now flows through config → effect → FFI instead of relying on hardcoded URLs.
+* Updated README and shortcode documentation to reflect native Mermaid fenced-block usage.
+
+### Fixed
+
+* Fixed native ` ```mermaid ` fenced blocks not rendering in post content.
+* Fixed Mermaid rendering timing after SPA DOM updates.
+* Fixed Mermaid blocks being decorated by the regular code-block enhancer before rendering.
+* Fixed Mermaid-only posts unnecessarily loading MathJax.
+
+### Removed
+
+* `src/shortcodes/mermaid.gleam`
+
+---
+
 ## [1.6.4] — 2026-07-08
 
 ### Changed
