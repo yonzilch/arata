@@ -57,8 +57,9 @@ flowchart TD
 - **Table of contents** with scroll-driven `IntersectionObserver` highlighting
 - **Floating ToC + Tags button** visible on **all screen sizes** — opens an overlay with the ToC tree and a Tags list for quick navigation
 - **Fancy code blocks** with copy button + language label
-- **4 shortcodes**: `note`, `character`, `image`, `mermaid`
+- **3 shortcodes**: `note`, `character`, `image`
 - **MathJax Rendering** toggle with `mathjax_enabled`
+- **Mermaid diagrams** — use native Markdown fenced code blocks with `mermaid` language for client-side rendering
 - **Post cards** — each post on `/posts` is wrapped in a bordered card with a hover effect, with clickable tag pills between the title and content
 - **Page-jump input** — type a page number in the pagination bar and press Enter to jump straight to that page
 - **CJK-aware** slugify (punctuation-denylist, sequential fallback IDs) and word count (multi-byte characters counted as individual words)
@@ -167,7 +168,7 @@ arata/
 │   │   └── markdown.gleam     # mork -> HTML wrapper with extension options
 │   ├── effect/                # managed side effects (FFI)
 │   ├── ffi/                   # JavaScript FFI
-│   │── shortcodes/            # note, character, image, mermaid
+│   │── shortcodes/            # note, character, image
 │   ├── view/                  # page + component views
 │   │   ├── aratafetch.gleam   # homepage ASCII summary component
 │   └── └── ...                # remaining view components
