@@ -186,7 +186,7 @@ pub fn default() -> Config {
     mathjax_enabled: True,
     mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
     mermaid_enabled: True,
-    mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js",
+    mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
     sidebar_enabled: True,
     floating_buttons_enabled: True,
     aratafetch_enabled: True,
