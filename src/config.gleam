@@ -85,6 +85,12 @@ pub type Config {
     /// on post navigation) — useful when no post uses LaTeX. Defaults to
     /// `False` to avoid loading MathJax unless explicitly opted in.
     mathjax_enabled: Bool,
+    /// CDN URL used by the MathJax runtime enhancement. This is passed to the
+    /// JavaScript FFI so users can replace jsDelivr with another CDN or a
+    /// vendored local asset.
+    mathjax_cdn_url: String,
+    mermaid_enabled: Bool,
+    mermaid_cdn_url: String,
     /// Whether the right sidebar (Tags + ToC) is rendered on post pages.
     /// When `False`, `view_tags_and_toc` is omitted so the post body takes
     /// the full content width. Defaults to `True` so the sidebar shows on
@@ -178,6 +184,9 @@ pub fn default() -> Config {
     navbar_fixed: True,
     analytics: AnalyticsDisabled,
     mathjax_enabled: True,
+    mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
+    mermaid_enabled: True,
+    mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js",
     sidebar_enabled: True,
     floating_buttons_enabled: True,
     aratafetch_enabled: True,

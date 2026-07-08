@@ -225,6 +225,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             route,
             is_effective_dark(new_model.theme, new_model.system_prefers_dark),
             new_model.config.mathjax_enabled,
+            new_model.config.mathjax_cdn_url,
+            new_model.config.mermaid_enabled,
+            new_model.config.mermaid_cdn_url,
           )
 
         ContentLoading | ContentFailed -> effect.none()
@@ -307,6 +310,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               new_model.route,
               is_effective_dark(new_model.theme, new_model.system_prefers_dark),
               new_model.config.mathjax_enabled,
+              new_model.config.mathjax_cdn_url,
+              new_model.config.mermaid_enabled,
+              new_model.config.mermaid_cdn_url,
             ),
           )
         }
@@ -380,6 +386,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             target_route,
             is_effective_dark(model.theme, model.system_prefers_dark),
             model.config.mathjax_enabled,
+            model.config.mathjax_cdn_url,
+            model.config.mermaid_enabled,
+            model.config.mermaid_cdn_url,
           ),
           lightbox_scroll_lock(False),
         ]),
@@ -425,6 +434,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
                 target_route,
                 is_effective_dark(model.theme, model.system_prefers_dark),
                 model.config.mathjax_enabled,
+                model.config.mathjax_cdn_url,
+                model.config.mermaid_enabled,
+                model.config.mermaid_cdn_url,
               ),
               lightbox_scroll_lock(False),
             ]),
@@ -580,11 +592,26 @@ fn post_effects_for(
   route: Route,
   is_dark: Bool,
   mathjax_enabled: Bool,
+  mathjax_cdn_url: String,
+  mermaid_enabled: Bool,
+  mermaid_cdn_url: String,
 ) -> effect.Effect(Msg) {
   case route {
     Post(_) -> {
       let mathjax_eff = case mathjax_enabled {
-        True -> effect.map(script_effect.typeset_math(), fn(_) { NoOp })
+        True ->
+          effect.map(script_effect.typeset_math(mathjax_cdn_url), fn(_) { NoOp })
+
+        False -> effect.none()
+      }
+
+      let mermaid_eff = case mermaid_enabled {
+        True ->
+          effect.map(
+            script_effect.render_mermaid(is_dark, mermaid_cdn_url),
+            fn(_) { NoOp },
+          )
+
         False -> effect.none()
       }
 
@@ -593,7 +620,7 @@ fn post_effects_for(
         effect.map(codeblock_effect.enhance(), fn(_) { NoOp }),
         effect.map(note_effect.enhance(), fn(_) { NoOp }),
         mathjax_eff,
-        effect.map(script_effect.render_mermaid(is_dark), fn(_) { NoOp }),
+        mermaid_eff,
       ])
     }
 
@@ -649,17 +676,17 @@ fn next_theme_after_click(
 }
 
 fn mermaid_rerender_for(model: Model) -> effect.Effect(Msg) {
-  case model.content_state, model.route {
-    ContentReady, Post(_) ->
+  case model.content_state, model.route, model.config.mermaid_enabled {
+    ContentReady, Post(_), True ->
       effect.map(
-        script_effect.render_mermaid(is_effective_dark(
-          model.theme,
-          model.system_prefers_dark,
-        )),
+        script_effect.render_mermaid(
+          is_effective_dark(model.theme, model.system_prefers_dark),
+          model.config.mermaid_cdn_url,
+        ),
         fn(_) { NoOp },
       )
 
-    _, _ -> effect.none()
+    _, _, _ -> effect.none()
   }
 }
 
@@ -748,6 +775,9 @@ fn handle_search_key(
                 target_route,
                 is_effective_dark(model.theme, model.system_prefers_dark),
                 model.config.mathjax_enabled,
+                model.config.mathjax_cdn_url,
+                model.config.mermaid_enabled,
+                model.config.mermaid_cdn_url,
               ),
               lightbox_scroll_lock(False),
             ]),
