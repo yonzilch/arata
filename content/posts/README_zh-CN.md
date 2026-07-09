@@ -12,9 +12,9 @@ updated = "2026-07-08"
 
 **对 [apollo](https://github.com/not-matthias/apollo) 博客主题的忠实复刻，使用 [Gleam](https://gleam.run) 语言与 [Lustre](https://hexdocs.pm/lustre) 框架构建。**
 
-[![License](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
-[![Lastest Tag](https://img.shields.io/github/v/tag/yonzilch/arata)]()
+[![License](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](https://github.com/yonzilch/arata/blob/main/LICENSE)
+[![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/yonzilch/arata/deployments)
+[![Lastest Tag](https://img.shields.io/github/v/tag/yonzilch/arata)](https://github.com/yonzilch/arata/tags)
 [![Gleam](https://img.shields.io/badge/Gleam-ffaff3?logo=gleam&labelColor=292d3e&color=ffaff3)](https://gleam.run)
 
 </div>

@@ -6,8 +6,8 @@
 **A faithful reimplementation of the [apollo](https://github.com/not-matthias/apollo) blog theme, built with [Gleam](https://gleam.run) and the [Lustre](https://hexdocs.pm/lustre) framework.**
 
 [![License](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Stable-green.svg)]()
-[![Lastest Tag](https://img.shields.io/github/v/tag/yonzilch/arata)]()
+[![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/yonzilch/arata/deployments)
+[![Lastest Tag](https://img.shields.io/github/v/tag/yonzilch/arata)](https://github.com/yonzilch/arata/tags)
 [![Gleam](https://img.shields.io/badge/Gleam-ffaff3?logo=gleam&labelColor=292d3e&color=ffaff3)](https://gleam.run)
 
 </div>
