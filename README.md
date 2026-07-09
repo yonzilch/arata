@@ -22,6 +22,8 @@ And served as a [Lustre](https://github.com/lustre-labs/lustre) SPA that fetches
 >
 > The tech structure bring a remarkable performance experience.
 
+![Arata Lighthouse Score](static/images/perfect-lighthouse-score.svg)
+
 ```mermaid
 flowchart TD
     subgraph Build["Build Time (once)"]

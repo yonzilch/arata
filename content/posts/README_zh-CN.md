@@ -29,6 +29,8 @@ Arata 以客户端单页应用（SPA）的形式，还原了 apollo 极简、以
 >
 > 这样的技术架构带来了出色的性能体验。
 
+![Arata Lighthouse Score](/images/perfect-lighthouse-score.svg)
+
 ```mermaid
 flowchart TD
     subgraph Build["构建时（一次性）"]
