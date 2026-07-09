@@ -1,0 +1,41 @@
+name: Test
+description: Report missing test coverage or propose test improvements
+title: "test(scope): "
+labels:
+  - test
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please follow the issue title format:
+        `test(<scope>): <summary>`
+        Example:
+        - `test(viewer): cover overlay state transitions`
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      description: The functional area affected
+      placeholder: viewer
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: Coverage gap or problem
+      description: What behavior, edge case, or regression is currently untested?
+      placeholder: Describe what is missing or insufficiently tested.
+    validations:
+      required: true
+  - type: textarea
+    id: cases
+    attributes:
+      label: Cases to cover
+      description: List the scenarios that should be tested
+      placeholder: |
+        - [ ] empty input
+        - [ ] invalid input
+        - [ ] ...
+    validations:
+      required: true

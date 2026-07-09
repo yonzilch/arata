@@ -1,0 +1,46 @@
+name: Documentation
+description: Report missing, unclear, or incorrect documentation
+title: "docs(scope): "
+labels:
+  - docs
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please follow the issue title format:
+        `docs(<scope>): <summary>`
+        Example:
+        - `docs(contributing): clarify pull request checklist`
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      description: The functional area or document affected
+      placeholder: contributing
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Document location
+      description: File path or URL of the affected documentation
+      placeholder: CONTRIBUTING.md, docs/setup.md, README.md, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong or missing?
+      description: Describe what is inaccurate, unclear, outdated, or absent
+      placeholder: Describe the documentation problem clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected content
+      description: What should the documentation say or include instead?
+      placeholder: Describe the correct or desired content.
+    validations:
+      required: true

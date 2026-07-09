@@ -1,0 +1,55 @@
+name: Performance
+description: Report a performance regression or propose an optimization
+title: "perf(scope): "
+labels:
+  - perf
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please follow the issue title format:
+        `perf(<scope>): <summary>`
+        Example:
+        - `perf(parser): reduce allocation during token normalization`
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      description: The functional area affected
+      placeholder: parser
+    validations:
+      required: true
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: Current performance
+      description: Describe the current behavior, including measurements if available
+      placeholder: e.g. Rendering 1000 items takes ~800ms on average.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected performance
+      description: What performance level is expected or acceptable?
+      placeholder: e.g. Should complete within 200ms for the same input.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps or benchmark
+      description: How can this be measured or reproduced?
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Environment, data size, profiling results, or related constraints
+    validations:
+      required: false

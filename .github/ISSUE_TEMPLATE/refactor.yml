@@ -1,0 +1,55 @@
+name: Refactor
+description: Track implementation tasks, cleanup, or structural improvements
+title: "refactor(scope): "
+labels:
+  - refactor
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please follow the issue title format:
+
+        `<type>(<scope>): <summary>`
+
+        Examples:
+        - `refactor(viewer): separate overlay controls from content container`
+        - `chore(ci): simplify issue validation workflow`
+
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      description: The functional area affected by this task
+      placeholder: viewer
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What needs to be changed?
+      placeholder: Describe the task clearly and concisely.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why is this work necessary?
+      placeholder: Explain the maintenance, architectural, or operational reason.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Define completion in verifiable terms
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true

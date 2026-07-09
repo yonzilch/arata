@@ -1,0 +1,70 @@
+name: Feature request
+description: Propose a new feature or enhancement
+title: "feat(scope): "
+labels:
+  - feat
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please follow the issue title format:
+
+        `<type>(<scope>): <summary>`
+
+        Example:
+        `feat(lightbox): support zoom and refine close button layout`
+
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      description: The functional area affected by this issue
+      placeholder: lightbox
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this change needed?
+      placeholder: Describe the problem or opportunity.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+      description: What should happen after this change?
+      placeholder: Describe the expected user-visible behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope_details
+    attributes:
+      label: Scope
+      description: What is included and what is explicitly out of scope?
+      placeholder: List the intended work and exclusions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Define completion in verifiable terms
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks or constraints
+      description: Optional technical or product constraints
+      placeholder: Describe any known risks, dependencies, or constraints.

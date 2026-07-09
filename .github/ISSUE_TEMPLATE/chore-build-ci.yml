@@ -1,0 +1,61 @@
+name: Chore / Build / CI
+description: Track maintenance, build system, or CI/CD tasks with no user-facing behavior change
+title: "chore(scope): "
+labels:
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please follow the issue title format:
+        `<type>(<scope>): <summary>`
+        Use `chore`, `build`, or `ci` as the type depending on the nature of the task.
+        Examples:
+        - `chore(deps): update gleam_stdlib to latest minor version`
+        - `build(deps): pin erlang runtime version`
+        - `ci(workflow): cache gleam build artifacts`
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: Select the most accurate type for this task
+      options:
+        - chore
+        - build
+        - ci
+    validations:
+      required: true
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      description: The functional area or tooling affected
+      placeholder: deps, workflow, devshell, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What needs to be done?
+      placeholder: Describe the task clearly and concisely.
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why is this task necessary?
+      placeholder: Explain the maintenance, dependency, or pipeline reason.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Define completion in verifiable terms
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true

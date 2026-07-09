@@ -1,0 +1,71 @@
+name: Fix (Bugs)
+description: Report a defect or regression
+title: "fix(scope): "
+labels:
+  - fix
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please follow the issue title format:
+
+        `<type>(<scope>): <summary>`
+
+        Example:
+        `fix(lightbox): prevent close button from overlapping image content`
+
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      description: The functional area affected by this issue
+      placeholder: lightbox
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: Current behavior
+      description: What is happening now?
+      placeholder: Describe the observed behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+      description: What should happen instead?
+      placeholder: Describe the expected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide a minimal and reliable reproduction path
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What is the severity or user impact?
+      placeholder: Describe scope, severity, and affected users.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Optional logs, screenshots, or constraints
+      placeholder: Add any extra context here.
