@@ -1,7 +1,6 @@
 +++
 title = "CHANGELOG"
 date = "2026-06-21"
-updated = "2026-07-08"
 description = "Comprehensive CHANGELOG of arata project"
 tags = ["docs"]
 +++
@@ -19,6 +18,20 @@ changes in arata.
 
 For example, project-specific sections such as 
 `CI`, `Contributors`, `Documentation`, or `Internal` may be used when they make a release easier to understand.
+
+---
+
+## [v1.6.6] - 2026-07-09
+
+### Added
+- Added initial GitHub issue template configuration.
+- Added `CONTRIBUTING.md` with repository contribution guidelines.
+- Added `Arata Lighthouse Score` to the README.
+- Added `perfect-lighthouse-score.svg`.
+
+### Changed
+- Updated README links for `[Status]` and `[Latest Tag]`.
+- Set the default port for `bun run serve` to `3333`.
 
 ---
 
