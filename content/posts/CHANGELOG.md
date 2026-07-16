@@ -21,6 +21,22 @@ For example, project-specific sections such as
 
 ---
 
+## [1.6.7] - 2026-07-16
+
+### Added
+
+- Added Liwan analytics support and configuration documentation.
+
+### Changed
+
+- Updated outdated code comments and analytics documentation.
+
+### Fixed
+
+- Corrected the updated timestamp in `README_zh-CN.md`.
+
+---
+
 ## [v1.6.6] - 2026-07-09
 
 ### Added
