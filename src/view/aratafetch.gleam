@@ -38,6 +38,10 @@ pub type Stats {
   )
 }
 
+type Row {
+  Row(label: String, value: Option(String))
+}
+
 /// Build aratafetch stats from already-loaded runtime content.
 ///
 /// `maintain_for` is deliberately a display string instead of a date because
@@ -111,6 +115,42 @@ fn unique_tag_count(posts: List(Post)) -> Int {
 }
 
 fn render(stats: Stats) -> String {
+  let rows = [
+    optional_row("maintain", stats.maintain_for),
+    positive_row("links", stats.link_count),
+    positive_row("posts", stats.post_count),
+    positive_row("words", stats.word_count),
+    positive_row("projects", stats.project_count),
+    positive_row("tags", stats.tag_count),
+    text_row("site", stats.site_title),
+    text_row("url", display_base_url(stats.base_url)),
+    text_row("description", stats.description),
+  ]
+
+  // Remove rows with None value.
+  let rows =
+    list.filter(rows, fn(row) {
+      case row {
+        Row(_, Some(_)) -> True
+        Row(_, None) -> False
+      }
+    })
+
+  // Calculate column width of label.
+  let label_width =
+    rows
+    |> list.map(fn(row) { string.length(row.label) })
+    |> list.fold(0, int.max)
+
+  let rendered =
+    rows
+    |> list.map(fn(r) {
+      case r {
+        Row(label, Some(value)) -> row(label, value, label_width)
+        _ -> ""
+      }
+    })
+
   string.join(
     list.flatten([
       [
@@ -123,43 +163,34 @@ fn render(stats: Stats) -> String {
         "    /_/    \\_\\",
         "",
       ],
-      optional_row("maintain", stats.maintain_for),
-      positive_row("links", stats.link_count),
-      positive_row("posts", stats.post_count),
-      positive_row("words", stats.word_count),
-      positive_row("projects", stats.project_count),
-      positive_row("tags", stats.tag_count),
-      text_row("site", stats.site_title),
-      text_row("url", display_base_url(stats.base_url)),
-      text_row("description", stats.description),
+      rendered,
     ]),
     "\n",
   )
 }
 
-fn row(label: String, value: String) -> String {
-  label <> repeat(" ", int.max(1, 12 - string.length(label))) <> value
+fn row(label: String, value: String, label_width: Int) -> String {
+  label
+  <> repeat(" ", int.max(1, label_width - string.length(label) + 1))
+  <> value
 }
 
-fn text_row(label: String, value: String) -> List(String) {
+fn text_row(label: String, value: String) -> Row {
   case string.trim(value) {
-    "" -> []
-    value -> [row(label, value)]
+    "" -> Row(label, None)
+    value -> Row(label, Some(value))
   }
 }
 
-fn positive_row(label: String, value: Int) -> List(String) {
+fn positive_row(label: String, value: Int) -> Row {
   case value > 0 {
-    True -> [row(label, int.to_string(value))]
-    False -> []
+    True -> Row(label, Some(int.to_string(value)))
+    False -> Row(label, None)
   }
 }
 
-fn optional_row(label: String, value: Option(String)) -> List(String) {
-  case value {
-    Some(text) -> text_row(label, text)
-    None -> []
-  }
+fn optional_row(label: String, value: Option(String)) -> Row {
+  Row(label, value)
 }
 
 fn repeat(chunk: String, times: Int) -> String {
