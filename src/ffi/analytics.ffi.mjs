@@ -7,6 +7,7 @@
 // `Analytics` config type:
 //   - GoatCounter
 //   - Umami
+//   - Liwan
 
 function analytics_already_injected() {
   return document.getElementById("arata-analytics") !== null;
@@ -22,6 +23,20 @@ export function inject_umami(website_id, src) {
   script.id = "arata-analytics";
   script.src = src;
   script.setAttribute("data-website-id", website_id);
+
+  document.head.appendChild(script);
+}
+
+export function inject_liwan(data_entity, src) {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  if (analytics_already_injected()) return;
+  if (!src || !data_entity) return;
+
+  const script = document.createElement("script");
+  script.type = "module";
+  script.id = "arata-analytics";
+  script.src = src;
+  script.setAttribute("data-entity", data_entity);
 
   document.head.appendChild(script);
 }

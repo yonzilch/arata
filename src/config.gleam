@@ -76,7 +76,7 @@ pub type Config {
     /// away with the document. Defaults to `True` to preserve existing behavior.
     navbar_fixed: Bool,
     /// Analytics provider for the SPA runtime. Defaults to `AnalyticsDisabled`;
-    /// set to `GoatCounter` or `Umami` to inject the provider's script at boot.
+    /// set to `GoatCounter`, `Umami` or `Liwan` to inject the provider's script at boot.
     /// This mirrors `SiteMeta.analytics` so analytics can be configured from
     /// `config.gleam` rather than only from `data/site.gleam`.
     analytics: Analytics,
