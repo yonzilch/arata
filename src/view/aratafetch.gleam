@@ -138,7 +138,7 @@ fn render(stats: Stats) -> String {
 }
 
 fn row(label: String, value: String) -> String {
-  label <> repeat(" ", int.max(1, 11 - string.length(label))) <> value
+  label <> repeat(" ", int.max(1, 12 - string.length(label))) <> value
 }
 
 fn text_row(label: String, value: String) -> List(String) {
