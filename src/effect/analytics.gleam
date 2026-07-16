@@ -5,8 +5,9 @@
 //// Because arata doesn't yet have a custom `index.html` (Phase 17), the
 //// script is injected dynamically on first load via the FFI. The provider is
 //// selected by the `data/site.Analytics` config type:
-////   - GoatCounter: loads `/js/count.js` with `data-goatcounter`.
-////   - Umami: loads `/js/imamu.js` with `data-website-id`.
+////   - GoatCounter
+////   - Umami
+////   - Liwan
 ////
 //// The FFI lives in `src/ffi/analytics.ffi.mjs`. The `@external` declaration
 //// has a no-op Gleam fallback so the project builds on Erlang.
