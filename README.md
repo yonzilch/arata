@@ -69,7 +69,7 @@ flowchart TD
 - **Zola-compatible friend link fields** — links can use `[extra].link_to` and `[extra].remote_image`
 - **Multi-platform Git hosting** — the `Project` type has `github`, `gitlab`, `codeberg`, and `forgejo` fields so projects hosted on any of those platforms link correctly from the card footer
 - **SEO** meta, OpenGraph, Atom/RSS feeds, sitemap, `robots.txt`, and `llms.txt`
-- **Analytics**: GoatCounter, Umami (Google Analytics intentionally not supported)
+- **Analytics**: GoatCounter, Umami, Liwan (Google Analytics intentionally not supported)
 - **Comments**: Giscus, Utterances
 - **Inline CSS shell** — CSS modules are inlined into `index.html` and `404.html` to remove render-blocking stylesheet requests; `dist/css/` is still emitted for inspection/debugging
 - **Config toggles** — `sidebar_enabled`, `floating_buttons_enabled`, `search_enabled`, `rss_enabled`, `mathjax_enabled`, and `aratafetch_enabled` let you turn features on or off without touching view code
@@ -289,7 +289,7 @@ Highlights:
 * **`aratafetch_enabled`** (`Bool`) — when `True`, the homepage renders the optional aratafetch ASCII summary block below the Markdown body.
 * **`aratafetch_maintained_for`** (`Option(String)`) — optional display string for aratafetch's `maintained` row, for example `Some("since 2024-06-23")`.
 * **`fonts`** — a `Fonts(text, header, code)` record of CSS `font-family` declarations. Defaults to system font stacks.
-* **`analytics`** — `AnalyticsDisabled`, `GoatCounter(user, host)`, or `Umami(website_id, host_url)`. Google Analytics is intentionally not supported.
+* **`analytics`** — `AnalyticsDisabled`, `GoatCounter(data_goatcounter, src)`, `Umami(website_id, src)` or `Liwan(data_entity, src)`. Google Analytics is intentionally not supported.
 * **Accent/Primary color** — edit `--primary-color` in `src/css/theme.css` to recolor accent surfaces. Arata defines separate light and dark accent values in `:root` and `:root.dark` for better contrast across themes.
 
 See [configuration.md](content/posts/configuration.md) for the full configuration guide.
@@ -346,7 +346,7 @@ aratafetch
 accessibility
 ```
 
-`fonts.css` must come first because it declares bundled font faces. 
+`fonts.css` must come first because it declares bundled font faces.
 
 `theme.css` must come before all other modules that use CSS variables.
 

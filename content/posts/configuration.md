@@ -481,6 +481,7 @@ One of:
 AnalyticsDisabled
 GoatCounter(data_goatcounter: "https://goatcounter.com/count", src: "//goatcounter.com/count.js")
 Umami(website_id: "your_website_id", src: "https://umami.com/script.js")
+Liwan(data_entity: "your_data_entity", src: "https://liwan.com/script.js")
 ```
 
 Google Analytics is intentionally not supported.

@@ -5,8 +5,9 @@
 //// Because arata doesn't yet have a custom `index.html` (Phase 17), the
 //// script is injected dynamically on first load via the FFI. The provider is
 //// selected by the `data/site.Analytics` config type:
-////   - GoatCounter: loads `/js/count.js` with `data-goatcounter`.
-////   - Umami: loads `/js/imamu.js` with `data-website-id`.
+////   - GoatCounter
+////   - Umami
+////   - Liwan
 ////
 //// The FFI lives in `src/ffi/analytics.ffi.mjs`. The `@external` declaration
 //// has a no-op Gleam fallback so the project builds on Erlang.
@@ -33,6 +34,12 @@ pub fn inject(analytics: Analytics) -> Effect(Nil) {
 
       Nil
     }
+
+    site.Liwan(data_entity, src) -> {
+      inject_liwan(data_entity: data_entity, src: src)
+
+      Nil
+    }
   }
 }
 
@@ -44,3 +51,6 @@ fn inject_goatcounter(
   data_goatcounter data_goatcounter: String,
   src src: String,
 ) -> Nil
+
+@external(javascript, "../ffi/analytics.ffi.mjs", "inject_liwan")
+fn inject_liwan(data_entity data_entity: String, src src: String) -> Nil
