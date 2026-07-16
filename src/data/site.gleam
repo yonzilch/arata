@@ -11,6 +11,7 @@ import gleam/option.{type Option, None}
 /// Analytics provider configuration.
 pub type Analytics {
   GoatCounter(data_goatcounter: String, src: String)
+  Liwan(data_entity: String, src: String)
   Umami(website_id: String, src: String)
   AnalyticsDisabled
 }
