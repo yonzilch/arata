@@ -76,7 +76,7 @@ flowchart TD
 - **兼容 Zola 的友链字段** —— 友链支持使用 `[extra].link_to` 和 `[extra].remote_image`
 - **多平台 Git 托管支持** —— `Project` 类型包含 `github`、`gitlab`、`codeberg` 和 `forgejo` 字段，因此托管在这些平台上的项目都能在卡片底部正确显示链接
 - **SEO** 元数据、OpenGraph、Atom/RSS 订阅、站点地图、`robots.txt` 以及 `llms.txt`
-- **统计分析**：GoatCounter、Umami（有意不支持 Google Analytics）
+- **统计分析**：GoatCounter、Umami、Liwan（有意不支持 Google Analytics）
 - **评论系统**：Giscus、Utterances
 - **内联 CSS 外壳** —— CSS 模块被内联进 `index.html` 和 `404.html`，以消除阻塞渲染的样式表请求；`dist/css/` 仍会生成，方便检查和调试
 - **配置开关** —— `sidebar_enabled`、`floating_buttons_enabled`、`search_enabled`、`rss_enabled`、`mathjax_enabled` 以及 `aratafetch_enabled`，无需修改视图代码即可开启或关闭相应功能
@@ -295,7 +295,7 @@ Arata 通过两个 Gleam 模块进行配置：
 * **`aratafetch_enabled`**（`Bool`）—— 为 `True` 时，首页会在 Markdown 正文下方渲染可选的 aratafetch ASCII 摘要区块。
 * **`aratafetch_maintained_for`**（`Option(String)`）—— aratafetch `maintained` 行的可选显示文字，例如 `Some("since 2024-06-23")`。
 * **`fonts`** —— 一个 `Fonts(text, header, code)` 记录，包含 CSS `font-family` 声明。默认使用系统字体族。
-* **`analytics`** —— `AnalyticsDisabled`、`GoatCounter(user, host)` 或 `Umami(website_id, host_url)`。有意不支持 Google Analytics。
+* **`analytics`** —— `AnalyticsDisabled`、`GoatCounter(data_goatcounter, src)`、`Umami(website_id, src)`或`Liwan(data_entity, src)`。有意不支持 Google Analytics。
 * **强调色/主色** —— 编辑 `src/css/theme.css` 中的 `--primary-color` 即可修改强调色表面。Arata 在 `:root` 与 `:root.dark` 中分别定义了浅色与深色的强调色值，以获得更好的主题对比度。
 
 完整的配置指南请参见 [configuration.md](configuration)。
