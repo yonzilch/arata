@@ -21,7 +21,28 @@ For example, project-specific sections such as
 
 ---
 
-## [1.6.7] - 2026-07-16
+## [1.6.8] — 2026-07-16
+
+### Added
+
+- Added an section of About page explaining the meanings behind the project name "Arata".
+
+### Changed
+
+- Refactored aratafetch metadata rows to share a unified rendering path.
+- Replaced the fixed metadata alignment width with dynamic label-based alignment.
+
+### Fixed
+
+- Corrected inconsistent aratafetch value alignment when rendering the longest metadata label.
+
+### Contributors
+
+- [@Fovir-GitHub](https://github.com/Fovir-GitHub) refactored aratafetch metadata rows.
+
+---
+
+## [1.6.7] — 2026-07-16
 
 ### Added
 
@@ -37,7 +58,7 @@ For example, project-specific sections such as
 
 ---
 
-## [v1.6.6] - 2026-07-09
+## [v1.6.6] — 2026-07-09
 
 ### Added
 - Added initial GitHub issue template configuration.
@@ -51,7 +72,7 @@ For example, project-specific sections such as
 
 ---
 
-## [v1.6.5] - 2026-07-08
+## [v1.6.5] — 2026-07-08
 
 ### Added
 
