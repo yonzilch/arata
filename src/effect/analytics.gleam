@@ -33,6 +33,12 @@ pub fn inject(analytics: Analytics) -> Effect(Nil) {
 
       Nil
     }
+
+    site.Liwan(data_entity, src) -> {
+      inject_liwan(data_entity: data_entity, src: src)
+
+      Nil
+    }
   }
 }
 
@@ -44,3 +50,6 @@ fn inject_goatcounter(
   data_goatcounter data_goatcounter: String,
   src src: String,
 ) -> Nil
+
+@external(javascript, "../ffi/analytics.ffi.mjs", "inject_liwan")
+fn inject_liwan(data_entity data_entity: String, src src: String) -> Nil
