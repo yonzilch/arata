@@ -114,8 +114,14 @@ pub type Config {
     /// Optional display string for aratafetch's "maintained" row.
     /// Example: Some("since 2026-06-21")
     aratafetch_maintained_for: Option(String),
+    /// Whether Markdown body images open in the built-in lightbox.
+    /// When `False`, images retain their default browser behavior.
     lightbox_enabled: Bool,
+    /// Whether to show the latest published posts on the homepage.
+    /// When `False`, the latest-posts section is omitted entirely.
     latest_posts_enabled: Bool,
+    /// Maximum number of published posts shown in the homepage latest-posts section.
+    /// Values less than or equal to zero produce an empty section.
     latest_posts_count: Int,
   )
 }
