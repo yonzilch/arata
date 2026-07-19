@@ -23,11 +23,13 @@ import effect/lightbox as lightbox_effect
 import effect/note as note_effect
 import effect/script as script_effect
 import effect/search as search_effect
+import effect/syntax_highlight as syntax_highlight_effect
 import effect/theme as theme_effect
 import effect/toc as toc_effect
 import gleam/int
 import gleam/list
 import gleam/option.{type Option}
+
 import gleam/result
 import lustre
 import lustre/attribute
@@ -228,6 +230,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             new_model.config.mathjax_cdn_url,
             new_model.config.mermaid_enabled,
             new_model.config.mermaid_cdn_url,
+            new_model.config.syntax_highlight_enabled,
+            new_model.config.syntax_highlight_cdn_url,
           )
 
         ContentLoading | ContentFailed -> effect.none()
@@ -313,6 +317,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               new_model.config.mathjax_cdn_url,
               new_model.config.mermaid_enabled,
               new_model.config.mermaid_cdn_url,
+              new_model.config.syntax_highlight_enabled,
+              new_model.config.syntax_highlight_cdn_url,
             ),
           )
         }
@@ -389,6 +395,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             model.config.mathjax_cdn_url,
             model.config.mermaid_enabled,
             model.config.mermaid_cdn_url,
+            model.config.syntax_highlight_enabled,
+            model.config.syntax_highlight_cdn_url,
           ),
           lightbox_scroll_lock(False),
         ]),
@@ -437,6 +445,8 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
                 model.config.mathjax_cdn_url,
                 model.config.mermaid_enabled,
                 model.config.mermaid_cdn_url,
+                model.config.syntax_highlight_enabled,
+                model.config.syntax_highlight_cdn_url,
               ),
               lightbox_scroll_lock(False),
             ]),
@@ -595,6 +605,8 @@ fn post_effects_for(
   mathjax_cdn_url: String,
   mermaid_enabled: Bool,
   mermaid_cdn_url: String,
+  syntax_highlight_enabled: Bool,
+  syntax_highlight_cdn_url: String,
 ) -> effect.Effect(Msg) {
   case route {
     Post(_) -> {
@@ -615,8 +627,18 @@ fn post_effects_for(
         False -> effect.none()
       }
 
+      let syntax_highlight_eff =
+        effect.map(
+          syntax_highlight_effect.enhance(
+            syntax_highlight_enabled,
+            syntax_highlight_cdn_url,
+          ),
+          fn(_) { NoOp },
+        )
+
       effect.batch([
         effect.map(toc_effect.observe(), TocActiveHeadingChanged),
+        syntax_highlight_eff,
         effect.map(codeblock_effect.enhance(), fn(_) { NoOp }),
         effect.map(note_effect.enhance(), fn(_) { NoOp }),
         mathjax_eff,
@@ -778,6 +800,8 @@ fn handle_search_key(
                 model.config.mathjax_cdn_url,
                 model.config.mermaid_enabled,
                 model.config.mermaid_cdn_url,
+                model.config.syntax_highlight_enabled,
+                model.config.syntax_highlight_cdn_url,
               ),
               lightbox_scroll_lock(False),
             ]),

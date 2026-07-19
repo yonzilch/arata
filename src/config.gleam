@@ -99,6 +99,16 @@ pub type Config {
     /// browser-importable ESM bundle exposing Mermaid's `initialize` and
     /// `render` APIs, such as jsDelivr's `mermaid.esm.min.mjs`.
     mermaid_cdn_url: String,
+    /// Whether syntax highlighting is applied to fenced code blocks at runtime.
+    /// When `False`, code blocks retain plain rendering, language labels, and
+    /// copy controls without loading the highlighting runtime.
+    syntax_highlight_enabled: Bool,
+    /// Runtime asset URL for the syntax-highlighting enhancement.
+    ///
+    /// This should point to a pinned browser-compatible Highlight.js bundle.
+    /// Users may replace the default CDN URL with another CDN or a vendored local
+    /// asset.
+    syntax_highlight_cdn_url: String,
     /// Whether the right sidebar (Tags + ToC) is rendered on post pages.
     /// When `False`, `view_tags_and_toc` is omitted so the post body takes
     /// the full content width. Defaults to `True` so the sidebar shows on
@@ -201,6 +211,8 @@ pub fn default() -> Config {
     mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
     mermaid_enabled: True,
     mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
+    syntax_highlight_enabled: True,
+    syntax_highlight_cdn_url: "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js",
     sidebar_enabled: True,
     floating_buttons_enabled: True,
     aratafetch_enabled: True,
