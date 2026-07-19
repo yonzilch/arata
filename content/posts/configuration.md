@@ -1,7 +1,7 @@
 +++
 title = "Configuration"
 date = "2026-06-23"
-updated = "2026-06-29"
+updated = "2026-07-19"
 description = "Comprehensive configuration guide for arata."
 tags = ["guide", "config"]
 +++
@@ -55,17 +55,18 @@ Example:
 ```gleam
 Config(
   title: "Arata",
-  description: "Arata is a modern and minimalistic blog theme powered by Gleam and Lustre.",
+  description: "A modern and minimalistic blog theme",
+  base_path: base_path,
   menu: [
-    MenuItem(name: "posts", url: "/posts"),
-    MenuItem(name: "projects", url: "/projects"),
-    MenuItem(name: "links", url: "/links"),
-    MenuItem(name: "tags", url: "/tags"),
-    MenuItem(name: "about", url: "/about"),
+    MenuItem(name: "about", url: with_base_path(base_path, "/about")),
+    MenuItem(name: "links", url: with_base_path(base_path, "/links")),
+    MenuItem(name: "posts", url: with_base_path(base_path, "/posts")),
+    MenuItem(name: "projects", url: with_base_path(base_path, "/projects")),
+    MenuItem(name: "tags", url: with_base_path(base_path, "/tags")),
   ],
   socials: default_socials(rss_enabled),
-  logo: Some("/images/avatar.avif"),
-  favicon: Some("/images/favicon.ico"),
+  logo: None,
+  favicon: Some("images/arata-logo.avif"),
   rss_enabled: True,
   fonts: Fonts(
     text: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
@@ -73,12 +74,25 @@ Config(
     code: "ui-monospace, \"Cascadia Code\", \"Source Code Pro\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace",
   ),
   search_enabled: True,
+  navbar_fixed: True,
   analytics: AnalyticsDisabled,
   mathjax_enabled: True,
+  mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
+  mermaid_enabled: True,
+  mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
+  syntax_highlight_enabled: True,
+  syntax_highlight_cdn_url: "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js",
   sidebar_enabled: True,
   floating_buttons_enabled: True,
+  aratafetch_enabled: True,
+  aratafetch_maintained_for: Some("since 2026-06-21"),
+  lightbox_enabled: True,
+  latest_posts_enabled: False,
+  latest_posts_count: 5,
 )
 ```
+
+This mirrors the actual hardcoded defaults returned by `config.default()`. `base_path` is not set by hand — it is derived from `base_url` in `site_meta()` (see the "Site Metadata" section below) and then used to prefix every internal `menu` URL via `with_base_path`, so project-site deployments (e.g. GitHub Pages) still resolve correctly.
 
 ### `title` and `description`
 
@@ -95,11 +109,11 @@ from `site_meta()` when possible.
 A list of `MenuItem(name, url)` values rendered in the header.
 
 ```gleam
+MenuItem(name: "about", url: "/about")
+MenuItem(name: "links", url: "/links")
 MenuItem(name: "posts", url: "/posts")
 MenuItem(name: "projects", url: "/projects")
-MenuItem(name: "links", url: "/links")
 MenuItem(name: "tags", url: "/tags")
-MenuItem(name: "about", url: "/about")
 ```
 
 Rules:
@@ -107,6 +121,9 @@ Rules:
 * `name` is the displayed label.
 * `url` should usually be an absolute site path beginning with `/`.
 * Internal routes are handled by modem as SPA navigation.
+* For subdirectory deployments, wrap the path with `with_base_path(base_path, "/posts")`
+  instead of hardcoding it, so the link still resolves under a project-site
+  base path such as `/arata`.
 
 Common routes:
 
@@ -161,6 +178,18 @@ Social(name: "RSS", url: "/atom.xml", icon: "rss")
 Use an absolute root path like `/atom.xml` so the RSS link works from nested
 routes such as `/posts/configuration`.
 
+The full default list, built by `default_socials(rss_enabled)`, is:
+
+```gleam
+Social(name: "RSS", url: "/rss.xml", icon: "rss")       // only when rss_enabled is True
+Social(name: "Codeberg", url: "https://codeberg.org/yonzilch/arata", icon: "codeberg")
+Social(name: "GitHub", url: "https://github.com/yonzilch/arata", icon: "github")
+```
+
+Replace this list entirely with your own `socials` when customizing a site —
+the Codeberg/GitHub entries point at arata's own repositories and are only
+meant as a working example.
+
 ### `logo`
 
 An `Option(String)`.
@@ -211,6 +240,14 @@ favicon: Some("/images/avatar.avif")
 
 As with `logo`, prefer absolute root paths.
 
+Note that the shipped default value is a relative path,
+`Some("images/arata-logo.avif")`, since `favicon` is resolved directly by the
+build pipeline when it writes `index.html`/`404.html` rather than by the SPA
+runtime. If you deploy under a subdirectory, using an absolute root path
+(e.g. `Some("/images/favicon.ico")`) is still the safer choice, since it
+avoids depending on the depth of the page the favicon `<link>` is emitted
+into.
+
 ### `fonts`
 
 A `Fonts(text, header, code)` record containing CSS `font-family`
@@ -235,6 +272,34 @@ These values are injected as CSS custom property overrides:
 ```
 
 The rest of the stylesheet resolves fonts through those variables.
+
+#### Optional font packages
+
+Two optional font packages are known to work well and can be installed and
+referenced from `fonts`:
+
+* [**Maple Font**](https://github.com/subframe7536/maple-font) — a
+  programming font with ligatures. Set:
+
+  ```gleam
+  code: "\"Maple Mono NF\", \"Maple Mono\", monospace"
+  ```
+
+* [**Sarasa Gothic**](https://github.com/be5invis/sarasa-gothic) — a
+  CJK-friendly font. Set either:
+
+  ```gleam
+  text: "\"Sarasa Gothic SC\", sans-serif"
+  ```
+
+  or, for a CJK-friendly monospace code font:
+
+  ```gleam
+  code: "\"Sarasa Mono SC\", monospace"
+  ```
+
+These fonts must be installed/vendored separately; `fonts` only controls
+which CSS `font-family` declarations are emitted.
 
 ### `rss_enabled`
 
@@ -304,6 +369,74 @@ When `False`, MathJax effects are skipped.
 
 Use `False` if no posts contain math.
 
+Even when `mathjax_enabled` is `True`, the JavaScript FFI only lazy-loads
+MathJax on posts whose rendered content actually contains likely TeX
+delimiters, so posts without math incur no extra runtime cost.
+
+### `mathjax_cdn_url`
+
+A `String` pointing to the MathJax runtime asset used by the typesetting
+enhancement above.
+
+```gleam
+mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+```
+
+Replace this with another CDN or a vendored local asset URL if you need to
+avoid jsDelivr.
+
+### Mermaid diagrams
+
+Controlled by `mermaid_enabled` and `mermaid_cdn_url`.
+
+`mermaid_enabled` is a `Bool`. When `True`, arata renders native Markdown
+fenced code blocks written as:
+
+````markdown
+```mermaid
+graph TD
+  A --> B
+```
+````
+
+and also keeps compatibility with legacy Mermaid shortcode output. When
+`False`, no Mermaid runtime module is imported at all.
+
+```gleam
+Config(
+  // ...
+  mermaid_enabled: True,
+  mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
+)
+```
+
+`mermaid_cdn_url` must point to a browser-importable ESM bundle exposing
+Mermaid's `initialize` and `render` APIs, such as jsDelivr's
+`mermaid.esm.min.mjs`. Replace it with another CDN or a vendored local asset
+if needed.
+
+### Syntax highlighting
+
+Controlled by `syntax_highlight_enabled` and `syntax_highlight_cdn_url`.
+
+`syntax_highlight_enabled` is a `Bool` that determines whether syntax
+highlighting is applied to fenced code blocks at runtime.
+
+```gleam
+Config(
+  // ...
+  syntax_highlight_enabled: True,
+  syntax_highlight_cdn_url: "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js",
+)
+```
+
+When `False`, code blocks retain plain rendering, language labels, and copy
+controls without loading the highlighting runtime.
+
+`syntax_highlight_cdn_url` should point to a pinned, browser-compatible
+Highlight.js bundle. Replace it with another CDN or a vendored local asset if
+needed.
+
 ### `sidebar_enabled`
 
 A `Bool`.
@@ -314,6 +447,26 @@ When `True`, post pages render the right sidebar containing:
 * table of contents
 
 When `False`, the right sidebar is omitted and the post body gets more space.
+
+### `floating_buttons_enabled`
+
+A `Bool`.
+
+Controls whether the floating buttons are rendered:
+
+* the ToC/tags FAB (floating action button) shown alongside the sidebar
+* the scroll-to-top button shown in the mobile sidebar overlay
+
+When `True` (the default), both are rendered and reachable.
+
+When `False`, no FAB is shown and the overlay is not reachable through it.
+
+```gleam
+Config(
+  // ...
+  floating_buttons_enabled: True,
+)
+```
 
 ### `aratafetch_enabled` and `aratafetch_maintained_for`
 
