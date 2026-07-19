@@ -37,16 +37,17 @@ import simplifile
 /// The output directory for the built site.
 const dist_dir = "dist"
 
-/// The CSS modules that are copied, in order, to `dist/css/` as separate
-/// files. `base.css` must come first (theme variables + resets); the rest
-/// follow the dependency order so cascade specificity resolves as intended.
-/// The `<link>` tags in `index.html` reference each file in this same order.
+/// CSS modules copied to `dist/css/` and inlined into the generated HTML
+/// shells in this exact order. The order is significant because it determines
+/// cascade precedence. Theme variables and global styles must precede
+/// component styles, while accessibility overrides must remain last.
 const css_modules = [
   "src/css/fonts.css",
   "src/css/theme.css",
   "src/css/globals.css",
   "src/css/typography.css",
   "src/css/home.css",
+  "src/css/aratafetch.css",
   "src/css/layout.css",
   "src/css/components.css",
   "src/css/pagination.css",
@@ -57,7 +58,6 @@ const css_modules = [
   "src/css/toc.css",
   "src/css/syntax.css",
   "src/css/lightbox.css",
-  "src/css/aratafetch.css",
   "src/css/accessibility.css",
 ]
 
