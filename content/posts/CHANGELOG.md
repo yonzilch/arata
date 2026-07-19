@@ -21,6 +21,19 @@ For example, project-specific sections such as
 
 ---
 
+## [1.6.9] — 2026-07-19
+
+### Added
+
+- Added optional runtime syntax highlighting with configurable Highlight.js loading.
+
+### Changed
+
+- Expanded configuration documentation for Mermaid, syntax highlighting, floating buttons, lightbox, and latest posts.
+- Consolidated syntax theme styles and removed redundant Giallo assets.
+
+---
+
 ## [1.6.8] — 2026-07-16
 
 ### Added
