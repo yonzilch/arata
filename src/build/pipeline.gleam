@@ -680,6 +680,8 @@ fn index_html(site_meta: site.SiteMeta, site_config: config.Config) -> String {
   let atom_href = config.with_base_path(base_path, "/atom.xml")
   let rss_href = config.with_base_path(base_path, "/rss.xml")
   let app_src = config.with_base_path(base_path, "/app.mjs")
+  let bootstrap_meta =
+    "<meta name='arata-base-path' content='" <> base_path <> "'>"
   // Configured favicon paths have already been resolved by the configuration
   // resolver. Only the fallback path needs a deployment prefix here.
   let favicon = case site_config.favicon {
@@ -700,6 +702,8 @@ fn index_html(site_meta: site.SiteMeta, site_config: config.Config) -> String {
   <> site_meta.title
   <> "</title><meta name='description' content='"
   <> site_meta.description
+  <> "'>"
+  <> bootstrap_meta
   <> "'><link rel='icon' href='"
   <> favicon
   <> "'>"
