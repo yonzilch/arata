@@ -33,7 +33,7 @@ import config/raw.{
   type RawAnalytics, type RawAratafetch, type RawAssets, type RawComments,
   type RawConfig, type RawFeatures, type RawFonts, type RawLatestPosts,
   type RawMenuItem, type RawSite, type RawSocial, RawAratafetch, RawAssets,
-  RawFeatures, RawFonts, RawLatestPosts, RawMenuItem, RawSite, RawSocial,
+  RawFeatures, RawFonts, RawLatestPosts, RawSite,
 }
 import data/site.{
   type Analytics, type CommentsConfig, type SiteMeta, AnalyticsDisabled,
