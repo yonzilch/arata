@@ -2,7 +2,7 @@
 title = "README_zh-CN"
 description = "Arata 中文版本 README（同时用于测试部分 HTML 与 CJK 渲染）； 此 README 可能无法反映项目最新变动情况"
 date = "2026-07-05"
-updated = "2026-07-16"
+updated = "2026-07-21"
 +++
 
 <div align="center">
@@ -62,12 +62,12 @@ flowchart TD
 - **GFM Markdown 扩展** —— 通过 mork 的选项启用了表格、任务列表、emoji 短代码、自动链接和脚注
 - **9 条路由**：`/`、`/posts`、`/posts/{slug}`、`/projects`、`/links`、`/tags`、`/tags/{name}`、`/{slug}`（独立页面）以及 404 页面
 - **三态主题切换**（浅色 / 深色 / 自动），通过 `localStorage` 持久化，并响应 `prefers-color-scheme`
-- **Cmd/Ctrl+K 搜索**弹窗，支持键盘导航（可通过 `search_enabled` 开关控制）
-- **目录（ToC）** —— 基于滚动位置的 `IntersectionObserver` 高亮
+- **Cmd/Ctrl+K 搜索**弹窗，支持键盘导航（可通过 `search` 开关控制）
+- **目录** —— 基于滚动位置的 `IntersectionObserver` 高亮
 - **悬浮式目录 + 标签按钮**，在**所有屏幕尺寸**下均可见 —— 打开一个包含目录树和标签列表的浮层，方便快速导航
 - **精美代码块**，带有复制按钮和语言标签
 - **4 种短代码**：`note`、`character`、`image`
-- **MathJax 渲染**开关，通过 `mathjax_enabled` 控制
+- **MathJax 渲染**开关，通过 `mathjax` 控制
 - **Mermaid 图表** — 使用原生 Markdown 带围栏的代码块，并采用 `mermaid` 语言进行客户端渲染
 - **文章卡片** —— `/posts` 页面上每篇文章都包裹在带悬浮效果的边框卡片中，标题与正文之间是可点击的标签胶囊
 - **页码跳转输入框** —— 在分页栏中输入页码并按下回车即可直接跳转到该页
@@ -79,8 +79,8 @@ flowchart TD
 - **统计分析**：GoatCounter、Umami、Liwan（有意不支持 Google Analytics）
 - **评论系统**：Giscus、Utterances
 - **内联 CSS 外壳** —— CSS 模块被内联进 `index.html` 和 `404.html`，以消除阻塞渲染的样式表请求；`dist/css/` 仍会生成，方便检查和调试
-- **配置开关** —— `sidebar_enabled`、`floating_buttons_enabled`、`search_enabled`、`rss_enabled`、`mathjax_enabled` 以及 `aratafetch_enabled`，无需修改视图代码即可开启或关闭相应功能
-- **可配置的 Logo 与 Favicon** —— 二者均在 `src/config.gleam` 中配置
+- **配置开关** —— `sidebar`、`floating_buttons`、`search`、`rss`、`mathjax` 以及 `aratafetch` 等功能均可在 `content/arata.toml` 中开启或关闭，无需修改视图代码
+- **可配置的 Logo 与 Favicon** —— 二者均在 `content/arata.toml` 中配置
 - **构建流水线**：`gleam run -m build/pipeline` → 在 `dist/` 中生成完整的静态站点（无需 Erlang/OTP）
 
 - **aratafetch** —— 可选的 neofetch 风格 ASCII 站点摘要，展示站点标题、已发布文章数、总字数、唯一标签数、友链数、项目数，以及可选的维护状态说明文字
@@ -141,11 +141,23 @@ arata/
 │   │   └── ...                # 其他演示站点内容（markdown-test.md、deployment.md 等）
 │   ├── pages/*.md             # 独立页面（包括 home.md、about.md）
 │   ├── links/*.md             # 友情链接卡片
-│   └── projects/*.md          # 项目展示卡片
+│   ├── projects/*.md          # 项目展示卡片
+│   └── arata.toml             # 用户拥有的站点配置入口
 ├── src/
 │   ├── arata.gleam            # 入口文件（启动 Lustre）
-│   ├── route.gleam            # URL <-> Route 映射（modem）
-│   ├── config.gleam           # Config 与 SiteMeta 的默认值
+│   ├── config.gleam           # 顶层稳定配置 API 与向后兼容的默认访问器
+│   ├── route.gleam            # URL <-> Route 映射 (modem)
+│   ├── config/                # 配置模块
+│   │   ├── defaults.gleam     # 默认配置值
+│   │   ├── decoder.gleam      # 配置解码器
+│   │   ├── encoder.gleam      # 配置编码器
+│   │   ├── error.gleam        # 配置错误类型
+│   │   ├── loader.gleam       # 配置加载器
+│   │   ├── raw.gleam          # 原始配置类型
+│   │   ├── resolve.gleam      # 配置解析器
+│   │   ├── runtime.gleam      # 运行时配置类型
+│   │   ├── url.gleam          # URL 规范化工具
+│   │   └── validate.gleam     # 配置验证器
 │   ├── build/                 # content -> dist/ 流水线 + 订阅源 + 爬虫文件
 │   │   ├── pipeline.gleam     # 编排器
 │   │   ├── feeds.gleam        # atom.xml、rss.xml、sitemap.xml
@@ -270,32 +282,43 @@ content/pages/home.md
 
 它渲染在 `/` 路由上。
 
-当 `aratafetch_enabled` 为 `True` 时，arata 会在首页 Markdown 正文下方渲染一个 neofetch 风格的 ASCII 摘要区块。
+当 `aratafetch` 在 `content/arata.toml` 中启用时，arata 会在首页 Markdown 正文下方渲染一个 neofetch 风格的 ASCII 摘要区块。
 该摘要由已加载的运行时内容模型计算得出，包含已发布文章数、总字数、唯一标签数、友链数、项目数，以及可选的维护状态说明文字。
 
 ## 配置
 
-Arata 通过两个 Gleam 模块进行配置：
+Arata 通过位于 `content/` 目录下的单个 `arata.toml` 文件进行配置。此文件为用户拥有的配置入口，在构建时读取，用于生成站点元数据和运行时设置。
 
-* **`src/config.gleam`** —— 面向用户的配置源：`Config`、`config.default()` 以及 `config.site_meta()`。
-* **`src/data/site.gleam`** —— 共享元数据类型：`SiteMeta`、`Analytics` 以及 `CommentsConfig`。
+SPA 运行时和构建流水线都从此处读取配置，因此标题、描述、RSS 设置、统计分析、评论以及 favicon 配置不会出现不一致。
 
-`config.gleam` 是站点默认值的唯一数据源。SPA 运行时和构建流水线都从这里读取数据，因此标题、描述、RSS 设置、统计分析、评论以及 favicon 配置不会出现不一致。
+以下是 `content/arata.toml` 中各配置部分的简要说明：
 
-要点说明：
-
-* **`logo`**（`Option(String)`）—— 可选的页头 Logo 路径。建议使用绝对路径，例如 `Some("/images/avatar.avif")`。
-* **`favicon`**（`Option(String)`）—— 可选的 favicon 路径，用于生成 `index.html` 和 `404.html`。
-* **`rss_enabled`**（`Bool`）—— 为 `False` 时，不会生成 `atom.xml` / `rss.xml`，不会输出订阅源 `<link>` 标签，页头也不会显示 RSS 社交图标。
-* **`search_enabled`**（`Bool`）—— 为 `False` 时，搜索按钮、弹窗以及 `Cmd/Ctrl+K` 快捷键都会被省略。
-* **`mathjax_enabled`**（`Bool`）—— 为 `True` 时，文章页面会加载 MathJax，并对 `$…$` / `$$…$$` LaTeX 语法进行排版。
-* **内置图片灯箱画廊** —— Markdown 正文中的图片会在一个由 Lustre 管理的全屏画廊浮层中打开，支持图注、键盘导航、触屏友好的控件以及页面滚动锁定。
-* **`sidebar_enabled`**（`Bool`，默认 `True`）—— 为 `False` 时，文章页面右侧的边栏（目录 + 标签）将被省略，正文将占据完整内容宽度。
-* **`floating_buttons_enabled`**（`Bool`，默认 `True`）—— 为 `False` 时，悬浮的目录/标签按钮以及浮层中的回到顶部按钮都不会渲染。
-* **`aratafetch_enabled`**（`Bool`）—— 为 `True` 时，首页会在 Markdown 正文下方渲染可选的 aratafetch ASCII 摘要区块。
-* **`aratafetch_maintained_for`**（`Option(String)`）—— aratafetch `maintained` 行的可选显示文字，例如 `Some("since 2024-06-23")`。
-* **`fonts`** —— 一个 `Fonts(text, header, code)` 记录，包含 CSS `font-family` 声明。默认使用系统字体族。
-* **`analytics`** —— `AnalyticsDisabled`、`GoatCounter(data_goatcounter, src)`、`Umami(website_id, src)`或`Liwan(data_entity, src)`。有意不支持 Google Analytics。
+* **`[site]`** —— 基础站点元数据：
+  * `base_url`：部署站点的公开规范 URL（支持根路径或子目录部署）。
+  * `title` & `description`：用于 SEO 和 meta 标签的站点标题与描述。
+  * `logo`：可选的导航栏 Logo 路径（留空则将站点标题渲染为文本链接）。
+  * `favicon`：可选的 favicon 路径（留空则回退至 Arata 的默认 favicon）。
+  * `fediverse_creator`：可选的 Fediverse 创建者归属（例如 `@user@example.social`）。
+* **`[[menu]]`** —— 按声明顺序渲染的导航项。内部 URL 必须是根相对路径。
+* **`[[socials]]`** —— 在页头渲染的社交链接。`icon` 对应 `static/icons/social/` 下的 SVG 文件名。
+* **`[features]`** —— 各种运行时与构建功能的开关：
+  * `rss` (bool)：生成 `atom.xml` 和 `rss.xml` 并添加托管的 RSS 社交链接。
+  * `search` (bool)：启用页面内搜索弹窗及 `Cmd/Ctrl+K` 快捷键。
+  * `navbar_fixed` (bool)：滚动时保持导航栏固定。
+  * `mathjax` (bool)：在包含可能 TeX 定界符的文章页启用 MathJax 渲染。
+  * `mermaid` (bool)：为原生 Mermaid 围栏代码块启用渲染。
+  * `syntax_highlight` (bool)：为围栏代码块启用运行时语法高亮。
+  * `sidebar` (bool)：在文章页渲染右侧标签和目录边栏。
+  * `floating_buttons` (bool)：渲染悬浮目录/标签按钮及滚动到顶部控件。
+  * `aratafetch` (bool)：在首页渲染 aratafetch 站点摘要。
+  * `lightbox` (bool)：在内置灯箱中打开 Markdown 正文图片。
+  * `latest_posts` (bool)：在首页渲染最新发布文章部分。
+* **`[latest_posts]`** —— `count` (int)：首页最新文章部分展示的最大已发布文章数。
+* **`[aratafetch]`** —— `maintained_for` (string)：`maintained` 行的可选显示值。
+* **`[fonts]`** —— `text`、`header` 和 `code` 的 CSS `font-family` 声明。
+* **`[assets]`** —— `mathjax_url`、`mermaid_url` 和 `syntax_highlight_url` 的运行时资源 URL。当其对应功能启用时，必须提供 URL。
+* **`[analytics]`** —— 统计分析提供方配置。支持的提供方：`disabled`、`goatcounter`、`umami`、`liwan`。特定于提供方的值应放在此表中。（有意不支持 Google Analytics）。
+* **`[comments]`** —— 评论提供方配置。支持的提供方：`disabled`、`giscus`、`utterances`。特定于提供方的值应放在此表中。
 * **强调色/主色** —— 编辑 `src/css/theme.css` 中的 `--primary-color` 即可修改强调色表面。Arata 在 `:root` 与 `:root.dark` 中分别定义了浅色与深色的强调色值，以获得更好的主题对比度。
 
 完整的配置指南请参见 [configuration.md](configuration)。
@@ -375,8 +398,8 @@ dist/
 ├── app.mjs                 # 打包后的 Lustre SPA
 ├── content_index.json      # SPA 获取的内容清单
 ├── search_index.json       # 搜索语料库
-├── atom.xml                # Atom 订阅源（当 rss_enabled 时）
-├── rss.xml                 # RSS 2.0 订阅源（当 rss_enabled 时）
+├── atom.xml                # Atom 订阅源（当启用 rss 时）
+├── rss.xml                 # RSS 2.0 订阅源（当启用 rss 时）
 ├── sitemap.xml             # 站点地图
 ├── robots.txt              # 带有 Sitemap 指令的爬虫策略
 ├── llms.txt                # 供 LLM/智能体使用的 Markdown 站点地图

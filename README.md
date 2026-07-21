@@ -55,12 +55,12 @@ flowchart TD
 - **GFM Markdown extensions** — tables, task lists, emoji shortcodes, autolinks, and footnotes are enabled through mork options
 - **9 routes**: `/`, `/posts`, `/posts/{slug}`, `/projects`, `/links`, `/tags`, `/tags/{name}`, `/{slug}` (standalone pages), and a 404 page
 - **3-state theme toggle** (Light / Dark / Auto) with `localStorage` persistence and `prefers-color-scheme` reactivity
-- **Cmd/Ctrl+K search** modal with keyboard navigation (toggle with `search_enabled`)
+- **Cmd/Ctrl+K search** modal with keyboard navigation (toggle with `search`)
 - **Table of contents** with scroll-driven `IntersectionObserver` highlighting
 - **Floating ToC + Tags button** visible on **all screen sizes** — opens an overlay with the ToC tree and a Tags list for quick navigation
 - **Fancy code blocks** with copy button + language label
 - **3 shortcodes**: `note`, `character`, `image`
-- **MathJax Rendering** toggle with `mathjax_enabled`
+- **MathJax Rendering** toggle with `mathjax`
 - **Mermaid diagrams** — use native Markdown fenced code blocks with `mermaid` language for client-side rendering
 - **Post cards** — each post on `/posts` is wrapped in a bordered card with a hover effect, with clickable tag pills between the title and content
 - **Page-jump input** — type a page number in the pagination bar and press Enter to jump straight to that page
@@ -72,8 +72,8 @@ flowchart TD
 - **Analytics**: GoatCounter, Umami, Liwan (Google Analytics intentionally not supported)
 - **Comments**: Giscus, Utterances
 - **Inline CSS shell** — CSS modules are inlined into `index.html` and `404.html` to remove render-blocking stylesheet requests; `dist/css/` is still emitted for inspection/debugging
-- **Config toggles** — `sidebar_enabled`, `floating_buttons_enabled`, `search_enabled`, `rss_enabled`, `mathjax_enabled`, and `aratafetch_enabled` let you turn features on or off without touching view code
-- **Configurable logo and favicon** — both are configured from `src/config.gleam`
+- **Config toggles** — features like `sidebar`, `floating_buttons`, `search`, `rss`, `mathjax`, and `aratafetch` can be toggled on or off in `content/arata.toml` without touching view code
+- **Configurable logo and favicon** — both are configured from `content/arata.toml`
 - **Build pipeline**: `gleam run -m build/pipeline` → complete static site in `dist/` (no Erlang/OTP required)
 
 - **aratafetch** — optional neofetch-style ASCII site summary showing site title, published post count, total word count, unique tag count, friend link count, project count, and optional maintenance string
@@ -134,11 +134,23 @@ arata/
 │   │   └── ...                # Other demo site content (markdown-test.md, deployment.md etc.)
 │   ├── pages/*.md             # standalone pages (incl. home.md, about.md)
 │   ├── links/*.md             # friend-link cards
-│   └── projects/*.md          # project showcase cards
+│   ├── projects/*.md          # project showcase cards
+│   └── arata.toml             # user-owned site configuration
 ├── src/
 │   ├── arata.gleam            # entry point (boots Lustre)
+│   ├── config.gleam           # top-level stable config API and backward-compatible default accessors
 │   ├── route.gleam            # URL <-> Route mapping (modem)
-│   ├── config.gleam           # Config defaults + SiteMeta defaults
+│   ├── config/                # configuration module
+│   │   ├── defaults.gleam     # default configuration values
+│   │   ├── decoder.gleam      # configuration decoder
+│   │   ├── encoder.gleam      # configuration encoder
+│   │   ├── error.gleam        # configuration error types
+│   │   ├── loader.gleam       # configuration loader
+│   │   ├── raw.gleam          # raw configuration types
+│   │   ├── resolve.gleam      # configuration resolver
+│   │   ├── runtime.gleam      # runtime configuration types
+│   │   ├── url.gleam          # URL canonicalization helpers
+│   │   └── validate.gleam     # configuration validator
 │   ├── build/                 # content -> dist/ pipeline + feeds + crawler files
 │   │   ├── pipeline.gleam     # orchestrator
 │   │   ├── feeds.gleam        # atom.xml, rss.xml, sitemap.xml
@@ -179,7 +191,6 @@ arata/
 ├── flake.nix                  # provide reproduceable development environment
 ├── gleam.toml                 # declare dependencies and metadata of project
 └── package.json               # declare commands using in development
-
 ```
 
 ## Content authoring
@@ -264,32 +275,43 @@ content/pages/home.md
 
 It renders at `/`.
 
-When `aratafetch_enabled` is `True`, arata renders a neofetch-style ASCII summary block below the homepage Markdown body.
+When `aratafetch` is enabled in `content/arata.toml`, arata renders a neofetch-style ASCII summary block below the homepage Markdown body.
 The summary is computed from the loaded runtime content model and includes published post count, total word count, unique tag count, friend link count, project count, and an optional maintenance string.
 
 ## Configuration
 
-Arata is configured through two Gleam modules:
+Arata is configured through a single `arata.toml` file located in the `content/` directory. This file is the user-owned configuration entry point, read at build time to generate site metadata and runtime settings.
 
-* **`src/config.gleam`** — the user-facing configuration source: `Config`, `config.default()`, and `config.site_meta()`.
-* **`src/data/site.gleam`** — shared metadata types: `SiteMeta`, `Analytics`, and `CommentsConfig`.
+Both the SPA runtime and build pipeline read from this configuration so title, description, RSS settings, analytics, comments, and favicon configuration do not drift.
 
-`config.gleam` is the single source for default site values. Both the SPA runtime and build pipeline read from it so title, description, RSS settings, analytics, comments, and favicon configuration do not drift.
+Here is a brief overview of the configuration sections in `content/arata.toml`:
 
-Highlights:
-
-* **`logo`** (`Option(String)`) — optional header logo path. Prefer absolute paths like `Some("/images/avatar.avif")`.
-* **`favicon`** (`Option(String)`) — optional favicon path used when generating `index.html` and `404.html`.
-* **`rss_enabled`** (`Bool`) — when `False`, no `atom.xml` / `rss.xml` are written, no feed `<link>` tags are emitted, and the RSS social is dropped from the header.
-* **`search_enabled`** (`Bool`) — when `False`, the search button, modal, and `Cmd/Ctrl+K` shortcut are all omitted.
-* **`mathjax_enabled`** (`Bool`) — when `True`, MathJax is loaded on post pages and `$…$` / `$$…$$` LaTeX is typeset.
-* **Built-in image lightbox gallery** — Markdown body images open in a Lustre-managed fullscreen gallery overlay with captions, keyboard navigation, touch-friendly controls, and page scroll locking.
-* **`sidebar_enabled`** (`Bool`, default `True`) — when `False`, the right sidebar (ToC + Tags) is omitted on post pages so the body takes the full content width.
-* **`floating_buttons_enabled`** (`Bool`, default `True`) — when `False`, the floating ToC/tags FAB and the overlay's scroll-to-top button are not rendered.
-* **`aratafetch_enabled`** (`Bool`) — when `True`, the homepage renders the optional aratafetch ASCII summary block below the Markdown body.
-* **`aratafetch_maintained_for`** (`Option(String)`) — optional display string for aratafetch's `maintained` row, for example `Some("since 2024-06-23")`.
-* **`fonts`** — a `Fonts(text, header, code)` record of CSS `font-family` declarations. Defaults to system font stacks.
-* **`analytics`** — `AnalyticsDisabled`, `GoatCounter(data_goatcounter, src)`, `Umami(website_id, src)` or `Liwan(data_entity, src)`. Google Analytics is intentionally not supported.
+* **`[site]`** — Basic site metadata:
+  * `base_url`: Public canonical URL of the deployed site (supports root or subdirectory deployments).
+  * `title` & `description`: Site title and description used for SEO and meta tags.
+  * `logo`: Optional navigation logo path (use an empty string to render the site title as a text link).
+  * `favicon`: Optional favicon path (falls back to Arata's default if empty).
+  * `fediverse_creator`: Optional Fediverse creator attribution (e.g., `@user@example.social`).
+* **`[[menu]]`** — Navigation items rendered in the declared order. Internal URLs must be root-relative.
+* **`[[socials]]`** — Social links rendered in the header. `icon` maps to an SVG filename under `static/icons/social/`.
+* **`[features]`** — Toggles for various runtime and build features:
+  * `rss` (bool): Generate `atom.xml` and `rss.xml` and add the managed RSS social link.
+  * `search` (bool): Enable the in-page search modal and `Cmd/Ctrl+K` shortcut.
+  * `navbar_fixed` (bool): Keep the navigation bar pinned while scrolling.
+  * `mathjax` (bool): Enable MathJax rendering on post pages containing likely TeX delimiters.
+  * `mermaid` (bool): Enable Mermaid rendering for native fenced Mermaid code blocks.
+  * `syntax_highlight` (bool): Enable runtime syntax highlighting for fenced code blocks.
+  * `sidebar` (bool): Render the right-hand Tags and table-of-contents sidebar on post pages.
+  * `floating_buttons` (bool): Render the floating ToC/tags button and scroll-to-top control.
+  * `aratafetch` (bool): Render the aratafetch site summary on the homepage.
+  * `lightbox` (bool): Open Markdown body images in the built-in lightbox.
+  * `latest_posts` (bool): Render the latest published posts section on the homepage.
+* **`[latest_posts]`** — `count` (int): Maximum number of published posts shown in the homepage latest-posts section.
+* **`[aratafetch]`** — `maintained_for` (string): Optional display value for the `maintained` row.
+* **`[fonts]`** — CSS `font-family` declarations for `text`, `header`, and `code`.
+* **`[assets]`** — Runtime asset URLs for `mathjax_url`, `mermaid_url`, and `syntax_highlight_url`. A URL is required when its corresponding feature is enabled.
+* **`[analytics]`** — Analytics provider configuration. Supported providers: `disabled`, `goatcounter`, `umami`, `liwan`. Provider-specific values belong in this table. (Google Analytics is intentionally not supported).
+* **`[comments]`** — Comments provider configuration. Supported providers: `disabled`, `giscus`, `utterances`. Provider-specific values belong in this table.
 * **Accent/Primary color** — edit `--primary-color` in `src/css/theme.css` to recolor accent surfaces. Arata defines separate light and dark accent values in `:root` and `:root.dark` for better contrast across themes.
 
 See [configuration.md](content/posts/configuration.md) for the full configuration guide.
@@ -369,8 +391,8 @@ dist/
 ├── app.mjs                 # bundled Lustre SPA
 ├── content_index.json      # content manifest fetched by the SPA
 ├── search_index.json       # search corpus
-├── atom.xml                # Atom feed (when rss_enabled)
-├── rss.xml                 # RSS 2.0 feed (when rss_enabled)
+├── atom.xml                # Atom feed (when rss is enabled)
+├── rss.xml                 # RSS 2.0 feed (when rss is enabled)
 ├── sitemap.xml             # sitemap
 ├── robots.txt              # crawler policy with Sitemap directive
 ├── llms.txt                # Markdown site map for LLM/agent consumers
