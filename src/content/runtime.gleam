@@ -1,22 +1,45 @@
-//// Runtime content: the SPA's content source. Instead of reading `.md` files
-//// at runtime (which requires `simplifile` — a Node-only dependency that
-//// breaks browser builds), the SPA fetches a pre-built `content_index.json`
-//// that the build pipeline generates from the `.md` files.
+//// Runtime content: the SPA's browser-safe content source.
 ////
-//// This module is browser-safe: it uses `rsvp` (HTTP fetch) to load the JSON
-//// at startup.
+//// The SPA fetches the build-generated `content_index.json` instead of reading
+//// Markdown files or `content/arata.toml` in the browser.
 ////
-//// Important invariant:
-//// Runtime decoding should be tolerant of older generated JSON where possible.
-//// For friend links, `weight` defaults to 999 so older `content_index.json`
-//// files still decode, while newer builds get deterministic Zola-style
-//// ordering.
+//// The content index contains:
+////
+////   - resolved browser-safe configuration;
+////   - posts;
+////   - pages;
+////   - homepage content;
+////   - friend links;
+////   - projects.
+////
+//// Runtime configuration is decoded from the same content index as content so
+//// the SPA retains Arata's single-fetch startup invariant.
+////
+//// Important compatibility invariants:
+////
+////   - friend-link `weight` defaults to 999 for older generated indexes;
+////   - optional post, page, link, and project fields retain safe defaults;
+////   - configuration decoding is strict because partial runtime configuration
+////     could produce inconsistent feature behavior.
+////
+//// The URL used to bootstrap `content_index.json` still comes from the
+//// compiled default configuration. This is necessary because the runtime
+//// configuration cannot be read until the content index has been fetched.
+//// A future HTML bootstrap value can remove this final bootstrap dependency
+//// for deployments whose TOML base path differs from the compiled default.
 
 import config
+import config/runtime.{
+  type RuntimeConfig, type RuntimeSite, RuntimeConfig, RuntimeSite,
+}
 import data/link.{type Link, Link}
 import data/page.{type Page, Page}
 import data/post.{type Post, type TocEntry, Post, TocEntry}
 import data/project.{type Project, Project}
+import data/site.{
+  type Analytics, type CommentsConfig, AnalyticsDisabled, CommentsDisabled,
+  Giscus, GoatCounter, Liwan, Umami, Utterances,
+}
 import gleam/dynamic/decode
 import gleam/int
 import gleam/list
@@ -28,9 +51,13 @@ import rsvp
 
 const default_link_weight = 999
 
-/// All content loaded from `content_index.json`.
+/// All runtime data loaded from `content_index.json`.
+///
+/// Configuration and content are kept together so every runtime consumer uses
+/// values produced by the same successful build.
 pub type Content {
   Content(
+    config: RuntimeConfig,
     posts: List(Post),
     pages: List(Page),
     homepage: Page,
@@ -39,27 +66,33 @@ pub type Content {
   )
 }
 
-/// Messages produced by the content loading effect.
+/// Messages produced by the content-loading effect.
 pub type ContentMsg {
   ContentLoaded(result: Result(Content, rsvp.Error(String)))
 }
 
-/// Fetch `content_index.json` and decode it. Dispatches `ContentLoaded`
-/// with the result.
+/// Fetch and decode `content_index.json`.
+///
+/// The request URL uses the compiled default base path only as a bootstrap
+/// value. After decoding, the SPA must use `Content.config` for all runtime
+/// rendering, routing, feature toggles, and public integration settings.
 pub fn load() -> Effect(ContentMsg) {
   let handler =
     rsvp.expect_json(decode_content_index(), fn(result) {
       ContentLoaded(result)
     })
 
-  let site_config = config.default()
-  let url = config.with_base_path(site_config.base_path, "/content_index.json")
+  let bootstrap_config = config.default()
+
+  let url =
+    config.with_base_path(bootstrap_config.base_path, "/content_index.json")
 
   rsvp.get(url, handler)
 }
 
-/// A decoder for `content_index.json`.
+/// Decode the complete content index.
 fn decode_content_index() -> decode.Decoder(Content) {
+  use runtime_config <- decode.field("config", decode_runtime_config())
   use posts <- decode.field("posts", decode.list(decode_post()))
   use pages <- decode.field("pages", decode.list(decode_page()))
   use homepage <- decode.field("homepage", decode_page())
@@ -69,12 +102,216 @@ fn decode_content_index() -> decode.Decoder(Content) {
   let ordered_links = sort_links(links)
 
   decode.success(Content(
+    config: runtime_config,
     posts: posts,
     pages: pages,
     homepage: homepage,
     links: ordered_links,
     projects: projects,
   ))
+}
+
+/// Decode the browser-safe runtime configuration.
+///
+/// The build encoder emits two explicit sections:
+///
+///   config.application
+///   config.site
+fn decode_runtime_config() -> decode.Decoder(RuntimeConfig) {
+  use application <- decode.field("application", decode_application_config())
+
+  use site <- decode.field("site", decode_runtime_site())
+
+  decode.success(RuntimeConfig(application: application, site: site))
+}
+
+/// Decode the application configuration consumed by views and effects.
+fn decode_application_config() -> decode.Decoder(config.Config) {
+  use title <- decode.field("title", decode.string)
+  use description <- decode.field("description", decode.string)
+  use base_path <- decode.field("base_path", decode.string)
+  use menu <- decode.field("menu", decode.list(decode_menu_item()))
+  use socials <- decode.field("socials", decode.list(decode_social()))
+  use logo <- decode.optional_field(
+    "logo",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use favicon <- decode.optional_field(
+    "favicon",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use rss_enabled <- decode.field("rss_enabled", decode.bool)
+  use fonts <- decode.field("fonts", decode_fonts())
+  use search_enabled <- decode.field("search_enabled", decode.bool)
+  use navbar_fixed <- decode.field("navbar_fixed", decode.bool)
+  use analytics <- decode.field("analytics", decode_analytics())
+  use mathjax_enabled <- decode.field("mathjax_enabled", decode.bool)
+  use mathjax_cdn_url <- decode.field("mathjax_cdn_url", decode.string)
+  use mermaid_enabled <- decode.field("mermaid_enabled", decode.bool)
+  use mermaid_cdn_url <- decode.field("mermaid_cdn_url", decode.string)
+  use syntax_highlight_enabled <- decode.field(
+    "syntax_highlight_enabled",
+    decode.bool,
+  )
+  use syntax_highlight_cdn_url <- decode.field(
+    "syntax_highlight_cdn_url",
+    decode.string,
+  )
+  use sidebar_enabled <- decode.field("sidebar_enabled", decode.bool)
+  use floating_buttons_enabled <- decode.field(
+    "floating_buttons_enabled",
+    decode.bool,
+  )
+  use aratafetch_enabled <- decode.field("aratafetch_enabled", decode.bool)
+  use aratafetch_maintained_for <- decode.optional_field(
+    "aratafetch_maintained_for",
+    option.None,
+    decode.optional(decode.string),
+  )
+  use lightbox_enabled <- decode.field("lightbox_enabled", decode.bool)
+  use latest_posts_enabled <- decode.field("latest_posts_enabled", decode.bool)
+  use latest_posts_count <- decode.field("latest_posts_count", decode.int)
+
+  decode.success(config.Config(
+    title: title,
+    description: description,
+    base_path: base_path,
+    menu: menu,
+    socials: socials,
+    logo: logo,
+    favicon: favicon,
+    rss_enabled: rss_enabled,
+    fonts: fonts,
+    search_enabled: search_enabled,
+    navbar_fixed: navbar_fixed,
+    analytics: analytics,
+    mathjax_enabled: mathjax_enabled,
+    mathjax_cdn_url: mathjax_cdn_url,
+    mermaid_enabled: mermaid_enabled,
+    mermaid_cdn_url: mermaid_cdn_url,
+    syntax_highlight_enabled: syntax_highlight_enabled,
+    syntax_highlight_cdn_url: syntax_highlight_cdn_url,
+    sidebar_enabled: sidebar_enabled,
+    floating_buttons_enabled: floating_buttons_enabled,
+    aratafetch_enabled: aratafetch_enabled,
+    aratafetch_maintained_for: aratafetch_maintained_for,
+    lightbox_enabled: lightbox_enabled,
+    latest_posts_enabled: latest_posts_enabled,
+    latest_posts_count: latest_posts_count,
+  ))
+}
+
+/// Decode browser-safe site metadata.
+fn decode_runtime_site() -> decode.Decoder(RuntimeSite) {
+  use base_url <- decode.field("base_url", decode.string)
+  use comments <- decode.field("comments", decode_comments())
+  use fediverse_creator <- decode.optional_field(
+    "fediverse_creator",
+    option.None,
+    decode.optional(decode.string),
+  )
+
+  decode.success(RuntimeSite(
+    base_url: base_url,
+    comments: comments,
+    fediverse_creator: fediverse_creator,
+  ))
+}
+
+fn decode_menu_item() -> decode.Decoder(config.MenuItem) {
+  use name <- decode.field("name", decode.string)
+  use url <- decode.field("url", decode.string)
+
+  decode.success(config.MenuItem(name: name, url: url))
+}
+
+fn decode_social() -> decode.Decoder(config.Social) {
+  use name <- decode.field("name", decode.string)
+  use url <- decode.field("url", decode.string)
+  use icon <- decode.field("icon", decode.string)
+
+  decode.success(config.Social(name: name, url: url, icon: icon))
+}
+
+fn decode_fonts() -> decode.Decoder(config.Fonts) {
+  use text <- decode.field("text", decode.string)
+  use header <- decode.field("header", decode.string)
+  use code <- decode.field("code", decode.string)
+
+  decode.success(config.Fonts(text: text, header: header, code: code))
+}
+
+/// Decode analytics using the explicit provider discriminator.
+fn decode_analytics() -> decode.Decoder(Analytics) {
+  use provider <- decode.field("provider", decode.string)
+
+  case string.lowercase(provider) {
+    "disabled" -> decode.success(AnalyticsDisabled)
+
+    "goatcounter" -> {
+      use data_goatcounter <- decode.field("data_goatcounter", decode.string)
+      use src <- decode.field("src", decode.string)
+
+      decode.success(GoatCounter(data_goatcounter: data_goatcounter, src: src))
+    }
+
+    "umami" -> {
+      use website_id <- decode.field("website_id", decode.string)
+      use src <- decode.field("src", decode.string)
+
+      decode.success(Umami(website_id: website_id, src: src))
+    }
+
+    "liwan" -> {
+      use data_entity <- decode.field("data_entity", decode.string)
+      use src <- decode.field("src", decode.string)
+
+      decode.success(Liwan(data_entity: data_entity, src: src))
+    }
+
+    _ ->
+      decode.failure(
+        AnalyticsDisabled,
+        "unsupported analytics provider: " <> provider,
+      )
+  }
+}
+
+/// Decode comments configuration using the provider discriminator.
+fn decode_comments() -> decode.Decoder(CommentsConfig) {
+  use provider <- decode.field("provider", decode.string)
+
+  case string.lowercase(provider) {
+    "disabled" -> decode.success(CommentsDisabled)
+
+    "giscus" -> {
+      use repo <- decode.field("repo", decode.string)
+      use repo_id <- decode.field("repo_id", decode.string)
+      use category <- decode.field("category", decode.string)
+      use category_id <- decode.field("category_id", decode.string)
+
+      decode.success(Giscus(
+        repo: repo,
+        repo_id: repo_id,
+        category: category,
+        category_id: category_id,
+      ))
+    }
+
+    "utterances" -> {
+      use repo <- decode.field("repo", decode.string)
+
+      decode.success(Utterances(repo: repo))
+    }
+
+    _ ->
+      decode.failure(
+        CommentsDisabled,
+        "unsupported comments provider: " <> provider,
+      )
+  }
 }
 
 fn sort_links(links: List(Link)) -> List(Link) {
