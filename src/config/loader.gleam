@@ -99,5 +99,5 @@ fn read_error(path: String, file_error: FileError) -> ConfigError {
     _ -> "could not read configuration file: " <> string.inspect(file_error)
   }
 
-  error.io(file: path, message: message)
+  error.io(path, message)
 }
