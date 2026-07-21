@@ -22,11 +22,9 @@
 ////   - configuration decoding is strict because partial runtime configuration
 ////     could produce inconsistent feature behavior.
 ////
-//// The URL used to bootstrap `content_index.json` still comes from the
-//// compiled default configuration. This is necessary because the runtime
-//// configuration cannot be read until the content index has been fetched.
-//// A future HTML bootstrap value can remove this final bootstrap dependency
-//// for deployments whose TOML base path differs from the compiled default.
+//// The initial `content_index.json` request uses the resolved deployment base
+//// path embedded in the generated HTML shell. This avoids depending on
+//// compiled configuration defaults before runtime configuration has loaded.
 
 import config
 import config/runtime.{
@@ -82,13 +80,21 @@ pub fn load() -> Effect(ContentMsg) {
       ContentLoaded(result)
     })
 
-  let bootstrap_config = config.default()
-
-  let url =
-    config.with_base_path(bootstrap_config.base_path, "/content_index.json")
+  let url = config.with_base_path(arata_base_path(), "/content_index.json")
 
   rsvp.get(url, handler)
 }
+
+/// Return the deployment base path embedded in the generated HTML shell.
+///
+/// The build pipeline writes the resolved value from `content/arata.toml` into
+/// both `index.html` and `404.html`. An empty value represents a root
+/// deployment.
+///
+/// The browser implementation falls back to an empty string when the metadata
+/// is unavailable, producing the root request path `/content_index.json`.
+@external(javascript, "../ffi/browser.ffi.mjs", "arata_base_path")
+fn arata_base_path() -> String
 
 /// Decode the complete content index.
 fn decode_content_index() -> decode.Decoder(Content) {
