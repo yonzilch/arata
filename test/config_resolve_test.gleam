@@ -186,7 +186,7 @@ pub fn subdirectory_configuration_canonicalizes_and_prefixes_paths_test() {
   |> should.equal(False)
 
   application.mathjax_cdn_url
-  |> should.equal("/arata")
+  |> should.equal("")
 
   application.aratafetch_maintained_for
   |> should.equal(None)

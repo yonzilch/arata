@@ -5,7 +5,9 @@
 ////   - merges `RawConfig` with Arata's built-in defaults;
 ////   - canonicalizes the public base URL;
 ////   - derives `base_path` exclusively from `base_url`;
-////   - resolves internal menu, social, and asset paths;
+////   - resolves valid root-relative menu, social, and asset paths;
+////   - preserves unsupported URL forms for semantic validation;
+////   - preserves empty runtime asset URLs for feature validation;
 ////   - constructs analytics and comments provider values;
 ////   - creates synchronized `Config` and `SiteMeta` values.
 ////
@@ -20,6 +22,14 @@
 //// The resolver rejects incomplete collection entries and provider
 //// configurations instead of silently replacing invalid user input with
 //// defaults.
+////
+//// URL resolution follows a strict boundary:
+////
+////   - root-relative paths receive the deployment base path;
+////   - valid external and browser-special URLs remain unchanged;
+////   - empty strings remain empty;
+////   - unsupported or ambiguous URL forms remain unchanged so validation can
+////     reject them without losing their original meaning.
 ////
 //// This module imports the existing top-level `config` module to construct the
 //// current public `Config`, `MenuItem`, `Social`, and `Fonts` types. The public
@@ -46,8 +56,8 @@ import gleam/string
 
 /// Default source path used in resolution diagnostics.
 ///
-/// A future caller resolving another explicitly selected file should use
-/// `resolve_from` so errors identify the actual source.
+/// A caller resolving another explicitly selected file should use
+/// `resolve_from` so errors identify the actual configuration source.
 pub const default_source_path = "content/arata.toml"
 
 /// Fully resolved configuration shared by build-time and runtime preparation.
@@ -169,7 +179,7 @@ pub fn resolve_from(
   }
 }
 
-/// Return the existing SPA-facing configuration from a resolved value.
+/// Return the SPA-facing configuration from a resolved value.
 pub fn runtime_config(resolved: ResolvedConfig) -> config.Config {
   resolved.config
 }
@@ -305,6 +315,7 @@ fn resolve_features(raw: Option(RawFeatures)) -> ResolvedFeatures {
 fn resolve_latest_posts(raw: Option(RawLatestPosts)) -> ResolvedLatestPosts {
   let raw = case raw {
     Some(value) -> value
+
     None -> RawLatestPosts(count: None)
   }
 
@@ -314,6 +325,7 @@ fn resolve_latest_posts(raw: Option(RawLatestPosts)) -> ResolvedLatestPosts {
 fn resolve_aratafetch(raw: Option(RawAratafetch)) -> ResolvedAratafetch {
   let raw = case raw {
     Some(value) -> value
+
     None -> RawAratafetch(maintained_for: None)
   }
 
@@ -756,6 +768,10 @@ fn require_string(
   }
 }
 
+/// Resolve an optional user-facing string.
+///
+/// Missing values inherit the supplied built-in default. Explicit empty strings
+/// disable optional values and resolve to `None`.
 fn resolve_optional_string(
   raw: Option(String),
   default: Option(String),
@@ -774,6 +790,11 @@ fn resolve_optional_string(
   }
 }
 
+/// Resolve an optional logo or favicon path.
+///
+/// Only valid root-relative paths receive the deployment base path. External
+/// URLs remain unchanged. Unsupported path forms remain unchanged so semantic
+/// validation can reject them without losing their original representation.
 fn resolve_optional_asset_path(
   base_path: String,
   path: Option(String),
@@ -785,31 +806,61 @@ fn resolve_optional_asset_path(
   }
 }
 
+/// Resolve a runtime asset URL.
+///
+/// Empty values must remain empty so feature validation can distinguish a
+/// missing runtime asset from a valid deployment root.
+///
+/// Root-relative paths receive the deployment base path. HTTP, HTTPS, and
+/// protocol-relative URLs remain unchanged. Unsupported forms remain unchanged
+/// and are rejected by semantic validation when the feature is enabled.
 fn resolve_runtime_asset_url(base_path: String, url: String) -> String {
   let url = string.trim(url)
 
-  case is_external_or_special_url(url) {
-    True -> url
-    False -> config.with_base_path(base_path, url)
+  case url {
+    "" -> ""
+
+    _ ->
+      case string.starts_with(url, "/") {
+        True -> config.with_base_path(base_path, url)
+
+        False -> url
+      }
   }
 }
 
+/// Resolve a navigation or social URL.
+///
+/// Only explicit root-relative paths are deployment-local and receive the
+/// derived base path. Valid external and browser-special URLs remain unchanged.
+///
+/// Ambiguous relative values and unsupported schemes also remain unchanged.
+/// This is intentional: validation must inspect the original value rather than
+/// a synthetic root-relative path.
+///
+/// Examples:
+///
+///   "/posts"                -> "/arata/posts"
+///   "https://example.com"   -> "https://example.com"
+///   "#comments"             -> "#comments"
+///   "mailto:a@example.com"  -> "mailto:a@example.com"
+///   "posts"                 -> "posts"
+///   "javascript:alert(1)"   -> "javascript:alert(1)"
 fn resolve_navigation_url(base_path: String, url: String) -> String {
   let url = string.trim(url)
 
-  case is_external_or_special_url(url) {
-    True -> url
-    False -> config.with_base_path(base_path, url)
-  }
-}
+  case string.starts_with(url, "/") {
+    True ->
+      case string.starts_with(url, "//") {
+        // Protocol-relative external URLs must not receive the deployment
+        // base path.
+        True -> url
 
-fn is_external_or_special_url(url: String) -> Bool {
-  string.starts_with(url, "https://")
-  || string.starts_with(url, "http://")
-  || string.starts_with(url, "//")
-  || string.starts_with(url, "#")
-  || string.starts_with(url, "mailto:")
-  || string.starts_with(url, "tel:")
+        False -> config.with_base_path(base_path, url)
+      }
+
+    False -> url
+  }
 }
 
 fn normalize_provider(provider: String) -> String {
@@ -847,6 +898,7 @@ fn append_result_errors(
 ) -> List(ConfigError) {
   case value {
     Ok(_) -> errors
+
     Error(next_errors) -> list.append(errors, next_errors)
   }
 }
