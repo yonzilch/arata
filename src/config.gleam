@@ -1,364 +1,323 @@
-//// Site configuration: title, description, navigation menu, socials, and logo.
+//// Public site configuration types and backward-compatible default accessors.
 ////
-//// This module mirrors the shape of apollo's `config.toml` `[extra]` block.
-//// For now it returns hardcoded defaults; Phase 4 replaces `default/0` with a
-//// JSON loader that reads a `config.json` shipped alongside the content index.
+//// User-owned configuration is defined in:
 ////
-//// The `Social.icon` field is the filename (without extension) of an SVG in
-//// `static/icons/social/` — e.g. `icon: "github"` resolves to
-//// `/icons/social/github.svg`. This matches apollo's `get_url(path='icons/social/' ~ social.icon ~ '.svg')`.
+////   content/arata.toml
+////
+//// The configuration pipeline loads that file, decodes it into `RawConfig`,
+//// applies the built-in defaults from `config/defaults`, resolves deployment
+//// paths, and validates the final configuration before the build writes any
+//// output.
+////
+//// This top-level module remains the stable configuration API consumed by
+//// existing views, effects, routes, and build modules. It owns the public
+//// runtime types but delegates framework defaults and URL normalization to
+//// their dedicated modules.
+////
+//// `default()` and `site_meta()` remain available for backward compatibility
+//// and tests. Production build code should load and resolve configuration once
+//// at the build entry point instead of calling these functions independently.
+////
+//// The `Social.icon` field is the filename without extension of an SVG under:
+////
+////   static/icons/social/
+////
+//// For example, `icon: "github"` resolves to:
+////
+////   /icons/social/github.svg
 
-import data/site.{
-  type Analytics, type SiteMeta, AnalyticsDisabled, CommentsDisabled, SiteMeta,
-}
+import config/defaults
+import config/url as config_url
+import data/site.{type Analytics, type SiteMeta, SiteMeta}
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/string
 
+/// A public social link rendered in the site header.
+///
+/// `icon` is the filename without the `.svg` extension under
+/// `static/icons/social/`.
 pub type Social {
   Social(name: String, url: String, icon: String)
 }
 
+/// A navigation item rendered in the site header.
+///
+/// Internal URLs are resolved against the deployment base path before they
+/// enter this trusted configuration type.
 pub type MenuItem {
   MenuItem(name: String, url: String)
 }
 
-/// Font family configuration. The values are CSS `font-family` declarations.
+/// Font-family configuration used by Arata's CSS custom properties.
 ///
-/// Optional fonts users can install and configure:
-/// - **Maple Font** (https://github.com/subframe7536/maple-font): A programming
-///   font with ligatures. Set `code` to `"\"Maple Mono NF\", \"Maple Mono\", monospace"`.
-/// - **Sarasa Gothic** (https://github.com/be5invis/sarasa-gothic): A CJK-friendly
-///   font. Set `text` to `"\"Sarasa Gothic SC\", sans-serif"` or
-///   `code` to `"\"Sarasa Mono SC\", monospace"`.
+/// Values are complete CSS `font-family` declarations.
+///
+/// Optional fonts users can configure include:
+///
+/// - Maple Font for programming ligatures;
+/// - Sarasa Gothic for CJK-friendly text and code rendering.
 pub type Fonts {
   Fonts(text: String, header: String, code: String)
 }
 
+/// Trusted application configuration consumed by the SPA.
+///
+/// Values of this type must already have passed through default resolution,
+/// deployment-path normalization, and semantic validation.
+///
+/// Build-only metadata that is not directly consumed by application views and
+/// effects remains in `data/site.SiteMeta`.
 pub type Config {
   Config(
     title: String,
     description: String,
-    /// Base path for subdirectory deployments.
+    /// Base path derived exclusively from the canonical public base URL.
     ///
-    /// Use "" for root deployments:
-    ///   https://example.com/
+    /// Root deployment:
     ///
-    /// Use "/arata" for GitHub Pages project deployments:
-    ///   https://yonzilch.github.io/arata/
+    ///   ""
+    ///
+    /// Subdirectory deployment:
+    ///
+    ///   "/arata"
     base_path: String,
+    /// Navigation entries in display order.
     menu: List(MenuItem),
+    /// Social entries in display order.
+    ///
+    /// The managed RSS entry is present only when `rss_enabled` is `True`.
     socials: List(Social),
-    /// Optional logo path (relative to `/`). When `None`, the site title is
-    /// rendered as a text link in the nav.
+    /// Optional resolved navigation logo path.
+    ///
+    /// When `None`, the site title is rendered as a text link.
     logo: Option(String),
-    /// Optional favicon path. Use an absolute path like `/icons/favicon.png`
-    /// or `/images/favicon.svg`. When `None`, falls back to `/icon/favicon.png`.
+    /// Optional resolved favicon path.
     favicon: Option(String),
-    /// Whether RSS/Atom feeds are generated by the build pipeline. When `False`,
-    /// no `atom.xml` / `rss.xml` are written to `dist/`, no feed `<link>` tags
-    /// are emitted in `index.html`, and the RSS social link is omitted from
-    /// the header. Mirrors blogatto's opt-out feed model.
+    /// Whether RSS and Atom feeds are enabled.
     rss_enabled: Bool,
-    /// Font family overrides for body text, headings, and code blocks. The
-    /// values are emitted as a `:root` CSS override in the SPA view so the
-    /// rest of `arata.css` resolves them through the `--text-font`,
-    /// `--header-font`, and `--code-font` custom properties.
+    /// Body, heading, and code font-family declarations.
     fonts: Fonts,
-    /// Whether the in-page search modal is enabled. When `False`, the search
-    /// button is omitted from the header, the search modal is not rendered,
-    /// and the Cmd/Ctrl+K keyboard shortcut is not subscribed to.
+    /// Whether the in-page search interface and keyboard shortcut are enabled.
     search_enabled: Bool,
-    /// Whether the navbar stays pinned while the page scrolls.
-    ///
-    /// When `True`, the header receives `.navbar-fixed`.
-    /// When `False`, the header receives `.navbar-static` and should scroll
-    /// away with the document. Defaults to `True` to preserve existing behavior.
+    /// Whether the navigation bar remains pinned while scrolling.
     navbar_fixed: Bool,
-    /// Analytics provider for the SPA runtime. Defaults to `AnalyticsDisabled`;
-    /// set to `GoatCounter`, `Umami` or `Liwan` to inject the provider's script at boot.
-    /// This mirrors `SiteMeta.analytics` so analytics can be configured from
-    /// `config.gleam` rather than only from `data/site.gleam`.
+    /// Public analytics provider configuration used by the SPA.
     analytics: Analytics,
-    /// Whether MathJax typesetting is allowed on post pages. When `False`, the
-    /// MathJax typeset effect is skipped entirely. When `True`, the JavaScript
-    /// FFI still lazy-loads MathJax only if the rendered post content contains
-    /// likely TeX delimiters, avoiding unnecessary runtime cost on posts without
-    /// math. Defaults to `False` unless LaTeX rendering is needed.
+    /// Whether MathJax rendering is enabled.
     mathjax_enabled: Bool,
-    /// Runtime asset URL used by the MathJax enhancement. This is passed to the
-    /// JavaScript FFI so users can replace jsDelivr with another CDN or a
-    /// vendored local asset.
+    /// Resolved public MathJax runtime asset URL.
     mathjax_cdn_url: String,
-    /// Whether Mermaid diagram rendering is allowed on post pages. When `True`,
-    /// Arata renders native Markdown fenced code blocks such as ```mermaid and
-    /// keeps compatibility with legacy Mermaid shortcode output. When `False`,
-    /// no Mermaid runtime module is imported.
+    /// Whether Mermaid rendering is enabled.
     mermaid_enabled: Bool,
-    /// Runtime asset URL used by the Mermaid enhancement. This must point to a
-    /// browser-importable ESM bundle exposing Mermaid's `initialize` and
-    /// `render` APIs, such as jsDelivr's `mermaid.esm.min.mjs`.
+    /// Resolved public Mermaid ESM runtime asset URL.
     mermaid_cdn_url: String,
-    /// Whether syntax highlighting is applied to fenced code blocks at runtime.
-    /// When `False`, code blocks retain plain rendering, language labels, and
-    /// copy controls without loading the highlighting runtime.
+    /// Whether runtime syntax highlighting is enabled.
     syntax_highlight_enabled: Bool,
-    /// Runtime asset URL for the syntax-highlighting enhancement.
-    ///
-    /// This should point to a pinned browser-compatible Highlight.js bundle.
-    /// Users may replace the default CDN URL with another CDN or a vendored local
-    /// asset.
+    /// Resolved public syntax-highlighting runtime asset URL.
     syntax_highlight_cdn_url: String,
-    /// Whether the right sidebar (Tags + ToC) is rendered on post pages.
-    /// When `False`, `view_tags_and_toc` is omitted so the post body takes
-    /// the full content width. Defaults to `True` so the sidebar shows on
-    /// every post unless explicitly disabled.
+    /// Whether the post sidebar is rendered.
     sidebar_enabled: Bool,
-    /// Whether the floating buttons (the ToC/tags FAB and the overlay's
-    /// scroll-to-top button) are rendered. When `False`, no FAB is shown
-    /// and the overlay is not reachable. Defaults to `True`.
+    /// Whether floating post controls are rendered.
     floating_buttons_enabled: Bool,
-    /// Whether to show the aratafetch ASCII summary on the homepage.
-    /// When `False`, the homepage behaves exactly as before.
+    /// Whether the homepage aratafetch summary is rendered.
     aratafetch_enabled: Bool,
-    /// Optional display string for aratafetch's "maintained" row.
-    /// Example: Some("since 2026-06-21")
+    /// Optional value displayed in the aratafetch `maintained` row.
     aratafetch_maintained_for: Option(String),
-    /// Whether Markdown body images open in the built-in lightbox.
-    /// When `False`, images retain their default browser behavior.
+    /// Whether Markdown body images use the built-in lightbox.
     lightbox_enabled: Bool,
-    /// Whether to show the latest published posts on the homepage.
-    /// When `False`, the latest-posts section is omitted entirely.
+    /// Whether the homepage latest-posts section is rendered.
     latest_posts_enabled: Bool,
-    /// Maximum number of published posts shown in the homepage latest-posts section.
-    /// Values less than or equal to zero produce an empty section.
+    /// Maximum number of posts rendered in the latest-posts section.
     latest_posts_count: Int,
   )
 }
 
-/// Hardcoded default site metadata used by the build pipeline and SPA runtime.
+/// Return built-in site metadata.
 ///
-/// `base_url` is canonicalized at the configuration boundary. This keeps
-/// trailing-slash variants equivalent for all downstream build outputs:
+/// This function preserves the legacy API for tests and existing callers. It
+/// does not read `content/arata.toml`.
 ///
-///   https://example.com/blog
-///   https://example.com/blog/
-///
-/// Both are stored internally as:
-///
-///   https://example.com/blog
-///
-/// This prevents drift between `base_path`, feed URLs, sitemap URLs, robots.txt,
-/// llms.txt, the SPA shell, and runtime content metadata.
+/// Production build code should use the metadata created by
+/// `config/resolve.resolve` so build output and runtime configuration originate
+/// from the same resolved input.
 pub fn site_meta() -> SiteMeta {
-  let base_url = canonical_base_url("https://arata.yon.im")
+  let base_url =
+    defaults.base_url()
+    |> config_url.canonical_base_url
 
   SiteMeta(
     base_url: base_url,
-    title: "Arata",
-    description: "A modern and minimalistic blog theme",
-    analytics: AnalyticsDisabled,
-    comments: CommentsDisabled,
-    fediverse_creator: None,
-    rss_enabled: True,
+    title: defaults.title(),
+    description: defaults.description(),
+    analytics: defaults.analytics(),
+    comments: defaults.comments(),
+    fediverse_creator: defaults.fediverse_creator(),
+    rss_enabled: defaults.rss_enabled(),
   )
 }
 
-/// Hardcoded default config. Replaced by JSON loading in Phase 4.
+/// Return Arata's fully resolved built-in application configuration.
+///
+/// This function preserves the legacy API and current behavior when no user
+/// configuration has been loaded. It does not read `content/arata.toml`.
+///
+/// Production build code must not call this function independently in multiple
+/// pipeline stages. Configuration should be loaded and resolved once, then
+/// passed explicitly to downstream consumers.
 pub fn default() -> Config {
-  let meta = site_meta()
-  let base_path = base_path_from_url(meta.base_url)
-  let rss_enabled = meta.rss_enabled
+  let metadata = site_meta()
+  let base_path = config_url.base_path_from_url(metadata.base_url)
+  let rss_enabled = metadata.rss_enabled
 
   Config(
-    title: meta.title,
-    description: meta.description,
+    title: metadata.title,
+    description: metadata.description,
     base_path: base_path,
-    menu: [
-      MenuItem(name: "about", url: with_base_path(base_path, "/about")),
-      MenuItem(name: "links", url: with_base_path(base_path, "/links")),
-      MenuItem(name: "posts", url: with_base_path(base_path, "/posts")),
-      MenuItem(name: "projects", url: with_base_path(base_path, "/projects")),
-      MenuItem(name: "tags", url: with_base_path(base_path, "/tags")),
-    ],
-    // The RSS social link is only added when `rss_enabled` is `True`. Fix
-    // 9b/10: the URL is absolute (`/atom.xml`) so it resolves correctly on
-    // every page (a relative `./atom.xml` would 404 on sub-pages like
-    // `/posts/markdown`, where it expands to `/posts/atom.xml`). The header
-    // view (`view_socials`) adds `target="_blank"` to social links so modem
-    // (the SPA router) does not intercept the click and the browser fetches
-    // the feed directly. Subdirectory-hosted deployments should configure a
-    // base URL prefix instead of relying on a relative path.
-    socials: default_socials(rss_enabled),
-    logo: None,
-    favicon: Some("images/arata-logo.avif"),
-    rss_enabled:,
+    menu: default_menu(base_path),
+    socials: default_socials(base_path, rss_enabled),
+    logo: resolve_optional_site_url(base_path, defaults.logo()),
+    favicon: resolve_optional_site_url(base_path, defaults.favicon()),
+    rss_enabled: rss_enabled,
     fonts: Fonts(
-      text: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
-      header: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
-      // Fix 9b — default the code font to the browser's native monospace
-      // (`ui-monospace`) first, then fall back to common code-editor fonts
-      // (Cascadia Code, Source Code Pro), then OS monospace defaults
-      // (Menlo/Consolas/DejaVu Sans Mono), and finally the generic
-      // `monospace` family. This matches what VS Code and Zed use by
-      // default and respects the user's OS-level monospace preference.
-      code: "ui-monospace, \"Cascadia Code\", \"Source Code Pro\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace",
+      text: defaults.text_font(),
+      header: defaults.header_font(),
+      code: defaults.code_font(),
     ),
-    search_enabled: True,
-    navbar_fixed: True,
-    analytics: AnalyticsDisabled,
-    mathjax_enabled: True,
-    mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
-    mermaid_enabled: True,
-    mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
-    syntax_highlight_enabled: True,
-    syntax_highlight_cdn_url: "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js",
-    sidebar_enabled: True,
-    floating_buttons_enabled: True,
-    aratafetch_enabled: True,
-    aratafetch_maintained_for: Some("since 2026-06-21"),
-    lightbox_enabled: True,
-    latest_posts_enabled: False,
-    latest_posts_count: 5,
+    search_enabled: defaults.search_enabled(),
+    navbar_fixed: defaults.navbar_fixed(),
+    analytics: metadata.analytics,
+    mathjax_enabled: defaults.mathjax_enabled(),
+    mathjax_cdn_url: config_url.resolve_site_url(
+      base_path,
+      defaults.mathjax_url(),
+    ),
+    mermaid_enabled: defaults.mermaid_enabled(),
+    mermaid_cdn_url: config_url.resolve_site_url(
+      base_path,
+      defaults.mermaid_url(),
+    ),
+    syntax_highlight_enabled: defaults.syntax_highlight_enabled(),
+    syntax_highlight_cdn_url: config_url.resolve_site_url(
+      base_path,
+      defaults.syntax_highlight_url(),
+    ),
+    sidebar_enabled: defaults.sidebar_enabled(),
+    floating_buttons_enabled: defaults.floating_buttons_enabled(),
+    aratafetch_enabled: defaults.aratafetch_enabled(),
+    aratafetch_maintained_for: defaults.aratafetch_maintained_for(),
+    lightbox_enabled: defaults.lightbox_enabled(),
+    latest_posts_enabled: defaults.latest_posts_enabled(),
+    latest_posts_count: defaults.latest_posts_count(),
   )
-}
-
-/// Build the default socials list, conditionally including the RSS link based
-/// on `rss_enabled`. This keeps the RSS toggle local to `config.gleam` so the
-/// header view (`view/header.gleam`) can stay agnostic — it just renders
-/// whatever `socials` it receives.
-fn default_socials(rss_enabled: Bool) -> List(Social) {
-  let rss = case rss_enabled {
-    True -> [Social(name: "RSS", url: "/rss.xml", icon: "rss")]
-    False -> []
-  }
-
-  list.append(rss, [
-    Social(
-      name: "Codeberg",
-      url: "https://codeberg.org/yonzilch/arata",
-      icon: "codeberg",
-    ),
-    Social(
-      name: "GitHub",
-      url: "https://github.com/yonzilch/arata",
-      icon: "github",
-    ),
-  ])
 }
 
 /// Canonicalize the public deployed site URL.
 ///
-/// This helper intentionally trims trailing slashes at the config boundary
-/// instead of forcing every output generator to guess whether it should join
-/// with `base_url` directly. It keeps these values equivalent:
-///
-///   https://example.com
-///   https://example.com/
-///
-///   https://example.com/blog
-///   https://example.com/blog/
-///
-/// The configured value is still written in one place, but the rest of the
-/// application receives a stable no-trailing-slash canonical form.
+/// This compatibility wrapper delegates to `config/url`.
 pub fn canonical_base_url(url: String) -> String {
-  url
-  |> string.trim
-  |> trim_trailing_slashes
+  config_url.canonical_base_url(url)
 }
 
-/// Derive a deployment base path from `SiteMeta.base_url`.
+/// Derive the deployment base path from a public site URL.
 ///
-/// Examples:
-///   https://example.com          -> ""
-///   https://example.com/         -> ""
-///   https://user.github.io/arata -> "/arata"
-///   https://user.github.io/arata/ -> "/arata"
-///
-/// This keeps GitHub Pages project deployments working without hardcoding
-/// root-absolute asset URLs like `/app.mjs`.
+/// This compatibility wrapper delegates to `config/url`.
 pub fn base_path_from_url(url: String) -> String {
-  let cleaned =
-    url
-    |> canonical_base_url
-
-  case string.split_once(cleaned, "://") {
-    Ok(#(_scheme, rest)) -> base_path_from_host_and_path(rest)
-
-    Error(_) -> normalize_base_path(cleaned)
-  }
-}
-
-fn base_path_from_host_and_path(rest: String) -> String {
-  case string.split_once(rest, "/") {
-    Ok(#(_host, path)) -> normalize_base_path("/" <> path)
-
-    Error(_) -> ""
-  }
+  config_url.base_path_from_url(url)
 }
 
 /// Normalize a deployment base path.
 ///
-/// Examples:
-///   ""        -> ""
-///   "/"       -> ""
-///   "arata"   -> "/arata"
-///   "/arata/" -> "/arata"
+/// This compatibility wrapper delegates to `config/url`.
 pub fn normalize_base_path(path: String) -> String {
-  path
-  |> string.trim
-  |> ensure_leading_slash
-  |> trim_trailing_slashes
-  |> normalize_root_path
+  config_url.normalize_base_path(path)
 }
 
-/// Prefix a root-relative site path with a deployment base path.
+/// Prefix a site-local path with a deployment base path.
 ///
-/// Examples:
-///   with_base_path("", "/app.mjs")       -> "/app.mjs"
-///   with_base_path("/arata", "/app.mjs") -> "/arata/app.mjs"
-///   with_base_path("/arata", "/")        -> "/arata/"
+/// This compatibility wrapper delegates to `config/url`.
+///
+/// Callers must ensure that a path receives its deployment prefix exactly
+/// once. For configurable URLs that may also be external, prefer
+/// `resolve_site_url`.
 pub fn with_base_path(base_path: String, path: String) -> String {
-  let base_path = normalize_base_path(base_path)
-
-  case base_path, path {
-    "", _ -> ensure_leading_slash(path)
-
-    _, "/" -> base_path <> "/"
-
-    _, _ -> base_path <> ensure_leading_slash(path)
-  }
+  config_url.with_base_path(base_path, path)
 }
 
-fn ensure_leading_slash(path: String) -> String {
-  case path {
-    "" -> ""
-
-    _ ->
-      case string.starts_with(path, "/") {
-        True -> path
-        False -> "/" <> path
-      }
-  }
+/// Resolve a configurable URL against the deployment base path.
+///
+/// External and browser-special URLs are returned unchanged. Site-local paths
+/// receive the deployment prefix.
+pub fn resolve_site_url(base_path: String, url: String) -> String {
+  config_url.resolve_site_url(base_path, url)
 }
 
-fn trim_trailing_slashes(path: String) -> String {
-  case string.ends_with(path, "/") {
+/// Return whether a URL is external or browser-special and therefore must not
+/// receive Arata's deployment base path.
+pub fn is_external_or_special_url(url: String) -> Bool {
+  config_url.is_external_or_special_url(url)
+}
+
+/// Return whether a URL is an absolute HTTP or HTTPS URL.
+pub fn is_http_url(url: String) -> Bool {
+  config_url.is_http_url(url)
+}
+
+/// Return whether a non-empty configurable URL is site-local.
+pub fn is_site_local_url(url: String) -> Bool {
+  config_url.is_site_local_url(url)
+}
+
+fn default_menu(base_path: String) -> List(MenuItem) {
+  defaults.menu()
+  |> list.map(fn(item) {
+    let #(name, configured_url) = item
+
+    MenuItem(
+      name: name,
+      url: config_url.resolve_site_url(base_path, configured_url),
+    )
+  })
+}
+
+fn default_socials(base_path: String, rss_enabled: Bool) -> List(Social) {
+  let managed_rss = case rss_enabled {
+    False -> []
+
     True -> {
-      let size = string.length(path)
+      let #(name, configured_url, icon) = defaults.rss_social()
 
-      path
-      |> string.slice(0, size - 1)
-      |> trim_trailing_slashes
+      [
+        Social(
+          name: name,
+          url: config_url.resolve_site_url(base_path, configured_url),
+          icon: icon,
+        ),
+      ]
     }
-
-    False -> path
   }
+
+  let configured_socials =
+    defaults.socials()
+    |> list.map(fn(item) {
+      let #(name, configured_url, icon) = item
+
+      Social(
+        name: name,
+        url: config_url.resolve_site_url(base_path, configured_url),
+        icon: icon,
+      )
+    })
+
+  list.append(managed_rss, configured_socials)
 }
 
-fn normalize_root_path(path: String) -> String {
-  case path {
-    "/" -> ""
-    _ -> path
+fn resolve_optional_site_url(
+  base_path: String,
+  configured_url: Option(String),
+) -> Option(String) {
+  case configured_url {
+    Some(url) -> Some(config_url.resolve_site_url(base_path, url))
+
+    None -> None
   }
 }
