@@ -21,6 +21,59 @@ For example, project-specific sections such as
 
 ---
 
+## [1.7.0] — 2026-07-21
+
+### Added
+
+- Added `content/arata.toml` as the user-owned configuration entry point, allowing site configuration to be migrated together with posts, pages, links, and projects without modifying Gleam source files.
+- Added a layered configuration architecture with separate models for raw TOML input, resolved build configuration, and browser-safe runtime configuration.
+- Added built-in configuration defaults with support for partial TOML overrides and explicit empty values.
+- Added structured configuration errors for file I/O, TOML parsing, type decoding, unknown keys, semantic validation, and asset validation.
+- Added TOML configuration loading, decoding, resolution, normalization, and validation before build output is written.
+- Added strict unknown-key detection for root configuration values and nested TOML sections.
+- Added support for explicitly empty navigation and social collections.
+- Added browser-safe runtime configuration encoding in `content_index.json`, preserving Arata’s single-fetch startup model.
+- Added runtime decoding for site metadata, navigation, socials, fonts, feature toggles, analytics, comments, and enhancement asset URLs.
+- Added configuration fixtures covering empty, minimal, complete, subdirectory, malformed, mistyped, semantically invalid, and unknown-key configurations.
+- Added tests for configuration loading, default resolution, explicit overrides, URL normalization, runtime projection, JSON encoding, validation failures, and deployment-path invariants.
+
+### Changed
+
+- Reworked the build pipeline to load and resolve `content/arata.toml` exactly once and pass the resulting configuration explicitly to downstream build stages.
+- Changed generated HTML shells, feeds, sitemap, crawler files, content indexes, and search indexes to use the same resolved configuration.
+- Changed the SPA to initialize its application configuration and site metadata from `content_index.json`.
+- Deferred configuration-dependent browser effects until the resolved runtime configuration has loaded.
+- Deferred search keyboard subscriptions, analytics injection, lightbox observation, MathJax, Mermaid, and syntax-highlighting initialization until their resolved feature settings are available.
+- Restricted built-in configuration defaults to bootstrap and backward-compatibility behavior instead of treating them as the runtime source of truth.
+- Extracted built-in defaults, URL normalization, raw input types, configuration resolution, validation, runtime projection, and error handling into dedicated configuration modules.
+- Centralized canonical URL and deployment base-path handling.
+- Changed `base_path` to be derived exclusively from the canonical `site.base_url`.
+- Changed internal root-relative navigation and asset URLs to receive the deployment prefix during configuration resolution.
+- Preserved external, protocol-relative, fragment, email, and telephone URLs without adding the deployment prefix.
+- Preserved unsupported and ambiguous URL forms until validation so invalid values cannot be converted into seemingly valid internal paths.
+- Preserved empty runtime asset URLs so feature dependency validation can correctly reject enabled enhancements without an asset URL.
+- Updated configuration and deployment documentation for the `content/arata.toml` workflow.
+- Completely rewrote the configuration guide around the new TOML-based configuration model.
+- Corrected documented `bun run` deployment commands.
+
+### Fixed
+
+- Fixed invalid URL schemes such as `javascript:` being converted into root-relative internal paths before validation.
+- Fixed empty runtime asset URLs resolving to the deployment root in subdirectory deployments.
+- Fixed explicit `menu = []` and `socials = []` values being indistinguishable from missing collections.
+- Fixed decoding of empty TOML arrays used to clear built-in navigation and social entries.
+- Fixed fixture path expressions being evaluated in the wrong order when piped into test helpers.
+- Fixed validation error-count assertions affected by operator precedence.
+- Fixed optional error details to use the expected `Result`-based `list.filter_map` callback.
+- Fixed configuration I/O error construction to use positional arguments.
+
+### Removed
+
+- Unused resolver imports and pattern bindings.
+- Old config document in README.
+
+---
+
 ## [1.6.9] — 2026-07-19
 
 ### Added
