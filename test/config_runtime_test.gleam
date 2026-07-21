@@ -16,10 +16,7 @@ import gleeunit/should
 const fixture_dir = "test/fixtures/config"
 
 pub fn runtime_projection_preserves_application_configuration_test() {
-  let resolved =
-    fixture_dir
-    <> "/full.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/full.toml")
 
   let application =
     resolved
@@ -46,10 +43,7 @@ pub fn runtime_projection_preserves_application_configuration_test() {
 }
 
 pub fn runtime_projection_preserves_public_site_metadata_test() {
-  let resolved =
-    fixture_dir
-    <> "/full.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/full.toml")
 
   let site =
     resolved
@@ -65,9 +59,7 @@ pub fn runtime_projection_preserves_public_site_metadata_test() {
 
 pub fn runtime_encoder_emits_application_and_site_sections_test() {
   let encoded =
-    fixture_dir
-    <> "/full.toml"
-    |> resolve_fixture
+    resolve_fixture(fixture_dir <> "/full.toml")
     |> runtime.from_resolved
     |> encoder.to_string
 
@@ -90,9 +82,7 @@ pub fn runtime_encoder_emits_application_and_site_sections_test() {
 
 pub fn runtime_encoder_emits_analytics_discriminator_test() {
   let encoded =
-    fixture_dir
-    <> "/full.toml"
-    |> resolve_fixture
+    resolve_fixture(fixture_dir <> "/full.toml")
     |> runtime.from_resolved
     |> encoder.to_string
 
@@ -107,9 +97,7 @@ pub fn runtime_encoder_emits_analytics_discriminator_test() {
 
 pub fn runtime_encoder_emits_comments_discriminator_test() {
   let encoded =
-    fixture_dir
-    <> "/full.toml"
-    |> resolve_fixture
+    resolve_fixture(fixture_dir <> "/full.toml")
     |> runtime.from_resolved
     |> encoder.to_string
 
@@ -128,9 +116,7 @@ pub fn runtime_encoder_emits_comments_discriminator_test() {
 
 pub fn runtime_encoder_emits_null_optional_values_test() {
   let encoded =
-    fixture_dir
-    <> "/empty.toml"
-    |> resolve_fixture
+    resolve_fixture(fixture_dir <> "/empty.toml")
     |> runtime.from_resolved
     |> encoder.to_string
 
@@ -145,7 +131,9 @@ pub fn runtime_encoder_emits_null_optional_values_test() {
 
 fn resolve_fixture(path: String) -> resolve.ResolvedConfig {
   let assert Ok(source) = loader.load_required(path)
+
   let assert Ok(raw) = decoder.decode(source)
+
   let assert Ok(resolved) = resolve.resolve_from(path, raw)
 
   resolved

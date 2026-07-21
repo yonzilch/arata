@@ -16,30 +16,21 @@ import gleeunit/should
 const fixture_dir = "test/fixtures/config"
 
 pub fn empty_configuration_is_valid_test() {
-  let resolved =
-    fixture_dir
-    <> "/empty.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/empty.toml")
 
   validate.validate_from(fixture_dir <> "/empty.toml", resolved)
   |> should.be_ok
 }
 
 pub fn full_configuration_is_valid_test() {
-  let resolved =
-    fixture_dir
-    <> "/full.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/full.toml")
 
   validate.validate_from(fixture_dir <> "/full.toml", resolved)
   |> should.be_ok
 }
 
 pub fn subdirectory_configuration_is_valid_test() {
-  let resolved =
-    fixture_dir
-    <> "/subdirectory.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/subdirectory.toml")
 
   validate.validate_from(fixture_dir <> "/subdirectory.toml", resolved)
   |> should.be_ok

@@ -14,10 +14,7 @@ import gleeunit/should
 const fixture_dir = "test/fixtures/config"
 
 pub fn empty_configuration_uses_built_in_defaults_test() {
-  let resolved =
-    fixture_dir
-    <> "/empty.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/empty.toml")
 
   let application = resolve.runtime_config(resolved)
   let metadata = resolve.site_meta(resolved)
@@ -57,10 +54,7 @@ pub fn empty_configuration_uses_built_in_defaults_test() {
 }
 
 pub fn minimal_configuration_overrides_only_present_values_test() {
-  let resolved =
-    fixture_dir
-    <> "/minimal.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/minimal.toml")
 
   let application = resolve.runtime_config(resolved)
   let metadata = resolve.site_meta(resolved)
@@ -85,10 +79,7 @@ pub fn minimal_configuration_overrides_only_present_values_test() {
 }
 
 pub fn full_configuration_resolves_all_supported_domains_test() {
-  let resolved =
-    fixture_dir
-    <> "/full.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/full.toml")
 
   let application = resolve.runtime_config(resolved)
   let metadata = resolve.site_meta(resolved)
@@ -169,10 +160,7 @@ pub fn full_configuration_resolves_all_supported_domains_test() {
 }
 
 pub fn subdirectory_configuration_canonicalizes_and_prefixes_paths_test() {
-  let resolved =
-    fixture_dir
-    <> "/subdirectory.toml"
-    |> resolve_fixture
+  let resolved = resolve_fixture(fixture_dir <> "/subdirectory.toml")
 
   let application = resolve.runtime_config(resolved)
   let metadata = resolve.site_meta(resolved)
