@@ -16,53 +16,60 @@ import gleeunit/should
 const fixture_dir = "test/fixtures/config"
 
 pub fn empty_configuration_is_valid_test() {
-  let resolved = resolve_fixture(fixture_dir <> "/empty.toml")
+  let path = fixture_dir <> "/empty.toml"
+  let resolved = resolve_fixture(path)
 
-  validate.validate_from(fixture_dir <> "/empty.toml", resolved)
+  validate.validate_from(path, resolved)
   |> should.be_ok
 }
 
 pub fn full_configuration_is_valid_test() {
-  let resolved = resolve_fixture(fixture_dir <> "/full.toml")
+  let path = fixture_dir <> "/full.toml"
+  let resolved = resolve_fixture(path)
 
-  validate.validate_from(fixture_dir <> "/full.toml", resolved)
+  validate.validate_from(path, resolved)
   |> should.be_ok
 }
 
 pub fn subdirectory_configuration_is_valid_test() {
-  let resolved = resolve_fixture(fixture_dir <> "/subdirectory.toml")
+  let path = fixture_dir <> "/subdirectory.toml"
+  let resolved = resolve_fixture(path)
 
-  validate.validate_from(fixture_dir <> "/subdirectory.toml", resolved)
+  validate.validate_from(path, resolved)
   |> should.be_ok
 }
 
 pub fn invalid_base_url_is_rejected_test() {
+  let path = "test/invalid-base-url.toml"
+
   let source =
     "
 [site]
 base_url = \"ftp://example.com\"
 "
 
-  let resolved = resolve_text("test/invalid-base-url.toml", source)
+  let resolved = resolve_text(path, source)
 
-  validate.validate_from("test/invalid-base-url.toml", resolved)
+  validate.validate_from(path, resolved)
   |> should.be_error
 }
 
 pub fn base_url_query_and_fragment_are_rejected_test() {
+  let path = "test/base-url-suffix.toml"
+
   let source =
     "
 [site]
 base_url = \"https://example.com/blog?preview=true#content\"
 "
 
-  let resolved = resolve_text("test/base-url-suffix.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/base-url-suffix.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
-  list.length(errors)
-  >= 2
+  let has_multiple_errors = list.length(errors) >= 2
+
+  has_multiple_errors
   |> should.equal(True)
 
   let rendered = error.render_all(errors)
@@ -77,16 +84,17 @@ base_url = \"https://example.com/blog?preview=true#content\"
 }
 
 pub fn negative_latest_posts_count_is_rejected_test() {
+  let path = "test/negative-latest-posts.toml"
+
   let source =
     "
 [latest_posts]
 count = -3
 "
 
-  let resolved = resolve_text("test/negative-latest-posts.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/negative-latest-posts.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
   let rendered = error.render_all(errors)
 
@@ -100,16 +108,17 @@ count = -3
 }
 
 pub fn empty_site_title_is_rejected_test() {
+  let path = "test/empty-title.toml"
+
   let source =
     "
 [site]
 title = \"\"
 "
 
-  let resolved = resolve_text("test/empty-title.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/empty-title.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
   error.render_all(errors)
   |> string.contains("site.title")
@@ -117,6 +126,8 @@ title = \"\"
 }
 
 pub fn enabled_mathjax_requires_runtime_asset_test() {
+  let path = "test/missing-mathjax-asset.toml"
+
   let source =
     "
 [features]
@@ -126,10 +137,9 @@ mathjax = true
 mathjax_url = \"\"
 "
 
-  let resolved = resolve_text("test/missing-mathjax-asset.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/missing-mathjax-asset.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
   let rendered = error.render_all(errors)
 
@@ -143,6 +153,8 @@ mathjax_url = \"\"
 }
 
 pub fn disabled_mathjax_allows_empty_runtime_asset_test() {
+  let path = "test/disabled-mathjax.toml"
+
   let source =
     "
 [features]
@@ -152,13 +164,15 @@ mathjax = false
 mathjax_url = \"\"
 "
 
-  let resolved = resolve_text("test/disabled-mathjax.toml", source)
+  let resolved = resolve_text(path, source)
 
-  validate.validate_from("test/disabled-mathjax.toml", resolved)
+  validate.validate_from(path, resolved)
   |> should.be_ok
 }
 
 pub fn invalid_navigation_url_is_rejected_test() {
+  let path = "test/invalid-navigation-url.toml"
+
   let source =
     "
 [[menu]]
@@ -166,10 +180,9 @@ name = \"posts\"
 url = \"javascript:alert(1)\"
 "
 
-  let resolved = resolve_text("test/invalid-navigation-url.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/invalid-navigation-url.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
   error.render_all(errors)
   |> string.contains("unsupported URL form")
@@ -177,6 +190,8 @@ url = \"javascript:alert(1)\"
 }
 
 pub fn social_icon_with_extension_is_rejected_test() {
+  let path = "test/social-icon-extension.toml"
+
   let source =
     "
 [features]
@@ -188,10 +203,9 @@ url = \"https://github.com/example/arata\"
 icon = \"github.svg\"
 "
 
-  let resolved = resolve_text("test/social-icon-extension.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/social-icon-extension.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
   error.render_all(errors)
   |> string.contains("must not include a file extension")
@@ -199,6 +213,8 @@ icon = \"github.svg\"
 }
 
 pub fn social_icon_path_traversal_is_rejected_test() {
+  let path = "test/social-icon-path.toml"
+
   let source =
     "
 [features]
@@ -210,10 +226,9 @@ url = \"https://github.com/example/arata\"
 icon = \"../github\"
 "
 
-  let resolved = resolve_text("test/social-icon-path.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/social-icon-path.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
   error.render_all(errors)
   |> string.contains("path separators")
@@ -221,6 +236,8 @@ icon = \"../github\"
 }
 
 pub fn invalid_comments_repository_is_rejected_test() {
+  let path = "test/invalid-comments-repository.toml"
+
   let source =
     "
 [comments]
@@ -228,10 +245,9 @@ provider = \"utterances\"
 repo = \"invalid-repository\"
 "
 
-  let resolved = resolve_text("test/invalid-comments-repository.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/invalid-comments-repository.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
   error.render_all(errors)
   |> string.contains("owner/name")
@@ -239,6 +255,8 @@ repo = \"invalid-repository\"
 }
 
 pub fn validation_collects_independent_errors_test() {
+  let path = "test/multiple-validation-errors.toml"
+
   let source =
     "
 [site]
@@ -254,19 +272,21 @@ header = \"\"
 code = \"\"
 "
 
-  let resolved = resolve_text("test/multiple-validation-errors.toml", source)
+  let resolved = resolve_text(path, source)
 
-  let assert Error(errors) =
-    validate.validate_from("test/multiple-validation-errors.toml", resolved)
+  let assert Error(errors) = validate.validate_from(path, resolved)
 
-  list.length(errors)
-  >= 7
+  let has_multiple_errors = list.length(errors) >= 7
+
+  has_multiple_errors
   |> should.equal(True)
 }
 
 fn resolve_fixture(path: String) -> resolve.ResolvedConfig {
   let assert Ok(source) = loader.load_required(path)
+
   let assert Ok(raw) = decoder.decode(source)
+
   let assert Ok(resolved) = resolve.resolve_from(path, raw)
 
   resolved
