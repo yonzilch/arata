@@ -1,13 +1,21 @@
-//// arata — a faithful reimplementation of the apollo blog theme using Gleam
-//// and the Lustre framework.
+//// Arata application entry point.
 ////
-//// This module is the application entry point. It boots a `lustre.application`
-//// SPA with client-side routing via `modem`.
+//// This module boots the Lustre SPA and performs client-side routing through
+//// `modem`.
 ////
-//// Important invariant:
-//// 404 must only be rendered after `content_index.json` has loaded
-//// successfully. During the initial async content fetch, route-specific lookup
-//// against empty lists would produce false 404s on deep-link refreshes.
+//// Runtime configuration is loaded together with content from the generated
+//// `content_index.json`. Built-in configuration is used only while that single
+//// bootstrap request is pending.
+////
+//// Important invariants:
+////
+////   - route-specific content is not rendered before the content index loads;
+////   - runtime feature effects are started only after resolved configuration
+////     has been decoded;
+////   - analytics, search, lightbox, MathJax, Mermaid, and syntax highlighting
+////     use the configuration embedded in the content index;
+////   - a deep-link refresh must not produce a false 404 while content is still
+////     loading.
 
 import config
 import content/runtime as content_runtime
@@ -16,7 +24,7 @@ import data/page.{type Page}
 import data/post.{type Post}
 import data/project.{type Project}
 import data/search.{type SearchResult}
-import data/site.{type SiteMeta}
+import data/site.{type SiteMeta, SiteMeta}
 import effect/analytics as analytics_effect
 import effect/codeblock as codeblock_effect
 import effect/lightbox as lightbox_effect
@@ -29,7 +37,6 @@ import effect/toc as toc_effect
 import gleam/int
 import gleam/list
 import gleam/option.{type Option}
-
 import gleam/result
 import lustre
 import lustre/attribute
@@ -109,17 +116,22 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
     Error(_) -> Home
   }
 
+  // These values are bootstrap placeholders only. The resolved TOML
+  // configuration replaces them when content_index.json has loaded.
+  let bootstrap_config = config.default()
+  let bootstrap_site_meta = config.site_meta()
+
   let model =
     Model(
       route: initial_route,
-      config: config.default(),
-      site_meta: config.site_meta(),
+      config: bootstrap_config,
+      site_meta: bootstrap_site_meta,
       posts: [],
       projects: [],
       links: [],
       homepage: page.Page(
         slug: "home",
-        title: "arata",
+        title: bootstrap_config.title,
         body: "",
         subtitle: option.None,
       ),
@@ -128,53 +140,30 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       active_heading: option.None,
       theme: theme_effect.Light,
       system_prefers_dark: False,
-      search: SearchState(
-        open: False,
-        query: "",
-        results: [],
-        selected_index: 0,
-      ),
+      search: closed_search(),
       mobile_menu_open: False,
       toc_overlay_open: False,
       lightbox: lightbox.Closed,
     )
 
-  let nav_effect =
-    modem.init(fn(uri) { uri |> route.parse_route |> UserNavigatedTo })
+  let navigation_effect =
+    modem.init(fn(uri) {
+      uri
+      |> route.parse_route
+      |> UserNavigatedTo
+    })
 
-  let theme_init = effect.map(theme_effect.init_theme(), theme_msg_to_msg)
+  let theme_effect = effect.map(theme_effect.init_theme(), theme_msg_to_msg)
 
-  let search_keys = case model.config.search_enabled {
-    True ->
-      effect.map(search_effect.subscribe_to_search_keys(), SearchKeyPressed)
-    False -> effect.none()
-  }
+  let content_effect = effect.map(content_runtime.load(), content_msg_to_msg)
 
-  let analytics_eff =
-    effect.map(analytics_effect.inject(model.config.analytics), fn(_) { NoOp })
-
-  let content_eff = effect.map(content_runtime.load(), content_msg_to_msg)
-
-  let lightbox_events = case model.config.lightbox_enabled {
-    True -> effect.map(lightbox_effect.observe(), LightboxEventReceived)
-
-    False -> effect.none()
-  }
-
-  // Do not run post effects here.
-  //
-  // On deep-link refresh, the route may already be `Post(slug)`, but the post
-  // DOM does not exist until `content_index.json` has loaded. Running TOC,
-  // codeblock, note, MathJax, or Mermaid effects here races against an empty
-  // view. They are armed after `ContentLoaded(Ok(_))`.
+  // Configuration-dependent effects must not start from bootstrap defaults.
+  // They are armed after ContentLoaded(Ok(_)).
   let effects =
     effect.batch([
-      nav_effect,
-      theme_init,
-      search_keys,
-      analytics_eff,
-      content_eff,
-      lightbox_events,
+      navigation_effect,
+      theme_effect,
+      content_effect,
     ])
 
   #(model, effects)
@@ -214,7 +203,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let new_model =
         Model(
           ..model,
-          route:,
+          route: route,
           active_heading: option.None,
           mobile_menu_open: False,
           toc_overlay_open: False,
@@ -222,17 +211,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         )
 
       let route_effects = case new_model.content_state {
-        ContentReady ->
-          post_effects_for(
-            route,
-            is_effective_dark(new_model.theme, new_model.system_prefers_dark),
-            new_model.config.mathjax_enabled,
-            new_model.config.mathjax_cdn_url,
-            new_model.config.mermaid_enabled,
-            new_model.config.mermaid_cdn_url,
-            new_model.config.syntax_highlight_enabled,
-            new_model.config.syntax_highlight_cdn_url,
-          )
+        ContentReady -> configured_post_effects(new_model)
 
         ContentLoading | ContentFailed -> effect.none()
       }
@@ -257,8 +236,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
 
       let new_model = Model(..model, theme: next_theme)
 
-      let mermaid_eff = mermaid_rerender_for(new_model)
-
       #(
         new_model,
         effect.batch([
@@ -266,20 +243,21 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             theme_effect.apply_theme_choice(next_theme),
             theme_msg_to_msg,
           ),
-          mermaid_eff,
+          mermaid_rerender_for(new_model),
         ]),
       )
     }
 
     ThemeLoaded(theme) -> {
-      let new_model = Model(..model, theme:)
+      let new_model = Model(..model, theme: theme)
+
       #(new_model, mermaid_rerender_for(new_model))
     }
 
     SystemPrefersDarkChanged(prefers_dark) -> {
       let new_model = Model(..model, system_prefers_dark: prefers_dark)
 
-      let theme_eff = case new_model.theme {
+      let apply_theme_effect = case new_model.theme {
         theme_effect.Auto ->
           effect.map(
             theme_effect.apply_theme_choice(new_model.theme),
@@ -289,37 +267,60 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         _ -> effect.none()
       }
 
-      #(new_model, effect.batch([theme_eff, mermaid_rerender_for(new_model)]))
+      #(
+        new_model,
+        effect.batch([
+          apply_theme_effect,
+          mermaid_rerender_for(new_model),
+        ]),
+      )
     }
 
     NoOp -> #(model, effect.none())
 
-    ContentLoaded(result) -> {
+    ContentLoaded(result) ->
       case result {
         Ok(content) -> {
+          let runtime_config = content.config
+          let application_config = runtime_config.application
+          let runtime_site = runtime_config.site
+
+          let site_meta =
+            SiteMeta(
+              base_url: runtime_site.base_url,
+              title: application_config.title,
+              description: application_config.description,
+              analytics: application_config.analytics,
+              comments: runtime_site.comments,
+              fediverse_creator: runtime_site.fediverse_creator,
+              rss_enabled: application_config.rss_enabled,
+            )
+
           let new_model =
             Model(
               ..model,
+              config: application_config,
+              site_meta: site_meta,
               posts: content.posts,
               pages: content.pages,
               homepage: content.homepage,
               links: content.links,
               projects: content.projects,
               content_state: ContentReady,
+              search: closed_search(),
+              mobile_menu_open: False,
+              toc_overlay_open: False,
+              lightbox: lightbox.Closed,
             )
 
           #(
             new_model,
-            post_effects_for(
-              new_model.route,
-              is_effective_dark(new_model.theme, new_model.system_prefers_dark),
-              new_model.config.mathjax_enabled,
-              new_model.config.mathjax_cdn_url,
-              new_model.config.mermaid_enabled,
-              new_model.config.mermaid_cdn_url,
-              new_model.config.syntax_highlight_enabled,
-              new_model.config.syntax_highlight_cdn_url,
-            ),
+            effect.batch([
+              configured_search_subscription(application_config),
+              configured_analytics_effect(application_config),
+              configured_lightbox_effect(application_config),
+              configured_post_effects(new_model),
+            ]),
           )
         }
 
@@ -328,20 +329,24 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           effect.none(),
         )
       }
-    }
 
-    UserOpenedSearch -> #(
-      Model(
-        ..model,
-        search: SearchState(
-          open: True,
-          query: "",
-          results: [],
-          selected_index: 0,
-        ),
-      ),
-      effect.none(),
-    )
+    UserOpenedSearch ->
+      case model.content_state, model.config.search_enabled {
+        ContentReady, True -> #(
+          Model(
+            ..model,
+            search: SearchState(
+              open: True,
+              query: "",
+              results: [],
+              selected_index: 0,
+            ),
+          ),
+          effect.none(),
+        )
+
+        _, _ -> #(model, effect.none())
+      }
 
     UserClosedSearch -> #(
       Model(..model, search: closed_search()),
@@ -354,7 +359,12 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(
         Model(
           ..model,
-          search: SearchState(open: True, query:, results:, selected_index: 0),
+          search: SearchState(
+            open: True,
+            query: query,
+            results: results,
+            selected_index: 0,
+          ),
         ),
         effect.none(),
       )
@@ -373,31 +383,29 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       effect.none(),
     )
 
-    SearchKeyPressed(event) -> handle_search_key(model, event)
+    SearchKeyPressed(event) ->
+      case model.config.search_enabled {
+        True -> handle_search_key(model, event)
+        False -> #(model, effect.none())
+      }
 
     SearchResultClicked(slug) -> {
       let target_route = route.Post(slug)
 
-      #(
+      let new_model =
         Model(
           ..model,
           route: target_route,
           search: closed_search(),
           active_heading: option.None,
           lightbox: lightbox.Closed,
-        ),
+        )
+
+      #(
+        new_model,
         effect.batch([
           modem.push(route.href_url(target_route), option.None, option.None),
-          post_effects_for(
-            target_route,
-            is_effective_dark(model.theme, model.system_prefers_dark),
-            model.config.mathjax_enabled,
-            model.config.mathjax_cdn_url,
-            model.config.mermaid_enabled,
-            model.config.mermaid_cdn_url,
-            model.config.syntax_highlight_enabled,
-            model.config.syntax_highlight_cdn_url,
-          ),
+          configured_post_effects(new_model),
           lightbox_scroll_lock(False),
         ]),
       )
@@ -414,40 +422,34 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     )
 
     UserScrolledToTop -> {
-      let eff =
+      let scroll_effect =
         effect.from(fn(_) {
           scroll_to_top()
           Nil
         })
 
-      #(model, eff)
+      #(model, scroll_effect)
     }
 
-    UserEnteredPageJump(page_str) ->
-      case int.parse(page_str) {
-        Ok(page) if page >= 1 -> {
-          let target_route = route.Posts(page)
+    UserEnteredPageJump(page_string) ->
+      case int.parse(page_string) {
+        Ok(page_number) if page_number >= 1 -> {
+          let target_route = route.Posts(page_number)
 
-          #(
+          let new_model =
             Model(
               ..model,
               route: target_route,
               mobile_menu_open: False,
               toc_overlay_open: False,
               lightbox: lightbox.Closed,
-            ),
+            )
+
+          #(
+            new_model,
             effect.batch([
               modem.push(route.href_url(target_route), option.None, option.None),
-              post_effects_for(
-                target_route,
-                is_effective_dark(model.theme, model.system_prefers_dark),
-                model.config.mathjax_enabled,
-                model.config.mathjax_cdn_url,
-                model.config.mermaid_enabled,
-                model.config.mermaid_cdn_url,
-                model.config.syntax_highlight_enabled,
-                model.config.syntax_highlight_cdn_url,
-              ),
+              configured_post_effects(new_model),
               lightbox_scroll_lock(False),
             ]),
           )
@@ -468,11 +470,10 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         lightbox_effect.NextPressed -> update(model, LightboxNext)
       }
 
-    LightboxOpened(src, alt) -> {
+    LightboxOpened(src, alt) ->
       update(model, LightboxGalleryOpened([src], [alt], 0))
-    }
 
-    LightboxGalleryOpened(srcs, alts, index) -> {
+    LightboxGalleryOpened(srcs, alts, index) ->
       case model.config.lightbox_enabled {
         True -> {
           let images = lightbox_images(srcs, alts)
@@ -501,7 +502,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           lightbox_scroll_lock(False),
         )
       }
-    }
 
     LightboxPrevious -> #(
       Model(..model, lightbox: lightbox_previous(model.lightbox)),
@@ -518,6 +518,46 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       lightbox_scroll_lock(False),
     )
   }
+}
+
+fn configured_search_subscription(
+  site_config: config.Config,
+) -> effect.Effect(Msg) {
+  case site_config.search_enabled {
+    True ->
+      effect.map(search_effect.subscribe_to_search_keys(), SearchKeyPressed)
+
+    False -> effect.none()
+  }
+}
+
+fn configured_analytics_effect(
+  site_config: config.Config,
+) -> effect.Effect(Msg) {
+  effect.map(analytics_effect.inject(site_config.analytics), fn(_) { NoOp })
+}
+
+fn configured_lightbox_effect(
+  site_config: config.Config,
+) -> effect.Effect(Msg) {
+  case site_config.lightbox_enabled {
+    True -> effect.map(lightbox_effect.observe(), LightboxEventReceived)
+
+    False -> effect.none()
+  }
+}
+
+fn configured_post_effects(model: Model) -> effect.Effect(Msg) {
+  post_effects_for(
+    model.route,
+    is_effective_dark(model.theme, model.system_prefers_dark),
+    model.config.mathjax_enabled,
+    model.config.mathjax_cdn_url,
+    model.config.mermaid_enabled,
+    model.config.mermaid_cdn_url,
+    model.config.syntax_highlight_enabled,
+    model.config.syntax_highlight_cdn_url,
+  )
 }
 
 fn lightbox_scroll_lock(locked: Bool) -> effect.Effect(Msg) {
@@ -610,14 +650,14 @@ fn post_effects_for(
 ) -> effect.Effect(Msg) {
   case route {
     Post(_) -> {
-      let mathjax_eff = case mathjax_enabled {
+      let mathjax_effect = case mathjax_enabled {
         True ->
           effect.map(script_effect.typeset_math(mathjax_cdn_url), fn(_) { NoOp })
 
         False -> effect.none()
       }
 
-      let mermaid_eff = case mermaid_enabled {
+      let mermaid_effect = case mermaid_enabled {
         True ->
           effect.map(
             script_effect.render_mermaid(is_dark, mermaid_cdn_url),
@@ -627,7 +667,7 @@ fn post_effects_for(
         False -> effect.none()
       }
 
-      let syntax_highlight_eff =
+      let syntax_highlight_effect =
         effect.map(
           syntax_highlight_effect.enhance(
             syntax_highlight_enabled,
@@ -638,11 +678,11 @@ fn post_effects_for(
 
       effect.batch([
         effect.map(toc_effect.observe(), TocActiveHeadingChanged),
-        syntax_highlight_eff,
+        syntax_highlight_effect,
         effect.map(codeblock_effect.enhance(), fn(_) { NoOp }),
         effect.map(note_effect.enhance(), fn(_) { NoOp }),
-        mathjax_eff,
-        mermaid_eff,
+        mathjax_effect,
+        mermaid_effect,
       ])
     }
 
@@ -668,10 +708,6 @@ fn is_effective_dark(
 ///
 ///   system light: Auto(light) -> Dark -> Light -> Auto(light)
 ///   system dark:  Auto(dark)  -> Light -> Dark -> Auto(dark)
-///
-/// The final explicit theme -> Auto transition may be visually identical to
-/// the previous explicit theme when it matches the system preference, but the
-/// icon still changes to Auto and the state remains meaningful.
 fn next_theme_after_click(
   theme: theme_effect.Theme,
   system_prefers_dark: Bool,
@@ -712,18 +748,22 @@ fn mermaid_rerender_for(model: Model) -> effect.Effect(Msg) {
   }
 }
 
-fn theme_msg_to_msg(tm: theme_effect.ThemeMsg) -> Msg {
-  case tm {
-    theme_effect.ThemeLoaded(theme) -> ThemeLoaded(theme:)
+fn theme_msg_to_msg(theme_message: theme_effect.ThemeMsg) -> Msg {
+  case theme_message {
+    theme_effect.ThemeLoaded(theme) -> ThemeLoaded(theme: theme)
+
     theme_effect.SystemPrefersDarkChanged(prefers_dark) ->
-      SystemPrefersDarkChanged(prefers_dark:)
+      SystemPrefersDarkChanged(prefers_dark: prefers_dark)
   }
 }
 
-fn content_msg_to_msg(cm: content_runtime.ContentMsg) -> Msg {
-  case cm {
+fn content_msg_to_msg(content_message: content_runtime.ContentMsg) -> Msg {
+  case content_message {
     content_runtime.ContentLoaded(result) ->
-      ContentLoaded(result |> result.map_error(fn(_) { Nil }))
+      ContentLoaded(
+        result
+        |> result.map_error(fn(_) { Nil }),
+      )
   }
 }
 
@@ -752,8 +792,9 @@ fn handle_search_key(
     )
 
     "ArrowDown", _, True -> {
-      let max = list.length(model.search.results) - 1
-      let next = int.min(model.search.selected_index + 1, max)
+      let maximum = list.length(model.search.results) - 1
+
+      let next = int.max(0, int.min(model.search.selected_index + 1, maximum))
 
       #(
         Model(
@@ -765,12 +806,12 @@ fn handle_search_key(
     }
 
     "ArrowUp", _, True -> {
-      let prev = int.max(model.search.selected_index - 1, 0)
+      let previous = int.max(model.search.selected_index - 1, 0)
 
       #(
         Model(
           ..model,
-          search: SearchState(..model.search, selected_index: prev),
+          search: SearchState(..model.search, selected_index: previous),
         ),
         effect.none(),
       )
@@ -780,29 +821,23 @@ fn handle_search_key(
       case
         list.first(list.drop(model.search.results, model.search.selected_index))
       {
-        Ok(result) -> {
-          let target_route = route.Post(result.post.slug)
+        Ok(search_result) -> {
+          let target_route = route.Post(search_result.post.slug)
 
-          #(
+          let new_model =
             Model(
               ..model,
               route: target_route,
               search: closed_search(),
               active_heading: option.None,
               lightbox: lightbox.Closed,
-            ),
+            )
+
+          #(
+            new_model,
             effect.batch([
               modem.push(route.href_url(target_route), option.None, option.None),
-              post_effects_for(
-                target_route,
-                is_effective_dark(model.theme, model.system_prefers_dark),
-                model.config.mathjax_enabled,
-                model.config.mathjax_cdn_url,
-                model.config.mermaid_enabled,
-                model.config.mermaid_cdn_url,
-                model.config.syntax_highlight_enabled,
-                model.config.syntax_highlight_cdn_url,
-              ),
+              configured_post_effects(new_model),
               lightbox_scroll_lock(False),
             ]),
           )
@@ -826,7 +861,7 @@ fn view(model: Model) -> Element(Msg) {
     ContentReady -> view_route_content(model)
   }
 
-  let search_modal_el = case model.config.search_enabled {
+  let search_modal_element = case model.config.search_enabled {
     True ->
       search_modal.view(
         model.search.open,
@@ -839,7 +874,7 @@ fn view(model: Model) -> Element(Msg) {
         SearchResultClicked,
         fn(key) {
           SearchKeyPressed(search_effect.SearchKeyEvent(
-            key:,
+            key: key,
             cmd_or_ctrl: False,
           ))
         },
@@ -860,7 +895,7 @@ fn view(model: Model) -> Element(Msg) {
         <> "; }",
     )
 
-  let toc_fab_els = case
+  let toc_fab_elements = case
     model.content_state,
     model.config.floating_buttons_enabled
   {
@@ -874,7 +909,8 @@ fn view(model: Model) -> Element(Msg) {
     list.flatten([
       [
         layout.view(
-          list.append([fonts_style], [
+          [
+            fonts_style,
             header.view(
               model.config,
               model.route,
@@ -886,12 +922,12 @@ fn view(model: Model) -> Element(Msg) {
               model.mobile_menu_open,
             ),
             main_content,
-          ]),
+          ],
           right_content,
         ),
       ],
-      [search_modal_el],
-      toc_fab_els,
+      [search_modal_element],
+      toc_fab_elements,
       [
         lightbox.view(
           model.lightbox,
@@ -907,7 +943,7 @@ fn view(model: Model) -> Element(Msg) {
 fn view_route_content(model: Model) -> #(Element(Msg), Element(Msg)) {
   case model.route {
     Home -> {
-      let stats =
+      let statistics =
         aratafetch.from_content(
           model.links,
           model.posts,
@@ -918,7 +954,8 @@ fn view_route_content(model: Model) -> #(Element(Msg), Element(Msg)) {
           model.config.aratafetch_maintained_for,
         )
 
-      let fetch_el = aratafetch.view(model.config.aratafetch_enabled, stats)
+      let aratafetch_element =
+        aratafetch.view(model.config.aratafetch_enabled, statistics)
 
       #(
         home_view.view(
@@ -927,14 +964,19 @@ fn view_route_content(model: Model) -> #(Element(Msg), Element(Msg)) {
           model.config.latest_posts_enabled,
           model.config.latest_posts_count,
           model.config.aratafetch_enabled,
-          fetch_el,
+          aratafetch_element,
         ),
         none(),
       )
     }
 
-    Posts(page) -> #(
-      post_list.view(model.posts, page, posts_per_page, UserEnteredPageJump),
+    Posts(page_number) -> #(
+      post_list.view(
+        model.posts,
+        page_number,
+        posts_per_page,
+        UserEnteredPageJump,
+      ),
       none(),
     )
 
@@ -1003,25 +1045,36 @@ fn toc_fab_elements(model: Model) -> List(Element(Msg)) {
                     ],
                     [
                       html.div(
-                        [attribute.class("toc-overlay-content")],
+                        [
+                          attribute.class("toc-overlay-content"),
+                        ],
                         list.flatten([
                           [
-                            html.div([attribute.class("toc-overlay-header")], [
-                              html.button(
-                                [
-                                  attribute.class("toc-overlay-scroll-top"),
-                                  event.on_click(UserScrolledToTop),
-                                ],
-                                [html.text("↑")],
-                              ),
-                            ]),
+                            html.div(
+                              [
+                                attribute.class("toc-overlay-header"),
+                              ],
+                              [
+                                html.button(
+                                  [
+                                    attribute.class("toc-overlay-scroll-top"),
+                                    event.on_click(UserScrolledToTop),
+                                  ],
+                                  [html.text("↑")],
+                                ),
+                              ],
+                            ),
                           ],
                           case found.tags {
                             [] -> []
-                            _ -> [view_tags_sidebar(found.tags)]
+
+                            _ -> [
+                              view_tags_sidebar(found.tags),
+                            ]
                           },
                           case found.toc {
                             [] -> []
+
                             _ -> [
                               toc_view.view(found.toc, model.active_heading),
                             ]
@@ -1045,9 +1098,7 @@ fn toc_fab_elements(model: Model) -> List(Element(Msg)) {
 }
 
 fn view_loading() -> Element(Msg) {
-  html.main([attribute.class("page-header")], [
-    // html.div([], [html.text("Loading…")]),
-  ])
+  html.main([attribute.class("page-header")], [])
 }
 
 fn view_content_failed() -> Element(Msg) {
@@ -1056,7 +1107,7 @@ fn view_content_failed() -> Element(Msg) {
       html.text("Content failed to load"),
     ]),
     html.span([], [
-      html.text("Could not fetch content_index.json."),
+      html.text("Could not fetch or decode content_index.json."),
     ]),
   ])
 }
@@ -1092,9 +1143,13 @@ fn view_tags_sidebar(post_tags: List(String)) -> Element(Msg) {
       html.div([attribute.class("post-tags")], [
         html.div([attribute.class("heading")], [html.text("Tags")]),
         ..list.map(post_tags, fn(tag) {
-          html.a([attribute.class("tag"), route.href(route.Tag(tag))], [
-            html.text(tag),
-          ])
+          html.a(
+            [
+              attribute.class("tag"),
+              route.href(route.Tag(tag)),
+            ],
+            [html.text(tag)],
+          )
         })
       ])
   }
