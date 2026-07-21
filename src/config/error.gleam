@@ -259,7 +259,12 @@ pub fn render(error: ConfigError) -> String {
 
   let rendered_details =
     details
-    |> list.filter_map(fn(detail) { detail })
+    |> list.filter_map(fn(detail) {
+      case detail {
+        Some(value) -> Ok(value)
+        None -> Error(Nil)
+      }
+    })
     |> string.join("\n")
 
   "error: " <> error.message <> "\n\n" <> rendered_details
