@@ -8,6 +8,12 @@
 //// Decoding preserves missing fields as `None`. Defaults, path normalization,
 //// provider construction, and semantic validation belong to later stages.
 ////
+//// Collection presence is preserved explicitly:
+////
+////   missing `menu` / `socials` -> None
+////   `menu = []` / `socials = []` -> Some([])
+////   `[[menu]]` / `[[socials]]` -> Some(items)
+////
 //// Unknown keys and type mismatches are reported as structured configuration
 //// errors. Independent decoding errors are accumulated where practical.
 ////
@@ -161,10 +167,15 @@ fn decode_site(
   let section = "site"
 
   let base_url = optional_string(source_path, section, table, "base_url")
+
   let title = optional_string(source_path, section, table, "title")
+
   let description = optional_string(source_path, section, table, "description")
+
   let logo = optional_string(source_path, section, table, "logo")
+
   let favicon = optional_string(source_path, section, table, "favicon")
+
   let fediverse_creator =
     optional_string(source_path, section, table, "fediverse_creator")
 
@@ -203,6 +214,7 @@ fn decode_menu_item(
   table: Dict(String, Toml),
 ) -> Field(RawMenuItem) {
   let name = optional_string(source_path, section, table, "name")
+
   let url = optional_string(source_path, section, table, "url")
 
   let errors =
@@ -222,7 +234,9 @@ fn decode_social(
   table: Dict(String, Toml),
 ) -> Field(RawSocial) {
   let name = optional_string(source_path, section, table, "name")
+
   let url = optional_string(source_path, section, table, "url")
+
   let icon = optional_string(source_path, section, table, "icon")
 
   let errors =
@@ -248,17 +262,27 @@ fn decode_features(
   let section = "features"
 
   let rss = optional_bool(source_path, section, table, "rss")
+
   let search = optional_bool(source_path, section, table, "search")
+
   let navbar_fixed = optional_bool(source_path, section, table, "navbar_fixed")
+
   let mathjax = optional_bool(source_path, section, table, "mathjax")
+
   let mermaid = optional_bool(source_path, section, table, "mermaid")
+
   let syntax_highlight =
     optional_bool(source_path, section, table, "syntax_highlight")
+
   let sidebar = optional_bool(source_path, section, table, "sidebar")
+
   let floating_buttons =
     optional_bool(source_path, section, table, "floating_buttons")
+
   let aratafetch = optional_bool(source_path, section, table, "aratafetch")
+
   let lightbox = optional_bool(source_path, section, table, "lightbox")
+
   let latest_posts = optional_bool(source_path, section, table, "latest_posts")
 
   let errors =
@@ -310,6 +334,7 @@ fn decode_latest_posts(
   table: Dict(String, Toml),
 ) -> Field(RawLatestPosts) {
   let section = "latest_posts"
+
   let count = optional_int(source_path, section, table, "count")
 
   let errors =
@@ -345,7 +370,9 @@ fn decode_fonts(
   let section = "fonts"
 
   let text = optional_string(source_path, section, table, "text")
+
   let header = optional_string(source_path, section, table, "header")
+
   let code = optional_string(source_path, section, table, "code")
 
   let errors =
@@ -375,7 +402,9 @@ fn decode_assets(
   let section = "assets"
 
   let mathjax_url = optional_string(source_path, section, table, "mathjax_url")
+
   let mermaid_url = optional_string(source_path, section, table, "mermaid_url")
+
   let syntax_highlight_url =
     optional_string(source_path, section, table, "syntax_highlight_url")
 
@@ -406,10 +435,14 @@ fn decode_analytics(
   let section = "analytics"
 
   let provider = optional_string(source_path, section, table, "provider")
+
   let data_goatcounter =
     optional_string(source_path, section, table, "data_goatcounter")
+
   let website_id = optional_string(source_path, section, table, "website_id")
+
   let data_entity = optional_string(source_path, section, table, "data_entity")
+
   let src = optional_string(source_path, section, table, "src")
 
   let errors =
@@ -445,22 +478,36 @@ fn decode_comments(
   let section = "comments"
 
   let provider = optional_string(source_path, section, table, "provider")
+
   let repo = optional_string(source_path, section, table, "repo")
+
   let repo_id = optional_string(source_path, section, table, "repo_id")
+
   let category = optional_string(source_path, section, table, "category")
+
   let category_id = optional_string(source_path, section, table, "category_id")
+
   let mapping = optional_string(source_path, section, table, "mapping")
+
   let strict = optional_bool(source_path, section, table, "strict")
+
   let reactions_enabled =
     optional_bool(source_path, section, table, "reactions_enabled")
+
   let emit_metadata =
     optional_bool(source_path, section, table, "emit_metadata")
+
   let input_position =
     optional_string(source_path, section, table, "input_position")
+
   let theme = optional_string(source_path, section, table, "theme")
+
   let lang = optional_string(source_path, section, table, "lang")
+
   let loading = optional_string(source_path, section, table, "loading")
+
   let issue_term = optional_string(source_path, section, table, "issue_term")
+
   let src = optional_string(source_path, section, table, "src")
 
   let errors =
@@ -546,6 +593,21 @@ fn optional_section(
   }
 }
 
+/// Decode an optional repeated-table collection.
+///
+/// The decoder distinguishes all three configuration states:
+///
+///   missing key
+///     -> None
+///
+///   key = []
+///     -> Some([])
+///
+///   [[key]]
+///     -> Some(items)
+///
+/// Non-empty ordinary arrays remain invalid. Collection entries must use TOML
+/// repeated-table syntax so each item has a named field structure.
 fn optional_array_of_tables(
   source_path: String,
   root: Dict(String, Toml),
@@ -558,13 +620,30 @@ fn optional_array_of_tables(
     Ok(tom.ArrayOfTables(tables)) ->
       decode_array_tables(source_path, key, tables, decoder, 0, [], [])
 
+    // TOML parsers represent `menu = []` and `socials = []` as an ordinary
+    // empty array rather than an array of tables. Accept this exact form so an
+    // explicit empty collection can replace Arata's built-in defaults.
+    Ok(tom.Array([])) -> Field(value: Some([]), errors: [])
+
+    Ok(tom.Array(_)) ->
+      Field(value: None, errors: [
+        error.decode(
+          source_path,
+          Some(key),
+          None,
+          "an empty array or an array of TOML tables",
+          "non-empty array",
+          "non-empty configuration collections must use repeated TOML tables",
+        ),
+      ])
+
     Ok(value) ->
       Field(value: None, errors: [
         error.decode(
           source_path,
           Some(key),
           None,
-          "an array of TOML tables",
+          "an empty array or an array of TOML tables",
           toml_type_name(value),
           "configuration collection must use repeated TOML tables",
         ),
@@ -591,6 +670,7 @@ fn decode_array_tables(
 
       let next_values = case decoded.value {
         Some(value) -> [value, ..values]
+
         None -> values
       }
 
@@ -705,17 +785,29 @@ fn append_field_errors(
 fn toml_type_name(value: Toml) -> String {
   case value {
     tom.Int(_) -> "integer"
+
     tom.Float(_) -> "float"
+
     tom.Infinity(_) -> "infinity"
+
     tom.Nan(_) -> "NaN"
+
     tom.Bool(_) -> "boolean"
+
     tom.String(_) -> "string"
+
     tom.Date(_) -> "date"
+
     tom.Time(_) -> "time"
+
     tom.DateTime(_, _, _) -> "date-time"
+
     tom.Array(_) -> "array"
+
     tom.ArrayOfTables(_) -> "array of tables"
+
     tom.Table(_) -> "table"
+
     tom.InlineTable(_) -> "inline table"
   }
 }

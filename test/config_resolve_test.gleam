@@ -195,11 +195,11 @@ pub fn subdirectory_configuration_canonicalizes_and_prefixes_paths_test() {
 pub fn explicit_empty_collections_replace_default_collections_test() {
   let source =
     "
-[site]
-title = \"No Navigation\"
-
 menu = []
 socials = []
+
+[site]
+title = \"No Navigation\"
 
 [features]
 rss = false
