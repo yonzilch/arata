@@ -1097,7 +1097,7 @@ The initial release of arata — a faithful reimplementation of the apollo blog 
 - **Taxonomy** (Phase 8): `/tags` index with post counts and `/tags/<tag>` single-tag pages.
 - **Homepage** (Phase 9): custom landing page with hero section.
 - **Standalone pages** (Phase 9): `/{slug}` pages (e.g. `/about`).
-- **404** (Phase 9): apollo-style 404 page.
+- **404** (Phase 9 & 16): apollo-style 404 page.
 - **Theme system** (Phase 10): 3-state theme toggle (Light → Dark → Auto) with `localStorage` persistence and `matchMedia` reactivity.
 - **Fancy code blocks** (Phase 11): copy-to-clipboard button and coloured language label on every `<pre><code>` block.
 - **Search** (Phase 12): Cmd/Ctrl+K search modal with keyboard navigation (↑/↓ to navigate, Enter to follow, Esc to close).
@@ -1108,7 +1108,6 @@ The initial release of arata — a faithful reimplementation of the apollo blog 
 - **Sitemap** (Phase 15): `sitemap.xml` with all post + page URLs.
 - **Analytics** (Phase 15): GoatCounter, Umami, and Google Analytics providers.
 - **Comments** (Phase 15): Giscus and Utterances comment sections.
-- **Wavy boundary** (Phase 16): a soft, SVG-based section divider (arata-original, not in apollo).
 - **Build pipeline** (Phase 17): `gleam run -m build/pipeline` produces a complete static site in `dist/`.
 - **Tests** (Phase 18): 57 unit tests covering routing, card reordering, tag index, search, and feed generation.
 - **Accessibility** (Phase 18): `:focus-visible` styles for keyboard navigation.

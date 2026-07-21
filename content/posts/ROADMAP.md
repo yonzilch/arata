@@ -1059,17 +1059,15 @@ static host.
    markdown to the renderer (comrak via FFI is the leading candidate).
 3. **`resize_image`.** Shell out to `libvips` (`vips thumbnail`) or
    `imagemagick` (`convert`) at build time.
-4. **Wavy boundary.** Not in apollo — design from scratch (Phase 16). Keep it
-   SVG + CSS only.
-5. **SPA vs SSG.** arata is a client SPA with a build step that emits static
+4. **SPA vs SSG.** arata is a client SPA with a build step that emits static
    assets. Full SSR/SSG (server-rendered HTML per route) is deferred to a
    future phase using `element.to_document_string` + `lustre/ssg`.
-6. **FOUC.** Replicate apollo's `<html class="dark light">` + always-load-light
+5. **FOUC.** Replicate apollo's `<html class="dark light">` + always-load-light
    approach by emitting both `<link>`s in `index.html` before the SPA script.
-7. **SCSS.** Hand-port to plain CSS to avoid a Dart-Sass dependency in the
+6. **SCSS.** Hand-port to plain CSS to avoid a Dart-Sass dependency in the
    build. apollo's SCSS is mostly variables + `@media`, so the port is
    mechanical.
-8. **elasticlunr.** Keep the vendored core; rewrite only the 635-line modal
+7. **elasticlunr.** Keep the vendored core; rewrite only the 635-line modal
    controller in Lustre. Alternatively evaluate a Gleam search library later.
 
 ---
@@ -1107,10 +1105,8 @@ arata is "done" when **all** of the following hold:
 4. `gleam run -m arata/build` produces a `dist/` that serves identically to
    `zola build` on the same content (feeds, sitemap, search index, minified
    assets).
-5. The wavy boundary (Phase 16) renders in both themes and respects the sticky
-   footer.
-6. Accessibility audit passes (semantic HTML, ARIA, keyboard nav, focus states).
-7. `docs/` is written and a demo deployment is live.
+5. Accessibility audit passes (semantic HTML, ARIA, keyboard nav, focus states).
+6. `docs/` is written and a demo deployment is live.
 
 ---
 
