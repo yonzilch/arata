@@ -1,30 +1,57 @@
 +++
 title = "Configuration"
 date = "2026-06-23"
-updated = "2026-07-19"
+updated = "2026-07-21"
 description = "Comprehensive configuration guide for arata."
 tags = ["guide", "config"]
 +++
 
 # Configuration
 
-Arata is configured through Gleam modules.
+Arata is configured through a single user-owned file:
 
-The important splits are:
+```txt
+content/arata.toml
+```
 
-* **`src/config.gleam`** — the user-facing configuration source:
-  `Config`, `config.default()`, and `config.site_meta()`.
-* **`src/data/site.gleam`** — shared metadata types only:
-  `SiteMeta`, `Analytics`, and `CommentsConfig`.
+As of v1.7.0, `arata.toml` is the entry point for all site configuration.
+Earlier versions of Arata required editing generated Gleam source directly to
+change the header, navigation, feature toggles, or metadata. That is no
+longer necessary — `arata.toml` is loaded once at build time, decoded,
+merged with Arata's built-in defaults, resolved against the site's
+deployment path, validated, and handed to both the static build pipeline and
+the compiled SPA runtime as a single, consistent configuration.
 
-`config.gleam` is the single place where default site values live. The SPA
-runtime and the build pipeline both read from it, so values such as title,
-description, RSS settings, analytics, comments, and favicon configuration do
-not drift between build-time and runtime paths.
+`arata.toml` is committed alongside your content and **must not** contain
+secrets, API keys, private tokens, or other sensitive values. The analytics
+and comments provider settings stored in it are public, browser-visible
+configuration — not credentials.
 
-A future phase may replace these hardcoded Gleam constants with a `config.toml`
-or JSON loader, but the documented field names and semantics are intended to
-remain stable.
+## Configuration Pipeline
+
+Internally, resolving configuration is a five-step pipeline:
+
+1. `content/arata.toml` is parsed with `tom` into a `RawConfig`.
+2. `config/defaults` supplies built-in fallback values for anything left
+   unset.
+3. `config/url` derives the deployment `base_path` from `site.base_url` and
+   resolves every root-relative path declared in the file — menu URLs,
+   social URLs, `logo`, `favicon`, vendored asset URLs — against it.
+4. The resolved values are validated.
+5. The result is exposed to the rest of Arata as a trusted `Config` value
+   (consumed by the SPA) and as `SiteMeta` (consumed by build-only concerns
+   such as feeds, `robots.txt`, and `llms.txt`).
+
+`src/config.gleam` still owns the public `Config`, `Social`, `MenuItem`, and
+`Fonts` types, and still exposes `config.default()` and `config.site_meta()`
+as backward-compatible accessors that return Arata's built-in defaults
+without reading `arata.toml`. These remain useful for tests and for anyone
+working on Arata itself. Production builds do not call them directly — they
+load and resolve `content/arata.toml` once at the build entry point instead,
+so build output and runtime configuration always originate from the same
+resolved input. See [Advanced: the Gleam configuration
+API](#advanced-the-gleam-configuration-api) below if you're extending Arata
+rather than configuring a site.
 
 The build pipeline:
 
@@ -32,365 +59,338 @@ The build pipeline:
 gleam run -m build/pipeline
 ```
 
-reads Markdown files from `content/`, parses TOML frontmatter with `tom`,
-renders Markdown bodies with <https://hex.pm/packages/mork>, writes
-`dist/content_index.json`, emits crawler files and feeds, copies static
-assets, inlines CSS into the HTML shell, and bundles the SPA into
-`dist/app.mjs`.
+reads `content/arata.toml`, reads Markdown files from `content/`, parses TOML
+frontmatter with `tom`, renders Markdown bodies with
+<https://hex.pm/packages/mork>, writes `dist/content_index.json`, emits
+crawler files and feeds, copies static assets, inlines CSS into the HTML
+shell, and bundles the SPA into `dist/app.mjs`.
 
-At runtime, the browser fetches `/content_index.json` once via `rsvp`.
-The browser never reads Markdown files or uses filesystem APIs.
+At runtime, the browser fetches `/content_index.json` once via `rsvp`. The
+browser never reads Markdown files, never reads `arata.toml`, and never uses
+filesystem APIs — by the time the SPA runs, your configuration has already
+been fully resolved into static HTML/JSON/JS by the build.
 
-## Site Configuration
+## `content/arata.toml`
 
-The main config lives in `src/config.gleam`.
+Root-relative paths declared anywhere in `arata.toml` — menu URLs, social
+URLs, `logo`, `favicon`, vendored asset paths — are resolved against the
+deployment path derived from `site.base_url`. There is no separate base-path
+setting; `site.base_url` is the single source of truth for it. See
+[Deployment base path](#deployment-base-path) below.
 
-### `Config`
+### `[site]`
 
-`Config` drives the header, navigation, socials, logo, favicon, font
-overrides, feature toggles, and runtime analytics injection.
-
-Example:
-
-```gleam
-Config(
-  title: "Arata",
-  description: "A modern and minimalistic blog theme",
-  base_path: base_path,
-  menu: [
-    MenuItem(name: "about", url: with_base_path(base_path, "/about")),
-    MenuItem(name: "links", url: with_base_path(base_path, "/links")),
-    MenuItem(name: "posts", url: with_base_path(base_path, "/posts")),
-    MenuItem(name: "projects", url: with_base_path(base_path, "/projects")),
-    MenuItem(name: "tags", url: with_base_path(base_path, "/tags")),
-  ],
-  socials: default_socials(rss_enabled),
-  logo: None,
-  favicon: Some("images/arata-logo.avif"),
-  rss_enabled: True,
-  fonts: Fonts(
-    text: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
-    header: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
-    code: "ui-monospace, \"Cascadia Code\", \"Source Code Pro\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace",
-  ),
-  search_enabled: True,
-  navbar_fixed: True,
-  analytics: AnalyticsDisabled,
-  mathjax_enabled: True,
-  mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
-  mermaid_enabled: True,
-  mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
-  syntax_highlight_enabled: True,
-  syntax_highlight_cdn_url: "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js",
-  sidebar_enabled: True,
-  floating_buttons_enabled: True,
-  aratafetch_enabled: True,
-  aratafetch_maintained_for: Some("since 2026-06-21"),
-  lightbox_enabled: True,
-  latest_posts_enabled: False,
-  latest_posts_count: 5,
-)
+```toml
+[site]
+base_url = "https://arata.yon.im"
+title = "Arata"
+description = "A modern and minimalistic blog theme"
+logo = ""
+favicon = "/images/arata-logo.avif"
+fediverse_creator = ""
 ```
 
-This mirrors the actual hardcoded defaults returned by `config.default()`. `base_path` is not set by hand — it is derived from `base_url` in `site_meta()` (see the "Site Metadata" section below) and then used to prefix every internal `menu` URL via `with_base_path`, so project-site deployments (e.g. GitHub Pages) still resolve correctly.
+#### `base_url`
 
-### `title` and `description`
+The canonical, public URL the site is deployed at. Used by:
+
+* feeds
+* the sitemap
+* `robots.txt`
+* `llms.txt`
+* absolute canonical resource links
+* deriving the runtime deployment base path for every root-relative path in
+  this file
+
+For a root-domain deployment:
+
+```toml
+base_url = "https://blog.example.com"
+```
+
+This derives a base path of `""`, and runtime assets resolve like:
+
+```txt
+/app.mjs
+/content_index.json
+/rss.xml
+/icons/search.svg
+```
+
+For a subdirectory deployment:
+
+```toml
+base_url = "https://example.com/blog"
+```
+
+This derives a base path of `"/blog"`, and runtime assets resolve like:
+
+```txt
+/blog/app.mjs
+/blog/content_index.json
+/blog/rss.xml
+/blog/icons/search.svg
+```
+
+For GitHub Pages project sites, use the repository path:
+
+```toml
+base_url = "https://yonzilch.github.io/arata"
+```
+
+This derives a base path of `"/arata"`, so root-absolute requests such as
+`/app.mjs` or `/rss.xml` no longer incorrectly resolve from the domain root
+instead of the repository subdirectory.
+
+A trailing slash is allowed and removed during resolution, so these are
+equivalent:
+
+```toml
+base_url = "https://example.com/blog"
+```
+
+```toml
+base_url = "https://example.com/blog/"
+```
+
+#### `title` and `description`
 
 Site-wide title and description.
 
-* `title` is used by the header when no logo is configured.
-* `description` is used for metadata and content index configuration.
+* `title` is used by the header when no `logo` is configured, and for SEO
+  and feed metadata.
+* `description` is used for metadata, feeds, and content index
+  configuration.
 
-Keep these aligned with `config.site_meta()` by deriving `Config` defaults
-from `site_meta()` when possible.
+Because both the SPA runtime and the build pipeline read the same resolved
+`arata.toml`, these values can never drift between the header rendered by
+the SPA and the metadata written into feeds, the sitemap, or `llms.txt`.
 
-### `menu`
+#### `logo`
 
-A list of `MenuItem(name, url)` values rendered in the header.
+An optional root-relative path to an asset under `static/`.
 
-```gleam
-MenuItem(name: "about", url: "/about")
-MenuItem(name: "links", url: "/links")
-MenuItem(name: "posts", url: "/posts")
-MenuItem(name: "projects", url: "/projects")
-MenuItem(name: "tags", url: "/tags")
+```toml
+logo = "/images/avatar.avif"
+```
+
+Leave it as an empty string to render the site title as a text link instead
+of an image:
+
+```toml
+logo = ""
+```
+
+Use an absolute, root-relative path. Avoid relative paths like
+`"images/avatar.avif"`, since deep-link refreshes may resolve them relative
+to the current route rather than the site root.
+
+#### `favicon`
+
+An optional root-relative path used by the build pipeline when generating
+`index.html` and `404.html`.
+
+```toml
+favicon = "/images/favicon.ico"
+```
+
+Leave it as an empty string to fall back to Arata's default favicon:
+
+```toml
+favicon = ""
+```
+
+As with `logo`, prefer absolute root paths — this avoids depending on the
+depth of the page the favicon `<link>` is emitted into.
+
+#### `fediverse_creator`
+
+An optional Fediverse attribution string, for example:
+
+```toml
+fediverse_creator = "@username@example.social"
+```
+
+Leave it as an empty string to disable the metadata:
+
+```toml
+fediverse_creator = ""
+```
+
+### `[[menu]]`
+
+Navigation items, rendered in the header in declared order.
+
+```toml
+[[menu]]
+name = "about"
+url = "/about"
+
+[[menu]]
+name = "links"
+url = "/links"
+
+[[menu]]
+name = "posts"
+url = "/posts"
+
+[[menu]]
+name = "projects"
+url = "/projects"
+
+[[menu]]
+name = "tags"
+url = "/tags"
 ```
 
 Rules:
 
 * `name` is the displayed label.
-* `url` should usually be an absolute site path beginning with `/`.
+* Internal URLs must be root-relative, beginning with `/`. Arata adds the
+  deployment base path derived from `site.base_url` automatically during
+  configuration resolution — do **not** hardcode a subdirectory yourself
+  (e.g. write `/posts`, never `/arata/posts`), even for project-site
+  deployments.
+* External URLs may use an absolute HTTP or HTTPS URL and are left
+  untouched.
 * Internal routes are handled by modem as SPA navigation.
-* For subdirectory deployments, wrap the path with `with_base_path(base_path, "/posts")`
-  instead of hardcoding it, so the link still resolves under a project-site
-  base path such as `/arata`.
 
-Common routes:
+Common internal routes:
 
 ```txt
 /
- /posts
- /posts/page/{n}
- /posts/{slug}
- /projects
- /links
- /tags
- /tags/{name}
- /{slug}
+/posts
+/posts/page/{n}
+/posts/{slug}
+/projects
+/links
+/tags
+/tags/{name}
+/{slug}
 ```
 
-### `socials`
+### `[[socials]]`
 
-Social links are rendered as icon links in the header.
+Social links, rendered as icon links in the header in declared order.
 
-```gleam
-Social(
-  name: "GitHub",
-  url: "https://github.com/yonzilch/arata",
-  icon: "github",
-)
+```toml
+[[socials]]
+name = "Codeberg"
+url = "https://codeberg.org/yonzilch/arata"
+icon = "codeberg"
+
+[[socials]]
+name = "GitHub"
+url = "https://github.com/yonzilch/arata"
+icon = "github"
 ```
 
 Fields:
 
 * `name` — accessible label.
-* `url` — link target.
-* `icon` — SVG filename without extension under `static/icons/social/`.
+* `url` — link target. Internal targets are root-relative and receive the
+  base path automatically, same as `[[menu]]`.
+* `icon` — SVG filename without extension, under `static/icons/social/`. For
+  example, `icon = "github"` resolves to `/icons/social/github.svg`.
 
-For example:
+The RSS social entry is managed automatically through `features.rss` and
+must **not** be declared in `[[socials]]`. When `features.rss` is `true`,
+Arata prepends a managed entry equivalent to:
 
-```gleam
-icon: "github"
+```toml
+name = "RSS"
+url = "/rss.xml"
+icon = "rss"
 ```
 
-resolves to:
+ahead of your declared `[[socials]]` list. When `features.rss` is `false`,
+no RSS entry is added.
 
-```txt
-/icons/social/github.svg
+Replace the shipped Codeberg/GitHub entries entirely with your own socials
+when customizing a site — they point at Arata's own repositories and are
+only a working example.
+
+### `[features]`
+
+```toml
+[features]
+rss = true
+search = true
+navbar_fixed = true
+mathjax = true
+mermaid = true
+syntax_highlight = true
+sidebar = true
+floating_buttons = true
+aratafetch = true
+lightbox = true
+latest_posts = false
 ```
 
-The default RSS social link is added only when `rss_enabled` is `True`:
+Each key is a boolean toggle.
 
-```gleam
-Social(name: "RSS", url: "/atom.xml", icon: "rss")
-```
+#### `rss`
 
-Use an absolute root path like `/atom.xml` so the RSS link works from nested
-routes such as `/posts/configuration`.
-
-The full default list, built by `default_socials(rss_enabled)`, is:
-
-```gleam
-Social(name: "RSS", url: "/rss.xml", icon: "rss")       // only when rss_enabled is True
-Social(name: "Codeberg", url: "https://codeberg.org/yonzilch/arata", icon: "codeberg")
-Social(name: "GitHub", url: "https://github.com/yonzilch/arata", icon: "github")
-```
-
-Replace this list entirely with your own `socials` when customizing a site —
-the Codeberg/GitHub entries point at arata's own repositories and are only
-meant as a working example.
-
-### `logo`
-
-An `Option(String)`.
-
-```gleam
-logo: Some("/images/avatar.avif")
-```
-
-When `None`, the header renders the site title as text. When `Some(path)`,
-the header renders the image.
-
-Use an absolute path beginning with `/`:
-
-```gleam
-Some("/images/avatar.avif")
-```
-
-Avoid relative paths like:
-
-```gleam
-Some("images/avatar.avif")
-```
-
-because deep-link refreshes may resolve them relative to the current route.
-
-### `favicon`
-
-An `Option(String)` used by the build pipeline when generating `index.html`
-and `404.html`.
-
-```gleam
-favicon: Some("/images/avatar.avif")
-```
-
-When `None`, arata falls back to the default favicon path.
-
-Recommended:
-
-```gleam
-favicon: Some("/images/favicon.ico")
-```
-
-or:
-
-```gleam
-favicon: Some("/images/avatar.avif")
-```
-
-As with `logo`, prefer absolute root paths.
-
-Note that the shipped default value is a relative path,
-`Some("images/arata-logo.avif")`, since `favicon` is resolved directly by the
-build pipeline when it writes `index.html`/`404.html` rather than by the SPA
-runtime. If you deploy under a subdirectory, using an absolute root path
-(e.g. `Some("/images/favicon.ico")`) is still the safer choice, since it
-avoids depending on the depth of the page the favicon `<link>` is emitted
-into.
-
-### `fonts`
-
-A `Fonts(text, header, code)` record containing CSS `font-family`
-declarations.
-
-```gleam
-Fonts(
-  text: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
-  header: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
-  code: "ui-monospace, \"Cascadia Code\", \"Source Code Pro\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace",
-)
-```
-
-These values are injected as CSS custom property overrides:
-
-```css
-:root {
-  --text-font: ...;
-  --header-font: ...;
-  --code-font: ...;
-}
-```
-
-The rest of the stylesheet resolves fonts through those variables.
-
-#### Optional font packages
-
-Two optional font packages are known to work well and can be installed and
-referenced from `fonts`:
-
-* [**Maple Font**](https://github.com/subframe7536/maple-font) — a
-  programming font with ligatures. Set:
-
-  ```gleam
-  code: "\"Maple Mono NF\", \"Maple Mono\", monospace"
-  ```
-
-* [**Sarasa Gothic**](https://github.com/be5invis/sarasa-gothic) — a
-  CJK-friendly font. Set either:
-
-  ```gleam
-  text: "\"Sarasa Gothic SC\", sans-serif"
-  ```
-
-  or, for a CJK-friendly monospace code font:
-
-  ```gleam
-  code: "\"Sarasa Mono SC\", monospace"
-  ```
-
-These fonts must be installed/vendored separately; `fonts` only controls
-which CSS `font-family` declarations are emitted.
-
-### `rss_enabled`
-
-A `Bool`.
-
-When `True`:
+When `true`:
 
 * `dist/atom.xml` is written.
 * `dist/rss.xml` is written.
 * feed `<link rel="alternate">` tags are emitted in the HTML shell.
-* the RSS social icon is included.
+* the managed RSS social icon is included (see `[[socials]]` above).
 
-When `False`:
+When `false`:
 
 * feed files are skipped.
 * feed `<link>` tags are omitted.
-* RSS social is omitted.
+* the RSS social entry is omitted.
 
 `robots.txt`, `llms.txt`, and `sitemap.xml` are independent of this toggle.
 
-### `search_enabled`
+#### `search`
 
-A `Bool`.
-
-When `True`:
+When `true`:
 
 * the search button is rendered.
 * the search modal is mounted.
 * Cmd/Ctrl+K opens search.
 * `dist/search_index.json` is generated and used by the SPA.
 
-When `False`:
+When `false`, search UI is omitted and the global search shortcut is not
+subscribed to.
 
-* search UI is omitted.
-* global search shortcut is not subscribed to.
-
-### `navbar_fixed`
-
-A `Bool`.
+#### `navbar_fixed`
 
 Controls whether the site header (navbar) stays pinned to the top of the
 viewport while scrolling.
 
-When `True`:
+When `true`:
 
 * the `<nav>` element receives the `.navbar-fixed` class.
 * the navbar uses `position: sticky` and stays visible at the top.
-* scrolling the page does not move the navbar.
 
-When `False`:
+When `false`:
 
 * the `<nav>` element receives the `.navbar-static` class.
-* the navbar participates in normal document flow (`position: static`).
-* scrolling the page moves the navbar out of view with the content.
+* the navbar participates in normal document flow (`position: static`) and
+  scrolls out of view with the content.
 
-Use `False` if you prefer a more traditional scrolling layout or want to
-maximize vertical reading space on long posts.
+Set it to `false` if you prefer a more traditional scrolling layout or want
+to maximize vertical reading space on long posts.
 
-### `mathjax_enabled`
+#### `mathjax`
 
-A `Bool`.
+When `true`, post pages trigger MathJax typesetting for inline and display
+LaTeX, using the runtime asset configured at `assets.mathjax_url` (see
+below). When `false`, MathJax effects are skipped entirely — use this if no
+posts contain math.
 
-When `True`, post pages trigger MathJax typesetting for inline and display
-LaTeX.
+Even when enabled, the JavaScript FFI only lazy-loads MathJax on posts whose
+rendered content actually contains likely TeX delimiters, so posts without
+math incur no extra runtime cost.
 
-When `False`, MathJax effects are skipped.
+#### `mermaid`
 
-Use `False` if no posts contain math.
-
-Even when `mathjax_enabled` is `True`, the JavaScript FFI only lazy-loads
-MathJax on posts whose rendered content actually contains likely TeX
-delimiters, so posts without math incur no extra runtime cost.
-
-### `mathjax_cdn_url`
-
-A `String` pointing to the MathJax runtime asset used by the typesetting
-enhancement above.
-
-```gleam
-mathjax_cdn_url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-```
-
-Replace this with another CDN or a vendored local asset URL if you need to
-avoid jsDelivr.
-
-### Mermaid diagrams
-
-Controlled by `mermaid_enabled` and `mermaid_cdn_url`.
-
-`mermaid_enabled` is a `Bool`. When `True`, arata renders native Markdown
-fenced code blocks written as:
+When `true`, Arata renders native Markdown fenced code blocks written as:
 
 ````markdown
 ```mermaid
@@ -399,149 +399,54 @@ graph TD
 ```
 ````
 
-and also keeps compatibility with legacy Mermaid shortcode output. When
-`False`, no Mermaid runtime module is imported at all.
+and keeps compatibility with legacy Mermaid shortcode output, using the
+runtime asset configured at `assets.mermaid_url`. When `false`, no Mermaid
+runtime module is imported at all.
 
-```gleam
-Config(
-  // ...
-  mermaid_enabled: True,
-  mermaid_cdn_url: "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs",
-)
-```
+#### `syntax_highlight`
 
-`mermaid_cdn_url` must point to a browser-importable ESM bundle exposing
-Mermaid's `initialize` and `render` APIs, such as jsDelivr's
-`mermaid.esm.min.mjs`. Replace it with another CDN or a vendored local asset
-if needed.
+When `true`, syntax highlighting is applied to fenced code blocks at
+runtime, using the runtime asset configured at `assets.syntax_highlight_url`.
+When `false`, code blocks retain plain rendering, language labels, and copy
+controls, without loading the highlighting runtime.
 
-### Syntax highlighting
+#### `sidebar`
 
-Controlled by `syntax_highlight_enabled` and `syntax_highlight_cdn_url`.
+When `true`, post pages render the right sidebar containing post tags and
+the table of contents. When `false`, the sidebar is omitted and the post
+body gets more space.
 
-`syntax_highlight_enabled` is a `Bool` that determines whether syntax
-highlighting is applied to fenced code blocks at runtime.
+#### `floating_buttons`
 
-```gleam
-Config(
-  // ...
-  syntax_highlight_enabled: True,
-  syntax_highlight_cdn_url: "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js",
-)
-```
+Controls whether the floating buttons are rendered: the ToC/tags FAB
+(floating action button) shown alongside the sidebar, and the scroll-to-top
+button shown in the mobile sidebar overlay.
 
-When `False`, code blocks retain plain rendering, language labels, and copy
-controls without loading the highlighting runtime.
+When `true` (the default), both are rendered and reachable. When `false`, no
+FAB is shown and the overlay is not reachable through it.
 
-`syntax_highlight_cdn_url` should point to a pinned, browser-compatible
-Highlight.js bundle. Replace it with another CDN or a vendored local asset if
-needed.
-
-### `sidebar_enabled`
-
-A `Bool`.
-
-When `True`, post pages render the right sidebar containing:
-
-* post tags
-* table of contents
-
-When `False`, the right sidebar is omitted and the post body gets more space.
-
-### `floating_buttons_enabled`
-
-A `Bool`.
-
-Controls whether the floating buttons are rendered:
-
-* the ToC/tags FAB (floating action button) shown alongside the sidebar
-* the scroll-to-top button shown in the mobile sidebar overlay
-
-When `True` (the default), both are rendered and reachable.
-
-When `False`, no FAB is shown and the overlay is not reachable through it.
-
-```gleam
-Config(
-  // ...
-  floating_buttons_enabled: True,
-)
-```
-
-### `aratafetch_enabled` and `aratafetch_maintained_for`
+#### `aratafetch`
 
 `aratafetch` is an optional terminal-style homepage summary block. When
-enabled, it is rendered at the bottom of the homepage content, after the
+`true`, it is rendered at the bottom of the homepage content, after the
 Markdown body from `content/pages/home.md`.
 
-It gives visitors a compact CLI-style overview of the site. Depending on the
-available site data, it can include:
+It gives visitors a compact CLI-style overview of the site, computed from
+the already-loaded runtime content model:
 
 * friend link count
-* published post count
+* published post count (drafts excluded)
 * total word count
 * project count
-* unique tag count
+* unique tag count (case-insensitive)
 * site title
 * base URL
 * site description
-* optional maintenance display string
+* the optional `[aratafetch].maintained_for` string (see below)
 
-Example configuration:
-
-```gleam
-Config(
-  // ...
-  floating_buttons_enabled: True,
-  aratafetch_enabled: True,
-  aratafetch_maintained_for: Some("since 2026-06-21"),
-)
-````
-
-Disable it with:
-
-```gleam
-aratafetch_enabled: False,
-```
-
-When disabled, the homepage renders exactly as before and no aratafetch DOM is
-emitted.
-
-`aratafetch_maintained_for` is an `Option(String)` rendered as-is in the
-`maintain` row.
-
-Examples:
-
-```gleam
-aratafetch_maintained_for: Some("since 2026-06-21")
-```
-
-```gleam
-aratafetch_maintained_for: Some("2 years")
-```
-
-```gleam
-aratafetch_maintained_for: None
-```
-
-When `None`, the `maintain` row is omitted.
-
-The statistics are computed from the already-loaded runtime content model:
-
-* `link_count` is based on loaded friend links.
-* `post_count` counts published posts only.
-* draft posts are excluded.
-* `word_count` sums `Post.word_count`.
-* `project_count` is based on loaded projects.
-* `tag_count` counts unique tags case-insensitively.
-
-Rows with unavailable or empty values are omitted from the rendered output:
-
-* numeric rows such as `posts`, `words`, `tags`, `links`, and `projects` are
-  omitted when their value is `0`.
-* text rows such as `site_title`, `base_url`, and `description` are omitted
-  when empty.
-* optional rows such as `maintain` are omitted when set to `None`.
+Rows with unavailable or empty values are omitted: numeric rows are omitted
+when `0`, text rows are omitted when empty, and `maintain` is omitted when
+`[aratafetch].maintained_for` is empty.
 
 Example output:
 
@@ -565,54 +470,70 @@ description  Arata is a modern and minimalistic blog theme
 maintain     since 2026-06-21
 ```
 
-aratafetch does not currently display comment counts.
+aratafetch does not currently display comment counts — external comment
+systems such as Giscus or Utterances do not provide a reliable static local
+count in Arata's current data model, so comment statistics are intentionally
+omitted until a stable data source is added.
 
-> External comment systems, such as Giscus or Utterances, do not provide a
-> reliable static local count in arata's current data model, so comment
-> statistics are intentionally omitted until a stable data source is added.
+#### `lightbox`
 
-### `latest_posts_enabled` and `latest_posts_count`
+Arata includes an optional built-in image lightbox for Markdown body images.
+When enabled, clicking images inside rendered post/page Markdown opens a
+fullscreen overlay managed entirely by the Lustre application model,
+supporting:
 
-Arata can optionally render a compact latest-posts section on the homepage.
+* fullscreen image preview
+* page-local image galleries
+* previous/next navigation
+* keyboard navigation (`Escape` closes, `ArrowLeft`/`ArrowRight` navigate)
+* backdrop click to close
+* body scroll locking while the overlay is open
+* image captions derived from `alt` or `title`
+* mobile/touch navigation controls
 
-When enabled, the newest published posts are displayed above aratafetch using
-the already-loaded runtime content model. No additional requests are performed.
+When `false`, Markdown images render normally: no lightbox overlay DOM is
+emitted, no lightbox event listeners are subscribed, and no scroll locking
+behavior is enabled.
 
-The section is intended to provide a lightweight editorial-style homepage
-overview without turning the homepage into a full archive page.
+The lightbox only observes images rendered inside Markdown content bodies
+(`.body img`), which intentionally excludes header icons, social icons,
+project cards, the theme toggle, search UI icons, and other non-content
+decorative images.
 
-Example configuration:
+Individual images or wrappers may opt out with `data-no-lightbox`:
 
-```gleam
-Config(
-  // ...
-  latest_posts_enabled: True,
-  latest_posts_count: 5,
-)
-````
-
-Disable it with:
-
-```gleam
-latest_posts_enabled: False,
+```html
+<img data-no-lightbox ...>
 ```
 
-Control the number of displayed posts with:
-
-```gleam
-latest_posts_count: 4,
+```html
+<span data-no-lightbox>
+  <img ...>
+</span>
 ```
 
-The latest-posts section:
+> The current gallery implementation prioritizes correctness and simplicity
+> over aggressive image preloading optimizations. During rapid navigation
+> between partially-loaded responsive images, some browsers may temporarily
+> reuse the previously-decoded bitmap frame until the next image finishes
+> decoding.
 
-* appears below the homepage Markdown body
-* appears above aratafetch
-* displays published posts only
-* uses the existing runtime post ordering
-* does not perform additional fetches
+#### `latest_posts`
+
+Arata can optionally render a compact latest-posts section on the homepage,
+above aratafetch, using the already-loaded runtime content model — no
+additional requests are performed. It's intended as a lightweight,
+editorial-style homepage overview without turning the homepage into a full
+archive page.
+
+The section:
+
+* appears below the homepage Markdown body and above aratafetch
+* displays published posts only, using the existing runtime post ordering
 * does not render when there are no posts
 
-The homepage list uses a compact editorial layout:
+The number of posts shown is controlled by `[latest_posts].count` (see
+below). Example layout:
 
 ```txt
 2026-06-25 ● Configurable homepage latest-posts section
@@ -621,302 +542,253 @@ The homepage list uses a compact editorial layout:
 2026-06-23 ● Guide for multi-platform project hosting
 ```
 
-Only post titles are interactive links.
+Only post titles are interactive links; dates and separators are rendered as
+non-interactive metadata for cleaner accessibility semantics and reduced
+hover noise.
 
-Dates and separators are rendered as non-interactive metadata for cleaner
-accessibility semantics and reduced hover noise.
+### `[latest_posts]`
 
-### `analytics`
-
-One of:
-
-```gleam
-AnalyticsDisabled
-GoatCounter(data_goatcounter: "https://goatcounter.com/count", src: "//goatcounter.com/count.js")
-Umami(website_id: "your_website_id", src: "https://umami.com/script.js")
-Liwan(data_entity: "your_data_entity", src: "https://liwan.com/script.js")
+```toml
+[latest_posts]
+count = 5
 ```
 
-Google Analytics is intentionally not supported.
+The maximum number of published posts shown in the homepage latest-posts
+section. Only takes effect when `features.latest_posts = true`. This value
+must be zero or greater.
 
-### `lightbox_enabled`
+### `[aratafetch]`
 
-arata includes an optional built-in image lightbox for Markdown body images.
-
-When enabled, clicking images inside rendered post/page Markdown opens a
-fullscreen overlay managed entirely by the Lustre application model.
-
-The lightbox supports:
-
-* fullscreen image preview
-* page-local image galleries
-* previous/next navigation
-* keyboard navigation
-  * `Escape` closes
-  * `ArrowLeft` navigates to the previous image
-  * `ArrowRight` navigates to the next image
-* backdrop click to close
-* body scroll locking while the overlay is open
-* image captions derived from `alt` or `title`
-* mobile/touch navigation controls
-
-Example configuration:
-
-```gleam
-Config(
-  // ...
-  lightbox_enabled: True,
-)
+```toml
+[aratafetch]
+maintained_for = "since 2026-06-21"
 ```
 
-Disable it with:
+An optional display value for the `maintained` row in the aratafetch
+summary. Only takes effect when `features.aratafetch = true`.
 
-```gleam
-lightbox_enabled: False,
+```toml
+maintained_for = "since 2026-06-21"
 ```
 
-When disabled:
-
-* Markdown images render normally.
-* No lightbox overlay DOM is emitted.
-* No lightbox event listeners are subscribed.
-* No scroll locking behavior is enabled.
-
-The lightbox only observes images rendered inside Markdown content bodies:
-
-```
-.body img
+```toml
+maintained_for = "2 years"
 ```
 
+Leave it empty to omit the row entirely:
 
-This intentionally excludes:
-
-* header icons
-* social icons
-* project cards
-* theme toggle icons
-* search UI icons
-* other non-content decorative images
-
-Individual images or wrappers may opt out of lightbox behavior with:
-
-```html
-<img data-no-lightbox ...>
+```toml
+maintained_for = ""
 ```
 
-or:
+### `[fonts]`
 
-```html
-<span data-no-lightbox>
-  <img ...>
-</span>
+CSS `font-family` declarations used by Arata's CSS custom properties.
+
+```toml
+[fonts]
+text = "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif"
+header = "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif"
+code = "ui-monospace, \"Cascadia Code\", \"Source Code Pro\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace"
 ```
 
-The lightbox overlay itself is rendered by Lustre/Gleam rather than imperative
-JavaScript DOM mutation.
+These values are injected as CSS custom property overrides:
 
-The JavaScript FFI layer is intentionally limited to:
-
-* observing Markdown image clicks
-* observing keyboard events
-* collecting page-local image galleries
-* forwarding typed events back into the app update loop
-* toggling scroll lock classes on `<html>` and `<body>`
-
-This separation keeps lightbox rendering deterministic and fully model-driven.
-
-> The current gallery implementation prioritizes correctness and simplicity over
-> aggressive image preloading optimizations. During rapid navigation between
-> partially-loaded responsive images, some browsers may temporarily reuse the
-> previously-decoded bitmap frame until the next image finishes decoding.
-
-## Site Metadata
-
-`SiteMeta` is defined in `src/data/site.gleam`, but its default value is
-configured in `src/config.gleam` via `site_meta()`.
-
-Example:
-
-```gleam
-pub fn site_meta() -> SiteMeta {
-  SiteMeta(
-    base_url: "https://blog.example.com",
-    title: "Yon Zilch",
-    description: "This is Yonzilch's blog",
-    analytics: AnalyticsDisabled,
-    comments: CommentsDisabled,
-    fediverse_creator: None,
-    rss_enabled: True,
-  )
+```css
+:root {
+  --text-font: ...;
+  --header-font: ...;
+  --code-font: ...;
 }
 ```
 
-### `base_url`
+The rest of the stylesheet resolves fonts through those variables.
 
-The canonical deployed site URL.
+#### Optional font packages
 
-Used by:
+Two optional font packages are known to work well and can be installed and
+referenced from `[fonts]`:
 
-* feeds
-* sitemap
-* robots.txt
-* llms.txt
-* absolute canonical resource links
-* deriving `Config.base_path` for non-root deployments
+* [**Maple Font**](https://github.com/subframe7536/maple-font) — a
+  programming font with ligatures. Set:
 
-`base_url` should describe the final public URL where the site is deployed.
-arata derives the runtime `base_path` from this value so the SPA can work both
-at the domain root and under a subdirectory.
+  ```toml
+  code = "\"Maple Mono NF\", \"Maple Mono\", monospace"
+  ```
 
-For root-domain deployments:
+* [**Sarasa Gothic**](https://github.com/be5invis/sarasa-gothic) — a
+  CJK-friendly font. Set either:
 
-```gleam
-base_url: "https://blog.example.com"
-````
+  ```toml
+  text = "\"Sarasa Gothic SC\", sans-serif"
+  ```
 
-This derives:
+  or, for a CJK-friendly monospace code font:
 
-```gleam
-base_path: ""
+  ```toml
+  code = "\"Sarasa Mono SC\", monospace"
+  ```
+
+These fonts must be installed/vendored separately; `[fonts]` only controls
+which CSS `font-family` declarations are emitted.
+
+### `[assets]`
+
+Runtime asset URLs for optional browser enhancements.
+
+```toml
+[assets]
+mathjax_url = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+mermaid_url = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+syntax_highlight_url = "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
 ```
 
-and runtime assets resolve like:
+A URL is required whenever its corresponding `[features]` toggle is enabled.
+These values may point to pinned CDN resources or to root-relative vendored
+assets under `static/` (resolved against the deployment base path like any
+other site-local path).
 
-```txt
-/app.mjs
-/content_index.json
-/rss.xml
-/icons/search.svg
+* `mathjax_url` — used only when `features.mathjax = true`. Replace with
+  another CDN or a vendored local asset if you need to avoid jsDelivr.
+* `mermaid_url` — used only when `features.mermaid = true`. Must point to a
+  browser-importable ESM bundle exposing Mermaid's `initialize` and `render`
+  APIs, such as jsDelivr's `mermaid.esm.min.mjs`.
+* `syntax_highlight_url` — used only when `features.syntax_highlight =
+  true`. Should point to a pinned, browser-compatible Highlight.js bundle.
+
+### `[analytics]`
+
+```toml
+[analytics]
+provider = "disabled"
 ```
 
-For subdirectory deployments:
+Supported providers: `disabled`, `goatcounter`, `umami`, `liwan`.
+Provider-specific values belong in this same table. Google Analytics is
+intentionally not supported.
 
-```gleam
-base_url: "https://example.com/blog"
+```toml
+[analytics]
+provider = "goatcounter"
+data_goatcounter = "https://yoursite.goatcounter.com/count"
+src = "//gc.zgo.at/count.js"
 ```
 
-This derives:
-
-```gleam
-base_path: "/blog"
+```toml
+[analytics]
+provider = "umami"
+website_id = "your-website-id"
+src = "https://umami.example.com/script.js"
 ```
 
-and runtime assets resolve like:
-
-```txt
-/blog/app.mjs
-/blog/content_index.json
-/blog/rss.xml
-/blog/icons/search.svg
+```toml
+[analytics]
+provider = "liwan"
+data_entity = "your-entity"
+src = "https://liwan.example.com/script.js"
 ```
 
-For GitHub Pages project sites, use the repository path:
+### `[comments]`
 
-```gleam
-base_url: "https://yonzilch.github.io/arata"
+```toml
+[comments]
+provider = "disabled"
 ```
 
-This derives:
+Supported providers: `disabled`, `giscus`, `utterances`. Provider-specific
+values belong in this same table.
 
-```gleam
-base_path: "/arata"
+```toml
+[comments]
+provider = "utterances"
+repo = "user/repo"
 ```
 
-and fixes project-site deployments where root-absolute requests such as:
-
-```txt
-/app.mjs
-/content_index.json
-/rss.xml
-/icons/social/rss.svg
+```toml
+[comments]
+provider = "giscus"
+repo = "user/repo"
+repo_id = "..."
+category = "..."
+category_id = "..."
 ```
 
-would otherwise incorrectly resolve from the domain root instead of the
-repository subdirectory.
+## Deployment base path
 
-Do not include a trailing slash unless your deployment path requires it.
-The config helpers normalize trailing slashes where needed, so these are
-equivalent:
+`site.base_url` is the single value that determines every deployment path in
+the site — there is no separate base-path setting to configure.
 
-```gleam
-base_url: "https://example.com/blog"
+Keep every other path in `arata.toml` as a logical root-relative path:
+
+```toml
+favicon = "/images/favicon.ico"
+
+[[socials]]
+name = "RSS"
+url = "/rss.xml"
 ```
 
-```gleam
-base_url: "https://example.com/blog/"
+Do not pre-prefix them manually with a subdirectory, even for project-site
+deployments:
+
+```toml
+favicon = "/blog/images/favicon.ico"  # avoid
+
+[[socials]]
+url = "/blog/rss.xml"  # avoid
 ```
 
-Both derive:
+Arata applies the derived base path at the output layer when generating
+HTML, fetching `content_index.json`, resolving header icons/social links,
+and producing SPA route hrefs — doing it yourself would double-prefix the
+path under a subdirectory deployment.
 
-```gleam
-base_path: "/blog"
-```
+## Advanced: the Gleam configuration API
 
-Keep `Config` paths as logical root-relative paths:
+This section is for people extending Arata itself, not for configuring a
+site — use `content/arata.toml` for that.
 
-```gleam
-favicon: Some("/images/favicon.ico")
-Social(name: "RSS", url: "/rss.xml", icon: "rss")
-```
+The important modules are:
 
-Do not pre-prefix them manually:
+* **`src/config.gleam`** — the stable, public runtime API: the `Config`,
+  `Social`, `MenuItem`, and `Fonts` types, plus backward-compatible
+  `config.default()` and `config.site_meta()` accessors that return Arata's
+  built-in defaults without reading `arata.toml`. Existing views, effects,
+  routes, and build modules consume `Config` through this module.
+* **`src/data/site.gleam`** — shared metadata types only: `SiteMeta`,
+  `Analytics`, and `CommentsConfig`.
+* **`config/defaults`** — the built-in fallback values used to fill in
+  anything left unset in `RawConfig`.
+* **`config/url`** — deployment path derivation and URL resolution:
+  `canonical_base_url`, `base_path_from_url`, `normalize_base_path`,
+  `with_base_path`, `resolve_site_url`, `is_external_or_special_url`,
+  `is_http_url`, and `is_site_local_url`. `config.gleam` re-exports these as
+  compatibility wrappers.
+* **`config/resolve`** — loads `content/arata.toml`, decodes it into
+  `RawConfig`, and produces the final resolved `Config`/`SiteMeta` pair
+  consumed by the build pipeline and the SPA. Production build code should
+  call this once at the build entry point and pass the result downstream,
+  rather than calling `config.default()` or `config.site_meta()`
+  independently in multiple pipeline stages.
 
-```gleam
-favicon: Some("/blog/images/favicon.ico")  # avoid
-Social(name: "RSS", url: "/blog/rss.xml", icon: "rss")  # avoid
-```
+`Social.icon` is always the filename without extension of an SVG under
+`static/icons/social/` — for example, `icon: "github"` resolves to
+`/icons/social/github.svg`, exactly as documented for `[[socials]]` above.
 
-arata applies `base_path` at the output layer when generating HTML, fetching
-`content_index.json`, resolving header icons/social links, and producing SPA
-route hrefs.
+## Site Metadata
 
-### `title` and `description`
+Build-only metadata not directly consumed by application views and effects
+lives in `SiteMeta` (`src/data/site.gleam`), populated from the same
+resolved `arata.toml` input as `Config`:
 
-Used for SEO, feeds, and generated metadata.
+* `base_url`, `title`, `description`, `analytics`, `comments`,
+  `fediverse_creator`, and `rss_enabled`.
 
-These should usually match `Config.title` and `Config.description`.
-
-### `analytics`
-
-Same analytics type used by `Config`.
-
-### `comments`
-
-One of:
-
-```gleam
-CommentsDisabled
-Utterances(repo: "user/repo")
-Giscus(
-  repo: "user/repo",
-  repo_id: "...",
-  category: "...",
-  category_id: "...",
-)
-```
-
-### `fediverse_creator`
-
-An `Option(String)`.
-
-```gleam
-fediverse_creator: Some("@you@example.social")
-```
-
-or:
-
-```gleam
-fediverse_creator: None
-```
-
-When present, arata can emit Fediverse creator metadata.
-
-### `rss_enabled`
-
-The build pipeline reads RSS behavior from `SiteMeta`.
-
-Keep this synchronized with `Config.rss_enabled`. The recommended approach is
-to derive `Config` values from `site_meta()` in `config.gleam`.
+Because `Config` and `SiteMeta` are both derived from one resolved
+`arata.toml`, values like title, description, RSS behavior, and analytics
+can no longer drift between the SPA runtime and the metadata used to
+generate feeds, the sitemap, `robots.txt`, and `llms.txt` — there's exactly
+one place to change them.
 
 ## Content Authoring
 
@@ -924,6 +796,7 @@ All content lives under `content/`.
 
 ```txt
 content/
+├── arata.toml
 ├── posts/
 ├── pages/
 ├── links/
@@ -1154,7 +1027,7 @@ Contains crawlable post and page URLs.
 
 ### `robots.txt`
 
-Generated from `SiteMeta.base_url`.
+Generated from the resolved `site.base_url`.
 
 Example:
 
@@ -1212,7 +1085,7 @@ across both themes:
 :root.dark {
   --primary-color: #5f7eea;
 }
-````
+```
 
 Change these variables to recolor links, active nav states, tags, heading
 prefixes, selection highlights, blockquote accents, card hover borders, and
@@ -1335,20 +1208,21 @@ gleam run -m build/pipeline
 
 The pipeline:
 
-1. loads Markdown content from `content/`
-2. parses TOML frontmatter
-3. renders Markdown to HTML
-4. writes `dist/content_index.json`
-5. writes `dist/search_index.json`
-6. writes feeds when RSS is enabled
-7. writes `dist/sitemap.xml`
-8. writes `dist/robots.txt`
-9. writes `dist/llms.txt`
-10. writes `dist/index.html`
-11. writes `dist/404.html`
-12. copies CSS modules to `dist/css/`
-13. copies static assets to `dist/`
-14. bundles the SPA to `dist/app.mjs` with Bun
+1. loads and resolves `content/arata.toml`
+2. loads Markdown content from `content/`
+3. parses TOML frontmatter
+4. renders Markdown to HTML
+5. writes `dist/content_index.json`
+6. writes `dist/search_index.json`
+7. writes feeds when RSS is enabled
+8. writes `dist/sitemap.xml`
+9. writes `dist/robots.txt`
+10. writes `dist/llms.txt`
+11. writes `dist/index.html`
+12. writes `dist/404.html`
+13. copies CSS modules to `dist/css/`
+14. copies static assets to `dist/`
+15. bundles the SPA to `dist/app.mjs` with Bun
 
 ## Output Directory
 
@@ -1374,34 +1248,21 @@ dist/
 
 `atom.xml` and `rss.xml` are only emitted when RSS is enabled.
 
-## Local Preview
+## Tips for Local Preview
 
-Use a static server suitable for SPA routes.
+Arata supports live local development with hot reload as well as production `dist/` preview.
 
-Recommended with Nix:
+### Development Server (Hot Reload)
 
-```sh
-nix run nixpkgs#http-server -- -p 8080 dist
-```
-
-Then open:
-
-```txt
-http://0.0.0.0:8080/
-```
-
-Avoid using Python's built-in static server for SPA deep-link refresh testing:
+Use the dev server when authoring content, tweaking templates, or editing `arata.toml`:
 
 ```sh
-python -m http.server --directory dist
+bun run dev
+
 ```
 
-It does not provide SPA fallback for routes such as:
+This serves the site at `http://localhost:3333` and:
 
-```txt
-/posts/configuration
-/about
-/tags/gleam
-```
-
-and may return a server-level 404 before the SPA can start.
+* Performs an initial full-site build.
+* Watches `src/`, `content/` (including `arata.toml`), `static/`, and `gleam.toml`.
+* Rebuilds automatically on changes and triggers live-reload in your browser.
