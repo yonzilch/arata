@@ -1,0 +1,69 @@
+[site]
+base_url = 42
+title = true
+description = ["invalid", "description"]
+logo = false
+favicon = 123
+fediverse_creator = 99
+
+[[menu]]
+name = 100
+url = false
+
+[[socials]]
+name = true
+url = 200
+icon = ["github"]
+
+[features]
+rss = "true"
+search = 1
+navbar_fixed = "false"
+mathjax = 1.0
+mermaid = "enabled"
+syntax_highlight = []
+sidebar = "yes"
+floating_buttons = 0
+aratafetch = {}
+lightbox = "true"
+latest_posts = "false"
+
+[latest_posts]
+count = "five"
+
+[aratafetch]
+maintained_for = false
+
+[fonts]
+text = 1
+header = false
+code = ["monospace"]
+
+[assets]
+mathjax_url = true
+mermaid_url = 10
+syntax_highlight_url = []
+
+[analytics]
+provider = true
+data_goatcounter = 1
+website_id = false
+data_entity = []
+src = 99
+
+[comments]
+provider = false
+repo = 1
+repo_id = true
+category = []
+category_id = 2
+mapping = false
+strict = "true"
+reactions_enabled = 1
+emit_metadata = "false"
+input_position = true
+theme = 10
+lang = []
+loading = false
+issue_term = 5
+src = true

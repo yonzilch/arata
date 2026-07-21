@@ -1,0 +1,70 @@
+[site]
+base_url = "https://blog.example.com"
+title = "Full Arata"
+description = "A fully configured Arata test site"
+logo = "/images/test-logo.svg"
+favicon = "/images/test-favicon.svg"
+fediverse_creator = "@arata@example.social"
+
+[[menu]]
+name = "home"
+url = "/"
+
+[[menu]]
+name = "posts"
+url = "/posts"
+
+[[menu]]
+name = "external"
+url = "https://example.com/docs"
+
+[[socials]]
+name = "GitHub"
+url = "https://github.com/example/arata"
+icon = "github"
+
+[[socials]]
+name = "Codeberg"
+url = "https://codeberg.org/example/arata"
+icon = "codeberg"
+
+[features]
+rss = true
+search = true
+navbar_fixed = false
+mathjax = true
+mermaid = true
+syntax_highlight = true
+sidebar = false
+floating_buttons = true
+aratafetch = true
+lightbox = true
+latest_posts = true
+
+[latest_posts]
+count = 8
+
+[aratafetch]
+maintained_for = "since 2024-01-01"
+
+[fonts]
+text = "\"Inter\", sans-serif"
+header = "\"Space Grotesk\", sans-serif"
+code = "\"JetBrains Mono\", monospace"
+
+[assets]
+mathjax_url = "https://cdn.example.com/mathjax.js"
+mermaid_url = "https://cdn.example.com/mermaid.mjs"
+syntax_highlight_url = "https://cdn.example.com/highlight.js"
+
+[analytics]
+provider = "umami"
+website_id = "11111111-2222-3333-4444-555555555555"
+src = "https://analytics.example.com/script.js"
+
+[comments]
+provider = "giscus"
+repo = "example/arata"
+repo_id = "R_kgDOExample"
+category = "Announcements"
+category_id = "DIC_kwDOExample"

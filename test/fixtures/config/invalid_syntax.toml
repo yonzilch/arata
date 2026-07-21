@@ -1,0 +1,7 @@
+[site
+base_url = "https://example.com"
+title = "Invalid TOML"
+
+[features]
+rss = true
+search = [true

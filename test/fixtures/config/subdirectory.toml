@@ -1,0 +1,58 @@
+[site]
+base_url = "https://example.github.io/arata/"
+title = "Arata Subdirectory"
+description = "Arata deployed from a subdirectory"
+logo = "/images/arata-logo.svg"
+favicon = "/images/arata-logo.avif"
+
+[[menu]]
+name = "home"
+url = "/"
+
+[[menu]]
+name = "posts"
+url = "/posts"
+
+[[menu]]
+name = "projects"
+url = "/projects"
+
+[[socials]]
+name = "GitHub"
+url = "https://github.com/example/arata"
+icon = "github"
+
+[features]
+rss = true
+search = true
+navbar_fixed = true
+mathjax = false
+mermaid = false
+syntax_highlight = false
+sidebar = true
+floating_buttons = true
+aratafetch = false
+lightbox = true
+latest_posts = true
+
+[latest_posts]
+count = 3
+
+[aratafetch]
+maintained_for = ""
+
+[fonts]
+text = "sans-serif"
+header = "sans-serif"
+code = "monospace"
+
+[assets]
+mathjax_url = ""
+mermaid_url = ""
+syntax_highlight_url = ""
+
+[analytics]
+provider = "disabled"
+
+[comments]
+provider = "disabled"

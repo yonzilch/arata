@@ -1,0 +1,53 @@
+unknown_root_key = true
+
+[site]
+base_url = "https://example.com"
+title = "Unknown Keys"
+description = "Configuration containing misspelled and unsupported keys"
+base_path = "/must-not-be-configured"
+titel = "Misspelled title"
+
+[[menu]]
+name = "posts"
+url = "/posts"
+target = "_blank"
+
+[[socials]]
+name = "GitHub"
+url = "https://github.com/example/arata"
+icon = "github"
+username = "example"
+
+[features]
+rss = true
+serach = true
+navbar_fiexd = true
+unsupported_feature = false
+
+[latest_posts]
+count = 5
+limit = 10
+
+[aratafetch]
+maintained_for = "since 2024"
+enabled = true
+
+[fonts]
+text = "sans-serif"
+header = "sans-serif"
+code = "monospace"
+display = "serif"
+
+[assets]
+mathjax_url = "https://cdn.example.com/mathjax.js"
+mermaid_url = "https://cdn.example.com/mermaid.mjs"
+syntax_highlight_url = "https://cdn.example.com/highlight.js"
+stylesheet_url = "https://cdn.example.com/theme.css"
+
+[analytics]
+provider = "disabled"
+tracking_id = "must-not-be-accepted"
+
+[comments]
+provider = "disabled"
+repository = "example/arata"

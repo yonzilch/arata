@@ -1,0 +1,74 @@
+[site]
+base_url = "ftp://example.com/blog?preview=true#content"
+title = ""
+description = "Configuration with semantically invalid values"
+logo = ""
+favicon = ""
+fediverse_creator = ""
+
+[[menu]]
+name = ""
+url = "posts"
+
+[[menu]]
+name = "unsupported scheme"
+url = "javascript:alert(1)"
+
+[[socials]]
+name = ""
+url = "profile"
+icon = ""
+
+[[socials]]
+name = "Invalid icon path"
+url = "https://example.com"
+icon = "../github"
+
+[[socials]]
+name = "Invalid icon extension"
+url = "https://example.com"
+icon = "github.svg"
+
+[[socials]]
+name = "User-defined RSS"
+url = "/rss.xml"
+icon = "rss"
+
+[features]
+rss = true
+search = true
+navbar_fixed = true
+mathjax = true
+mermaid = true
+syntax_highlight = true
+sidebar = true
+floating_buttons = true
+aratafetch = true
+lightbox = true
+latest_posts = true
+
+[latest_posts]
+count = -3
+
+[aratafetch]
+maintained_for = ""
+
+[fonts]
+text = ""
+header = ""
+code = ""
+
+[assets]
+mathjax_url = ""
+mermaid_url = "mermaid.mjs"
+syntax_highlight_url = "file:///tmp/highlight.js"
+
+[analytics]
+provider = "unsupported"
+
+[comments]
+provider = "giscus"
+repo = "invalid-repository"
+repo_id = ""
+category = ""
+category_id = ""
