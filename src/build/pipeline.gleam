@@ -75,14 +75,19 @@ const css_modules = [
 const static_dir = "static"
 
 /// Run the full build pipeline.
+///
+/// `run()` keeps build failures as typed `Error` values so tests and internal
+/// callers can inspect them without terminating the process.
+///
+/// The executable entry point converts those errors into a panic. On the
+/// JavaScript target this terminates `gleam run -m build/pipeline` with a
+/// non-zero exit status, preventing CI, package scripts, and deployment chains
+/// from treating an invalid configuration as a successful build.
 pub fn main() -> Nil {
   case run() {
     Ok(_) -> Nil
 
-    Error(message) -> {
-      io.println(message)
-      Nil
-    }
+    Error(message) -> panic as message
   }
 }
 
