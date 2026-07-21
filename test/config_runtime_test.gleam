@@ -3,6 +3,18 @@
 //// These tests verify that resolved build configuration is projected into the
 //// runtime model without drift and serialized with explicit provider
 //// discriminators.
+////
+//// The subdirectory tests protect the configuration side of the bootstrap
+//// invariant:
+////
+////   content/arata.toml
+////     -> ResolvedConfig.base_path
+////     -> RuntimeConfig.application.base_path
+////     -> content_index.json
+////
+//// Reading the generated HTML bootstrap metadata through the browser FFI is
+//// outside this module's scope and belongs in a browser or build-pipeline
+//// integration test.
 
 import config/decoder
 import config/encoder
@@ -57,6 +69,75 @@ pub fn runtime_projection_preserves_public_site_metadata_test() {
   |> should.equal(option.Some("@arata@example.social"))
 }
 
+pub fn runtime_projection_preserves_subdirectory_base_path_test() {
+  let resolved = resolve_fixture(fixture_dir <> "/subdirectory.toml")
+
+  let runtime_config = runtime.from_resolved(resolved)
+
+  let application = runtime.application(runtime_config)
+
+  let site = runtime.site(runtime_config)
+
+  application.base_path
+  |> should.equal("/arata")
+
+  site.base_url
+  |> should.equal("https://example.github.io/arata")
+}
+
+pub fn runtime_projection_prefixes_subdirectory_application_paths_test() {
+  let resolved = resolve_fixture(fixture_dir <> "/subdirectory.toml")
+
+  let application =
+    resolved
+    |> runtime.from_resolved
+    |> runtime.application
+
+  application.logo
+  |> should.equal(option.Some("/arata/images/arata-logo.svg"))
+
+  application.favicon
+  |> should.equal(option.Some("/arata/images/arata-logo.avif"))
+
+  let assert [home, posts, projects] = application.menu
+
+  home.url
+  |> should.equal("/arata/")
+
+  posts.url
+  |> should.equal("/arata/posts")
+
+  projects.url
+  |> should.equal("/arata/projects")
+}
+
+pub fn runtime_projection_preserves_empty_disabled_asset_urls_test() {
+  let resolved = resolve_fixture(fixture_dir <> "/subdirectory.toml")
+
+  let application =
+    resolved
+    |> runtime.from_resolved
+    |> runtime.application
+
+  application.mathjax_enabled
+  |> should.equal(False)
+
+  application.mathjax_cdn_url
+  |> should.equal("")
+
+  application.mermaid_enabled
+  |> should.equal(False)
+
+  application.mermaid_cdn_url
+  |> should.equal("")
+
+  application.syntax_highlight_enabled
+  |> should.equal(False)
+
+  application.syntax_highlight_cdn_url
+  |> should.equal("")
+}
+
 pub fn runtime_encoder_emits_application_and_site_sections_test() {
   let encoded =
     resolve_fixture(fixture_dir <> "/full.toml")
@@ -77,6 +158,59 @@ pub fn runtime_encoder_emits_application_and_site_sections_test() {
 
   encoded
   |> string.contains("\"base_url\":\"https://blog.example.com\"")
+  |> should.equal(True)
+}
+
+pub fn runtime_encoder_emits_subdirectory_base_path_test() {
+  let encoded =
+    resolve_fixture(fixture_dir <> "/subdirectory.toml")
+    |> runtime.from_resolved
+    |> encoder.to_string
+
+  encoded
+  |> string.contains("\"base_path\":\"/arata\"")
+  |> should.equal(True)
+
+  encoded
+  |> string.contains("\"base_url\":\"https://example.github.io/arata\"")
+  |> should.equal(True)
+
+  encoded
+  |> string.contains("\"url\":\"/arata/posts\"")
+  |> should.equal(True)
+
+  encoded
+  |> string.contains("\"favicon\":\"/arata/images/arata-logo.avif\"")
+  |> should.equal(True)
+}
+
+pub fn runtime_encoder_does_not_duplicate_subdirectory_prefix_test() {
+  let encoded =
+    resolve_fixture(fixture_dir <> "/subdirectory.toml")
+    |> runtime.from_resolved
+    |> encoder.to_string
+
+  encoded
+  |> string.contains("/arata/arata/")
+  |> should.equal(False)
+}
+
+pub fn runtime_encoder_preserves_empty_disabled_asset_urls_test() {
+  let encoded =
+    resolve_fixture(fixture_dir <> "/subdirectory.toml")
+    |> runtime.from_resolved
+    |> encoder.to_string
+
+  encoded
+  |> string.contains("\"mathjax_cdn_url\":\"\"")
+  |> should.equal(True)
+
+  encoded
+  |> string.contains("\"mermaid_cdn_url\":\"\"")
+  |> should.equal(True)
+
+  encoded
+  |> string.contains("\"syntax_highlight_cdn_url\":\"\"")
   |> should.equal(True)
 }
 
