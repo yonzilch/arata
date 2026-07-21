@@ -21,6 +21,20 @@ For example, project-specific sections such as
 
 ---
 
+## [1.7.0-fix] — 2026-07-21
+
+### Added
+
+- Increased regression test coverage for subdirectory runtime projection, path prefixing, runtime JSON encoding, and empty disabled asset URLs.
+
+### Fixed
+
+- Made invalid TOML configuration terminate the build with a non-zero exit status, preventing CI and deployment workflows from accepting failed builds.
+- Embedded the resolved deployment base path in both generated SPA shells.
+- Changed the initial `content_index.json` request to use the generated base path instead of compiled defaults, fixing startup on subdirectory deployments.
+
+---
+
 ## [1.7.0] — 2026-07-21
 
 ### Added
