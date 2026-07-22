@@ -149,7 +149,7 @@ pub fn mathjax_enabled() -> Bool {
 
 /// Default MathJax runtime asset URL.
 pub fn mathjax_url() -> String {
-  "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+  "https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js"
 }
 
 /// Whether Mermaid rendering is enabled by default.
@@ -159,7 +159,7 @@ pub fn mermaid_enabled() -> Bool {
 
 /// Default Mermaid ESM runtime asset URL.
 pub fn mermaid_url() -> String {
-  "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+  "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs"
 }
 
 /// Whether runtime syntax highlighting is enabled by default.
@@ -169,7 +169,7 @@ pub fn syntax_highlight_enabled() -> Bool {
 
 /// Default Highlight.js runtime asset URL.
 pub fn syntax_highlight_url() -> String {
-  "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+  "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/es/highlight.min.js"
 }
 
 /// Whether the post sidebar is enabled by default.
