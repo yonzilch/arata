@@ -1,6 +1,5 @@
 +++
 title = "CHANGELOG"
-date = "2026-06-21"
 description = "Comprehensive CHANGELOG of arata project"
 tags = ["docs"]
 +++
@@ -18,6 +17,24 @@ changes in arata.
 
 For example, project-specific sections such as 
 `CI`, `Contributors`, `Documentation`, or `Internal` may be used when they make a release easier to understand.
+
+---
+
+## [1.7.1] — 2026-07-23
+
+### Fixed
+
+- Inherited the persisted `light`, `dark`, or `auto` theme preference on browser-rendered Atom and RSS feed pages, including browsers that restrict `prefers-color-scheme`.
+- Removed a stray `>` character from the generated bootstrap metadata.
+
+### Changed
+
+- Pinned client-side CDN dependencies for deterministic builds:
+  - Upgraded MathJax to `4.1.3` and switched to the TeX-to-CHTML component.
+  - Pinned Mermaid to `11.16.0`.
+  - Switched Highlight.js `11.11.1` to its ES module build.
+- Adjusted post-list item styling to allow padding overrides under `.post-list-items`.
+- Ignored the root `/build/` directory in Git.
 
 ---
 
