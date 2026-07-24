@@ -293,7 +293,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               analytics: application_config.analytics,
               comments: runtime_site.comments,
               fediverse_creator: runtime_site.fediverse_creator,
-              rss_enabled: application_config.rss_enabled,
+              rss_enabled: config.feeds_enabled(application_config.feed_mode),
             )
 
           let new_model =
