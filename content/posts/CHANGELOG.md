@@ -20,6 +20,29 @@ For example, project-specific sections such as
 
 ---
 
+## [1.7.2] — 2026-07-24
+
+### Added
+
+- Added configurable Atom and RSS modes: `full`, `summary`, and `disabled`.
+- Added full-content feeds using Atom HTML content and RSS `content:encoded`.
+
+### Changed
+
+- Preserved backward compatibility: `rss = true` maps to `summary`, while `rss = false` maps to `disabled`.
+- Excluded drafts and undated posts from feeds, matching publication eligibility rules.
+- Synchronized feed generation, discovery metadata, and the managed RSS social link with the resolved feed mode.
+- Removed stale Atom, RSS, and XSL artifacts when feeds are disabled.
+- Documented feed modes, compatibility behavior, and publication requirements.
+
+### Fixed
+
+- Emitted format-appropriate dates for Atom and RSS entries.
+- Preserved valid XML when serializing rendered HTML and special characters.
+- Kept runtime and build-time RSS state consistent through the resolved feed mode.
+
+---
+
 ## [1.7.1] — 2026-07-23
 
 ### Fixed
