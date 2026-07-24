@@ -314,7 +314,7 @@ only a working example.
 
 ```toml
 [features]
-rss = true
+rss = "summary"
 search = true
 navbar_fixed = true
 mathjax = true
@@ -327,24 +327,53 @@ lightbox = true
 latest_posts = false
 ```
 
-Each key is a boolean toggle.
+Most keys are boolean toggles. `rss` accepts a feed content mode and remains backward-compatible with the previous boolean form.
 
 #### `rss`
 
-When `true`:
+Supported modes:
 
-* `dist/atom.xml` is written.
-* `dist/rss.xml` is written.
-* feed `<link rel="alternate">` tags are emitted in the HTML shell.
-* the managed RSS social icon is included (see `[[socials]]` above).
+```toml
+rss = "full"
+rss = "summary"
+rss = "disabled"
+```
 
-When `false`:
+- `"full"` generates Atom and RSS feeds containing each published post's summary and complete rendered HTML body.
+- `"summary"` generates Atom and RSS feeds containing post summaries only. This is the default behavior.
+- `"disabled"` disables Atom and RSS generation.
 
-* feed files are skipped.
-* feed `<link>` tags are omitted.
-* the RSS social entry is omitted.
+The previous boolean form remains supported:
 
-`robots.txt`, `llms.txt`, and `sitemap.xml` are independent of this toggle.
+```toml
+rss = true   # Equivalent to "summary"
+rss = false  # Equivalent to "disabled"
+```
+
+When feeds are enabled with `"full"` or `"summary"`:
+
+- `dist/atom.xml` and `dist/rss.xml` are written.
+- `dist/atom.xsl` and `dist/rss.xsl` are written for browser-friendly feed previews.
+- feed `<link rel="alternate">` tags are emitted in the HTML shell.
+- the managed RSS social icon is included (see `[[socials]]` above).
+
+When feeds are `"disabled"`:
+
+- Atom, RSS, and their XSL stylesheets are not generated.
+- stale feed artifacts from earlier builds are removed from `dist/`.
+- feed `<link rel="alternate">` tags are omitted.
+- the managed RSS social entry is omitted.
+
+Only non-draft posts with a non-empty publication date are included in Atom and RSS feeds. Posts without a publication date remain available on the site but are excluded from feeds.
+
+In `"full"` mode:
+
+- Atom stores rendered article HTML in `<content type="html">`.
+- RSS stores rendered article HTML in `<content:encoded>`.
+- post summaries remain available through Atom `<summary>` and RSS `<description>`.
+- referenced remote or site assets are not downloaded or embedded into the feed.
+
+`robots.txt`, `llms.txt`, and `sitemap.xml` are generated independently of the selected RSS mode.
 
 #### `search`
 
