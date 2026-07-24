@@ -10,6 +10,14 @@
 //// All serialized values are public and browser-visible. Configuration must
 //// not contain API keys, private tokens, credentials, or other secrets.
 ////
+//// Feed state is serialized in two forms:
+////
+////   - `feed_mode` is the authoritative content mode;
+////   - `rss_enabled` is retained for backward compatibility.
+////
+//// Both values are derived from `Config.feed_mode` so the generated runtime
+//// configuration cannot contain conflicting feed state.
+////
 //// This module does not:
 ////
 ////   - write files;
@@ -50,7 +58,20 @@ pub fn to_string(runtime: RuntimeConfig) -> String {
 }
 
 /// Encode the application configuration consumed by SPA views and effects.
+///
+/// `feed_mode` is the authoritative serialized feed state. The compatibility
+/// `rss_enabled` field is derived from that mode instead of copied from the
+/// corresponding field on `Config`.
+///
+/// This preserves the following invariant:
+///
+///   Full      -> feed_mode = "full",     rss_enabled = true
+///   Summary   -> feed_mode = "summary",  rss_enabled = true
+///   Disabled  -> feed_mode = "disabled", rss_enabled = false
 pub fn application_to_json(application: config.Config) -> json.Json {
+  let feed_mode = application.feed_mode
+  let rss_enabled = config.feeds_enabled(feed_mode)
+
   json.object([
     #("title", json.string(application.title)),
     #("description", json.string(application.description)),
@@ -59,7 +80,8 @@ pub fn application_to_json(application: config.Config) -> json.Json {
     #("socials", json.array(application.socials, social_to_json)),
     #("logo", option_string_to_json(application.logo)),
     #("favicon", option_string_to_json(application.favicon)),
-    #("rss_enabled", json.bool(application.rss_enabled)),
+    #("rss_enabled", json.bool(rss_enabled)),
+    #("feed_mode", feed_mode_to_json(feed_mode)),
     #("fonts", fonts_to_json(application.fonts)),
     #("search_enabled", json.bool(application.search_enabled)),
     #("navbar_fixed", json.bool(application.navbar_fixed)),
@@ -90,6 +112,27 @@ pub fn application_to_json(application: config.Config) -> json.Json {
     #("latest_posts_enabled", json.bool(application.latest_posts_enabled)),
     #("latest_posts_count", json.int(application.latest_posts_count)),
   ])
+}
+
+/// Encode a resolved feed mode using its stable runtime representation.
+pub fn feed_mode_to_json(mode: config.FeedMode) -> json.Json {
+  mode
+  |> feed_mode_to_string
+  |> json.string
+}
+
+/// Return the stable string representation of a resolved feed mode.
+///
+/// These values form part of the browser-visible content-index schema and must
+/// remain synchronized with `content/runtime.decode_feed_mode`.
+pub fn feed_mode_to_string(mode: config.FeedMode) -> String {
+  case mode {
+    config.Full -> "full"
+
+    config.Summary -> "summary"
+
+    config.Disabled -> "disabled"
+  }
 }
 
 /// Encode the browser-safe site metadata.
@@ -191,9 +234,11 @@ pub fn comments_to_json(comments: CommentsConfig) -> json.Json {
   }
 }
 
+/// Encode an optional browser-visible string.
 fn option_string_to_json(value: Option(String)) -> json.Json {
   case value {
     Some(value) -> json.string(value)
+
     None -> json.null()
   }
 }
