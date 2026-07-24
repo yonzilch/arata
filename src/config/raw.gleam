@@ -81,10 +81,36 @@ pub type RawSocial {
   RawSocial(name: Option(String), url: Option(String), icon: Option(String))
 }
 
+/// Raw representation of the backward-compatible `features.rss` setting.
+///
+/// The setting accepts both the legacy boolean form and the new mode form:
+///
+///   rss = true
+///   rss = false
+///   rss = "full"
+///   rss = "summary"
+///   rss = "disabled"
+///
+/// Resolution maps legacy values as follows:
+///
+///   true   -> summary
+///   false  -> disabled
+///
+/// String values remain untrusted until the resolver normalizes and validates
+/// them. Keeping both input forms explicit avoids collapsing malformed values
+/// into a trusted feed mode during decoding.
+pub type RawFeedSetting {
+  LegacyFeedEnabled(Bool)
+  FeedModeName(String)
+}
+
 /// Raw values from the `[features]` table.
+///
+/// `rss` differs from the other feature fields because it supports both the
+/// legacy boolean toggle and the explicit feed content mode.
 pub type RawFeatures {
   RawFeatures(
-    rss: Option(Bool),
+    rss: Option(RawFeedSetting),
     search: Option(Bool),
     navbar_fixed: Option(Bool),
     mathjax: Option(Bool),
