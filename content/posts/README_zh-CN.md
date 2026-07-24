@@ -2,7 +2,7 @@
 title = "README_zh-CN"
 description = "Arata 中文版本 README（同时用于测试部分 HTML 与 CJK 渲染）； 此 README 可能无法反映项目最新变动情况"
 date = "2026-07-05"
-updated = "2026-07-21"
+updated = "2026-07-24"
 +++
 
 <div align="center">
