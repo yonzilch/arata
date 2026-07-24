@@ -1,10 +1,14 @@
-//// Site metadata: SEO, analytics, and comments configuration, mirroring
-//// apollo's `config.toml` `[extra]` block.
+//// Site metadata shared by build-time SEO, feed, analytics, and comments
+//// generation.
 ////
-//// This extends the basic `config.Config` with the site-wide settings that
-//// the head builder, analytics FFI, and comments view consume. The values
-//// are normally loaded from `config.toml`; here they are hardcoded defaults
-//// (Phase 17 replaces them with JSON loading).
+//// Runtime application configuration is represented by `config.Config`.
+//// `SiteMeta` retains the build-facing values needed by feed, sitemap,
+//// crawler, analytics, comments, and metadata generators.
+////
+//// Feed content behavior is not represented here. `config.FeedMode` is the
+//// authoritative source for choosing full, summary, or disabled feed output.
+//// `rss_enabled` is retained as a compatibility availability flag derived from
+//// the resolved feed mode.
 
 import gleam/option.{type Option, None}
 
@@ -16,16 +20,27 @@ pub type Analytics {
   AnalyticsDisabled
 }
 
-/// Comments provider configuration (per-page, controlled by frontmatter).
+/// Comments provider configuration.
 pub type CommentsConfig {
-  /// Giscus: repo, repo-id, category, category-id.
+  /// Giscus repository and discussion category configuration.
   Giscus(repo: String, repo_id: String, category: String, category_id: String)
-  /// Utterances: repo.
+
+  /// Utterances repository configuration.
   Utterances(repo: String)
+
   CommentsDisabled
 }
 
-/// Site-level metadata for SEO and integrations.
+/// Site-level metadata for build output, SEO, and public integrations.
+///
+/// `rss_enabled` is a compatibility availability flag:
+///
+///   - `True` for full and summary feed modes;
+///   - `False` for disabled feed mode.
+///
+/// It must be derived from the authoritative `config.FeedMode`. Consumers that
+/// need to distinguish full content from summaries must use `Config.feed_mode`
+/// instead.
 pub type SiteMeta {
   SiteMeta(
     base_url: String,
@@ -34,15 +49,14 @@ pub type SiteMeta {
     analytics: Analytics,
     comments: CommentsConfig,
     fediverse_creator: Option(String),
-    /// Whether to emit RSS/Atom feeds during the build. When `False`, the
-    /// pipeline skips writing `dist/atom.xml` and `dist/rss.xml` and omits the
-    /// feed `<link>` tags from `index.html`. Defaults to `True`. The pipeline
-    /// reads this field because it operates on `SiteMeta`, not `config.Config`.
     rss_enabled: Bool,
   )
 }
 
-/// Hardcoded default site metadata. Phase 17 replaces this with JSON loading.
+/// Return built-in site metadata.
+///
+/// Production build code should use the metadata created by configuration
+/// resolution so runtime and build values originate from the same input.
 pub fn default() -> SiteMeta {
   SiteMeta(
     base_url: "https://arata.example.com",
