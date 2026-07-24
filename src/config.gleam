@@ -60,6 +60,32 @@ pub type Fonts {
   Fonts(text: String, header: String, code: String)
 }
 
+/// Controls whether feeds are generated and how post content is included.
+///
+/// - `Full` emits each post's complete rendered HTML.
+/// - `Summary` emits only each post's configured summary.
+/// - `Disabled` omits Atom and RSS feed output.
+pub type FeedMode {
+  Full
+  Summary
+  Disabled
+}
+
+/// Return whether Atom and RSS output is enabled for a feed mode.
+pub fn feeds_enabled(mode: FeedMode) -> Bool {
+  mode != Disabled
+}
+
+/// Convert the legacy RSS feature toggle into a feed mode.
+///
+/// Existing enabled configurations retain the current summary-only behavior.
+pub fn feed_mode_from_enabled(enabled: Bool) -> FeedMode {
+  case enabled {
+    True -> Summary
+    False -> Disabled
+  }
+}
+
 /// Trusted application configuration consumed by the SPA.
 ///
 /// Values of this type must already have passed through default resolution,
@@ -85,7 +111,7 @@ pub type Config {
     menu: List(MenuItem),
     /// Social entries in display order.
     ///
-    /// The managed RSS entry is present only when `rss_enabled` is `True`.
+    /// The managed RSS entry is present unless `feed_mode` is `Disabled`.
     socials: List(Social),
     /// Optional resolved navigation logo path.
     ///
@@ -94,7 +120,13 @@ pub type Config {
     /// Optional resolved favicon path.
     favicon: Option(String),
     /// Whether RSS and Atom feeds are enabled.
+    ///
+    /// This compatibility field is derived from `feed_mode`. New build code
+    /// should inspect `feed_mode` when it needs to distinguish full-content
+    /// feeds from summary-only feeds.
     rss_enabled: Bool,
+    /// Controls feed generation and entry content.
+    feed_mode: FeedMode,
     /// Body, heading, and code font-family declarations.
     fonts: Fonts,
     /// Whether the in-page search interface and keyboard shortcut are enabled.
@@ -161,23 +193,28 @@ pub fn site_meta() -> SiteMeta {
 /// This function preserves the legacy API and current behavior when no user
 /// configuration has been loaded. It does not read `content/arata.toml`.
 ///
+/// The legacy default RSS toggle resolves to `Summary`, preserving the current
+/// summary-only feed behavior.
+///
 /// Production build code must not call this function independently in multiple
 /// pipeline stages. Configuration should be loaded and resolved once, then
 /// passed explicitly to downstream consumers.
 pub fn default() -> Config {
   let metadata = site_meta()
   let base_path = config_url.base_path_from_url(metadata.base_url)
-  let rss_enabled = metadata.rss_enabled
+  let feed_mode = feed_mode_from_enabled(metadata.rss_enabled)
+  let rss_enabled = feeds_enabled(feed_mode)
 
   Config(
     title: metadata.title,
     description: metadata.description,
     base_path: base_path,
     menu: default_menu(base_path),
-    socials: default_socials(base_path, rss_enabled),
+    socials: default_socials(base_path, feed_mode),
     logo: resolve_optional_site_url(base_path, defaults.logo()),
     favicon: resolve_optional_site_url(base_path, defaults.favicon()),
     rss_enabled: rss_enabled,
+    feed_mode: feed_mode,
     fonts: Fonts(
       text: defaults.text_font(),
       header: defaults.header_font(),
@@ -279,11 +316,11 @@ fn default_menu(base_path: String) -> List(MenuItem) {
   })
 }
 
-fn default_socials(base_path: String, rss_enabled: Bool) -> List(Social) {
-  let managed_rss = case rss_enabled {
-    False -> []
+fn default_socials(base_path: String, feed_mode: FeedMode) -> List(Social) {
+  let managed_rss = case feed_mode {
+    Disabled -> []
 
-    True -> {
+    Full | Summary -> {
       let #(name, configured_url, icon) = defaults.rss_social()
 
       [
