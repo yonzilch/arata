@@ -295,7 +295,7 @@ Here is a brief overview of the configuration sections in `content/arata.toml`:
 * **`[[menu]]`** — Navigation items rendered in the declared order. Internal URLs must be root-relative.
 * **`[[socials]]`** — Social links rendered in the header. `icon` maps to an SVG filename under `static/icons/social/`.
 * **`[features]`** — Toggles for various runtime and build features:
-  * `rss` (bool): Generate `atom.xml` and `rss.xml` and add the managed RSS social link.
+  * `rss`: Generate `atom.xml` and `rss.xml` and add the managed RSS social link.
   * `search` (bool): Enable the in-page search modal and `Cmd/Ctrl+K` shortcut.
   * `navbar_fixed` (bool): Keep the navigation bar pinned while scrolling.
   * `mathjax` (bool): Enable MathJax rendering on post pages containing likely TeX delimiters.
