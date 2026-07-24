@@ -14,6 +14,18 @@
 ////   `menu = []` / `socials = []` -> Some([])
 ////   `[[menu]]` / `[[socials]]` -> Some(items)
 ////
+//// The `features.rss` field accepts either a legacy boolean or an explicit
+//// feed mode string:
+////
+////   rss = true
+////   rss = false
+////   rss = "full"
+////   rss = "summary"
+////   rss = "disabled"
+////
+//// Mode names remain untrusted strings until configuration resolution and
+//// semantic validation.
+////
 //// Unknown keys and type mismatches are reported as structured configuration
 //// errors. Independent decoding errors are accumulated where practical.
 ////
@@ -22,6 +34,7 @@
 ////   - read files;
 ////   - apply built-in defaults;
 ////   - derive deployment paths;
+////   - validate feed mode names;
 ////   - validate cross-field invariants;
 ////   - verify referenced assets;
 ////   - write build output.
@@ -30,10 +43,11 @@ import config/error.{type ConfigError}
 import config/loader.{type ConfigSource}
 import config/raw.{
   type RawAnalytics, type RawAratafetch, type RawAssets, type RawComments,
-  type RawConfig, type RawFeatures, type RawFonts, type RawLatestPosts,
-  type RawMenuItem, type RawSite, type RawSocial, RawAnalytics, RawAratafetch,
-  RawAssets, RawComments, RawConfig, RawFeatures, RawFonts, RawLatestPosts,
-  RawMenuItem, RawSite, RawSocial,
+  type RawConfig, type RawFeatures, type RawFeedSetting, type RawFonts,
+  type RawLatestPosts, type RawMenuItem, type RawSite, type RawSocial,
+  FeedModeName, LegacyFeedEnabled, RawAnalytics, RawAratafetch, RawAssets,
+  RawComments, RawConfig, RawFeatures, RawFonts, RawLatestPosts, RawMenuItem,
+  RawSite, RawSocial,
 }
 import gleam/dict.{type Dict}
 import gleam/int
@@ -261,7 +275,7 @@ fn decode_features(
 ) -> Field(RawFeatures) {
   let section = "features"
 
-  let rss = optional_bool(source_path, section, table, "rss")
+  let rss = optional_feed_setting(source_path, section, table, "rss")
 
   let search = optional_bool(source_path, section, table, "search")
 
@@ -684,6 +698,36 @@ fn decode_array_tables(
         list.append(errors, decoded.errors),
       )
     }
+  }
+}
+
+/// Decode the backward-compatible feed setting.
+///
+/// Boolean values retain the legacy on/off configuration form. String values
+/// preserve the requested mode name for normalization and validation during
+/// resolution.
+fn optional_feed_setting(
+  source_path: String,
+  section: String,
+  table: Dict(String, Toml),
+  key: String,
+) -> Field(RawFeedSetting) {
+  case dict.get(table, key) {
+    Error(_) -> Field(value: None, errors: [])
+
+    Ok(tom.Bool(value)) ->
+      Field(value: Some(LegacyFeedEnabled(value)), errors: [])
+
+    Ok(tom.String(value)) -> Field(value: Some(FeedModeName(value)), errors: [])
+
+    Ok(value) ->
+      wrong_type_field(
+        source_path,
+        section,
+        key,
+        "a boolean or one of the strings full, summary, or disabled",
+        value,
+      )
   }
 }
 
