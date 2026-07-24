@@ -45,8 +45,10 @@ pub fn atom_feed(
   stylesheet_href: String,
   mode: config.FeedMode,
 ) -> String {
+  let published_posts = feed_posts(posts)
+
   let entries =
-    posts
+    published_posts
     |> list.map(fn(post) { atom_entry(site, post, mode) })
     |> string.join("\n")
 
@@ -69,7 +71,7 @@ pub fn atom_feed(
   <> xml_escape(trim_trailing_slashes(site.base_url))
   <> "</id>\n"
   <> "    <updated>"
-  <> feed_updated(posts)
+  <> feed_updated(published_posts)
   <> "</updated>\n"
   <> entries
   <> "\n</feed>"
@@ -138,8 +140,10 @@ pub fn rss_feed(
   stylesheet_href: String,
   mode: config.FeedMode,
 ) -> String {
+  let published_posts = feed_posts(posts)
+
   let items =
-    posts
+    published_posts
     |> list.map(fn(post) { rss_item(site, post, mode) })
     |> string.join("\n")
 
@@ -206,6 +210,16 @@ fn rss_content(post: Post, mode: config.FeedMode) -> String {
 
     config.Disabled -> panic as "rss_feed cannot render disabled feed mode"
   }
+}
+
+/// Return posts eligible for Atom and RSS output.
+///
+/// Feed entries require a publication date. Draft posts and posts without a
+/// non-empty date remain available to the site but are excluded from feeds,
+/// matching Zola's feed behavior.
+fn feed_posts(posts: List(Post)) -> List(Post) {
+  posts
+  |> list.filter(fn(post) { !post.draft && string.trim(post.date) != "" })
 }
 
 /// Return the timestamp used for a post entry in Atom's `published` and
