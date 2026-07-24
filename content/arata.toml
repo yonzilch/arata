@@ -91,7 +91,7 @@ icon = "github"
 [features]
 # Generate `atom.xml` and `rss.xml`, emit feed metadata, and add the managed
 # RSS social link.
-rss = true
+rss = "summary"
 
 # Enable the in-page search modal and the Cmd/Ctrl+K shortcut.
 search = true
