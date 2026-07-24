@@ -5,23 +5,23 @@ on:
     branches:
       - main
       - master
-    tags:
-      - "v*"
   pull_request:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-  deployments: read
 
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.event.pull_request.number) || 'pages-deploy' }}
+  group: >-
+    ${{ github.event_name == 'pull_request'
+      && format('pages-pr-{0}', github.event.pull_request.number)
+      || 'pages-deploy' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
+    name: Build and test
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
 
-      - name: Install deps
+      - name: Install dependencies
         run: gleam deps download
 
       - name: Run tests
@@ -51,77 +51,22 @@ jobs:
         with:
           path: dist
 
-  check-deployment:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push'
-    outputs:
-      already_deployed: ${{ steps.check.outputs.already_deployed }}
-    steps:
-      - name: Check if this commit is already deployed
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -uo pipefail
-          sha="${GITHUB_SHA}"
-          repo="${GITHUB_REPOSITORY}"
-
-          echo "Looking up github-pages deployments for ${sha}..."
-          deployment_ids=$(gh api \
-            "repos/${repo}/deployments?sha=${sha}&environment=github-pages&per_page=100" \
-            --jq '.[].id' 2>/dev/null || true)
-
-          already_deployed=false
-          for id in ${deployment_ids}; do
-            state=$(gh api \
-              "repos/${repo}/deployments/${id}/statuses?per_page=100" \
-              --jq '.[-1].state // empty' 2>/dev/null || true)
-            echo "deployment ${id} latest state: ${state}"
-            if [ "${state}" = "success" ]; then
-              already_deployed=true
-              break
-            fi
-          done
-
-          echo "already_deployed=${already_deployed}" >> "${GITHUB_OUTPUT}"
-
   deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name == 'push'
+    needs: build
     runs-on: ubuntu-latest
-    needs:
-      - build
-      - check-deployment
-    if: >
-      github.event_name == 'push' &&
-      needs.check-deployment.outputs.already_deployed != 'true'
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        continue-on-error: true
-
-      - name: Interpret deploy result
-        env:
-          OUTCOME: ${{ steps.deployment.outcome }}
-          CONCLUSION: ${{ steps.deployment.conclusion }}
-        run: |
-          set -uo pipefail
-          if [ "${OUTCOME}" = "success" ]; then
-            echo "✅ Deployment succeeded."
-            exit 0
-          fi
-
-          echo "⚠️ deploy-pages step did not succeed (outcome=${OUTCOME})."
-          echo "This is most commonly caused by the github-pages environment's"
-          echo "'Deployment branches and tags' protection rule not matching ref:"
-          echo "  ref_type=${GITHUB_REF_TYPE} ref_name=${GITHUB_REF_NAME}"
-          echo
-          echo "Treating this as an intentional skip rather than a CI failure."
-          echo "If this ref SHOULD be allowed to deploy, update the rule at:"
-          echo "  Settings > Environments > github-pages > Deployment branches and tags"
-
-          echo "::notice title=Deploy skipped::Ref '${GITHUB_REF_NAME}' was rejected by github-pages environment protection rules; treated as skip, not failure."
-          exit 0
