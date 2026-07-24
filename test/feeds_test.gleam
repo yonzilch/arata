@@ -8,6 +8,7 @@ import gleeunit
 import gleeunit/should
 
 import build/feeds
+import config
 
 pub fn main() -> Nil {
   gleeunit.main()
@@ -59,11 +60,11 @@ fn sample_posts() -> List(Post) {
 }
 
 fn atom_feed(posts: List(Post)) -> String {
-  feeds.atom_feed(sample_site(), posts, "/atom.xsl")
+  feeds.atom_feed(sample_site(), posts, "/atom.xsl", config.Full)
 }
 
 fn rss_feed(posts: List(Post)) -> String {
-  feeds.rss_feed(sample_site(), posts, "/rss.xsl")
+  feeds.rss_feed(sample_site(), posts, "/rss.xsl", config.Full)
 }
 
 pub fn atom_feed_has_xml_declaration_test() {
@@ -82,7 +83,7 @@ pub fn atom_feed_has_stylesheet_pi_test() {
 }
 
 pub fn atom_feed_omits_stylesheet_pi_when_href_empty_test() {
-  let feed = feeds.atom_feed(sample_site(), sample_posts(), "")
+  let feed = feeds.atom_feed(sample_site(), sample_posts(), "", config.Full)
 
   string.contains(feed, "<?xml-stylesheet") |> should.be_false()
 }
@@ -126,7 +127,7 @@ pub fn rss_feed_has_stylesheet_pi_test() {
 }
 
 pub fn rss_feed_omits_stylesheet_pi_when_href_empty_test() {
-  let feed = feeds.rss_feed(sample_site(), sample_posts(), "")
+  let feed = feeds.rss_feed(sample_site(), sample_posts(), "", config.Full)
 
   string.contains(feed, "<?xml-stylesheet") |> should.be_false()
 }
@@ -173,7 +174,7 @@ pub fn xml_escapes_special_chars_test() {
       fediverse_creator: None,
     )
 
-  let feed = feeds.rss_feed(site, [], "/rss.xsl")
+  let feed = feeds.rss_feed(site, [], "/rss.xsl", config.Full)
 
   string.contains(feed, "&amp;") |> should.be_true()
   string.contains(feed, "&lt;script&gt;") |> should.be_true()
