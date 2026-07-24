@@ -7,11 +7,17 @@
 //// Running `gleam run -m build/pipeline` produces a complete static site in
 //// `dist/`:
 ////
-////   1. Emits the JSON content index, search index, feeds, sitemap,
+////   1. Emits the JSON content index, search index, configured feeds, sitemap,
 ////      robots.txt, llms.txt, index.html, and 404.html.
 ////   2. Copies each CSS module under `src/css/` to `dist/css/`.
 ////   3. Copies all static assets from `static/` to `dist/`.
 ////   4. Compiles and bundles the Lustre SPA into `dist/app.mjs`.
+////
+//// Feed generation follows the resolved `FeedMode`:
+////
+////   - `Full` emits complete rendered post content;
+////   - `Summary` emits post summaries;
+////   - `Disabled` emits no feed artifacts and removes stale feed files.
 ////
 //// Runtime-safe configuration is embedded in `content_index.json`. The browser
 //// does not fetch `content/arata.toml` or a separate configuration file.
@@ -69,6 +75,17 @@ const css_modules = [
   "src/css/syntax.css",
   "src/css/lightbox.css",
   "src/css/accessibility.css",
+]
+
+/// Feed files managed by the build pipeline.
+///
+/// These files must be removed when feeds are disabled so a reused `dist/`
+/// directory cannot expose stale feed output from an earlier build.
+const feed_artifacts = [
+  "atom.xml",
+  "rss.xml",
+  "atom.xsl",
+  "rss.xsl",
 ]
 
 /// The static assets directory.
@@ -133,31 +150,8 @@ pub fn run() -> Result(Nil, String) {
         search_index_json(site_config, posts),
       )
 
-      // 3. Feeds and their stylesheets.
-      case site_meta.rss_enabled {
-        True -> {
-          let atom_xsl_href =
-            config.with_base_path(site_config.base_path, "/atom.xsl")
-
-          let rss_xsl_href =
-            config.with_base_path(site_config.base_path, "/rss.xsl")
-
-          write(
-            dist_dir <> "/atom.xml",
-            feeds.atom_feed(site_meta, posts, atom_xsl_href),
-          )
-
-          write(
-            dist_dir <> "/rss.xml",
-            feeds.rss_feed(site_meta, posts, rss_xsl_href),
-          )
-
-          write(dist_dir <> "/atom.xsl", feeds_style.atom_xsl())
-          write(dist_dir <> "/rss.xsl", feeds_style.rss_xsl())
-        }
-
-        False -> Nil
-      }
+      // 3. Feeds and their browser-facing stylesheets.
+      build_feeds(site_meta, site_config, posts)
 
       // 4. Sitemap.
       let page_slugs = list.map(pages, fn(page) { page.slug })
@@ -191,11 +185,67 @@ pub fn run() -> Result(Nil, String) {
       // 11. Browser bundle.
       bundle_spa()
 
-      print_build_summary(site_meta)
+      print_build_summary(site_config.feed_mode)
 
       Ok(Nil)
     }
   }
+}
+
+/// Generate or remove feed artifacts according to the resolved feed mode.
+///
+/// `Full` and `Summary` both generate the standard Atom and RSS files. The
+/// selected mode is passed to the feed renderer so it can choose between full
+/// rendered HTML and summary-only entries.
+///
+/// `Disabled` removes all managed feed files. This is required because Arata
+/// permits reuse of an existing `dist/` directory between builds.
+fn build_feeds(
+  site_meta: site.SiteMeta,
+  site_config: config.Config,
+  posts: List(Post),
+) -> Nil {
+  case site_config.feed_mode {
+    config.Disabled -> remove_feed_artifacts()
+
+    config.Full | config.Summary -> {
+      let atom_xsl_href =
+        config.with_base_path(site_config.base_path, "/atom.xsl")
+
+      let rss_xsl_href =
+        config.with_base_path(site_config.base_path, "/rss.xsl")
+
+      write(
+        dist_dir <> "/atom.xml",
+        feeds.atom_feed(site_meta, posts, atom_xsl_href, site_config.feed_mode),
+      )
+
+      write(
+        dist_dir <> "/rss.xml",
+        feeds.rss_feed(site_meta, posts, rss_xsl_href, site_config.feed_mode),
+      )
+
+      write(dist_dir <> "/atom.xsl", feeds_style.atom_xsl())
+      write(dist_dir <> "/rss.xsl", feeds_style.rss_xsl())
+    }
+  }
+}
+
+/// Remove generated feed files from a reused output directory.
+///
+/// Missing files are intentionally ignored: `simplifile.delete_all` does not
+/// error when one or more of the given paths do not exist, so a first build
+/// or a directory that never had feeds is a no-op. Deleting through
+/// simplifile rather than shelling out to `rm` keeps this portable to targets
+/// without a POSIX shell (e.g. native Windows builds), and receives only
+/// fixed build-owned paths, never user-controlled values.
+fn remove_feed_artifacts() -> Nil {
+  let paths =
+    list.map(feed_artifacts, fn(filename) { dist_dir <> "/" <> filename })
+
+  let _ = simplifile.delete_all(paths)
+
+  Nil
 }
 
 /// Load, decode, resolve, and validate Arata configuration exactly once.
@@ -255,18 +305,23 @@ fn empty_raw_config() -> RawConfig {
 }
 
 /// Print the build output summary.
-fn print_build_summary(site_meta: site.SiteMeta) -> Nil {
+fn print_build_summary(feed_mode: config.FeedMode) -> Nil {
   io.println("Build complete. dist/ contains:")
   io.println("  index.html, 404.html, app.mjs,")
   io.println("  content_index.json, search_index.json,")
 
-  case site_meta.rss_enabled {
-    True ->
+  case feed_mode {
+    config.Full ->
       io.println(
-        "  atom.xml, rss.xml, atom.xsl, rss.xsl, sitemap.xml, robots.txt,",
+        "  atom.xml, rss.xml, atom.xsl, rss.xsl (full content), sitemap.xml, robots.txt,",
       )
 
-    False -> io.println("  sitemap.xml, robots.txt, (feeds disabled)")
+    config.Summary ->
+      io.println(
+        "  atom.xml, rss.xml, atom.xsl, rss.xsl (summaries), sitemap.xml, robots.txt,",
+      )
+
+    config.Disabled -> io.println("  sitemap.xml, robots.txt, (feeds disabled)")
   }
 
   io.println("  llms.txt, fonts/, icons/, images/, css/")
@@ -673,30 +728,35 @@ fn trim_css_spaces_around_tokens(css: String) -> String {
 
 /// Generate the SPA HTML shell.
 ///
-/// Feed metadata is emitted only when RSS is enabled. Asset paths are resolved
-/// from the configuration-derived deployment base path.
+/// Feed metadata is emitted for both `Full` and `Summary` modes. Asset paths
+/// are resolved from the configuration-derived deployment base path.
 fn index_html(site_meta: site.SiteMeta, site_config: config.Config) -> String {
   let base_path = site_config.base_path
   let atom_href = config.with_base_path(base_path, "/atom.xml")
   let rss_href = config.with_base_path(base_path, "/rss.xml")
   let app_src = config.with_base_path(base_path, "/app.mjs")
   let bootstrap_meta = "<meta name='arata-base-path' content='" <> base_path
+
   // Configured favicon paths have already been resolved by the configuration
   // resolver. Only the fallback path needs a deployment prefix here.
   let favicon = case site_config.favicon {
     Some(path) -> path
     None -> config.with_base_path(base_path, "/icon/favicon.png")
   }
-  let feed_links = case site_meta.rss_enabled {
-    True ->
+
+  let feed_links = case site_config.feed_mode {
+    config.Full | config.Summary ->
       "<link rel='alternate' type='application/atom+xml' title='Atom Feed' href='"
       <> atom_href
       <> "'><link rel='alternate' type='application/rss+xml' title='RSS Feed' href='"
       <> rss_href
       <> "'>"
-    False -> ""
+
+    config.Disabled -> ""
   }
+
   let css = inline_css()
+
   "<!DOCTYPE html><html lang='en' class='dark light'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>"
   <> site_meta.title
   <> "</title><meta name='description' content='"
