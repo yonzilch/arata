@@ -19,6 +19,7 @@
 ////
 ////   - friend-link `weight` defaults to 999 for older generated indexes;
 ////   - optional post, page, link, and project fields retain safe defaults;
+////   - missing `feed_mode` falls back to the legacy `rss_enabled` value;
 ////   - configuration decoding is strict because partial runtime configuration
 ////     could produce inconsistent feature behavior.
 ////
@@ -132,6 +133,15 @@ fn decode_runtime_config() -> decode.Decoder(RuntimeConfig) {
 }
 
 /// Decode the application configuration consumed by views and effects.
+///
+/// `feed_mode` is optional for compatibility with older generated content
+/// indexes. When absent, the legacy `rss_enabled` value maps to:
+///
+///   true  -> Summary
+///   false -> Disabled
+///
+/// When present, `feed_mode` is authoritative and `rss_enabled` is derived from
+/// it so the two runtime values cannot disagree.
 fn decode_application_config() -> decode.Decoder(config.Config) {
   use title <- decode.field("title", decode.string)
   use description <- decode.field("description", decode.string)
@@ -148,7 +158,12 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     option.None,
     decode.optional(decode.string),
   )
-  use rss_enabled <- decode.field("rss_enabled", decode.bool)
+  use legacy_rss_enabled <- decode.field("rss_enabled", decode.bool)
+  use feed_mode <- decode.optional_field(
+    "feed_mode",
+    config.feed_mode_from_enabled(legacy_rss_enabled),
+    decode_feed_mode(),
+  )
   use fonts <- decode.field("fonts", decode_fonts())
   use search_enabled <- decode.field("search_enabled", decode.bool)
   use navbar_fixed <- decode.field("navbar_fixed", decode.bool)
@@ -188,7 +203,8 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     socials: socials,
     logo: logo,
     favicon: favicon,
-    rss_enabled: rss_enabled,
+    rss_enabled: config.feeds_enabled(feed_mode),
+    feed_mode: feed_mode,
     fonts: fonts,
     search_enabled: search_enabled,
     navbar_fixed: navbar_fixed,
@@ -207,6 +223,22 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     latest_posts_enabled: latest_posts_enabled,
     latest_posts_count: latest_posts_count,
   ))
+}
+
+/// Decode a serialized feed content mode.
+fn decode_feed_mode() -> decode.Decoder(config.FeedMode) {
+  decode.string
+  |> decode.then(fn(mode) {
+    case string.lowercase(mode) {
+      "full" -> decode.success(config.Full)
+
+      "summary" -> decode.success(config.Summary)
+
+      "disabled" -> decode.success(config.Disabled)
+
+      _ -> decode.failure(config.Disabled, "unsupported feed mode: " <> mode)
+    }
+  })
 }
 
 /// Decode browser-safe site metadata.
