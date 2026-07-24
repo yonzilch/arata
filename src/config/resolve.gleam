@@ -3,6 +3,7 @@
 //// This module:
 ////
 ////   - merges `RawConfig` with Arata's built-in defaults;
+////   - resolves legacy RSS booleans and explicit feed content modes;
 ////   - canonicalizes the public base URL;
 ////   - derives `base_path` exclusively from `base_url`;
 ////   - resolves valid root-relative menu, social, and asset paths;
@@ -19,9 +20,9 @@
 ////   - validate referenced files under `static/`;
 ////   - serialize runtime configuration.
 ////
-//// The resolver rejects incomplete collection entries and provider
-//// configurations instead of silently replacing invalid user input with
-//// defaults.
+//// The resolver rejects incomplete collection entries, invalid feed modes,
+//// and incomplete provider configurations instead of silently replacing
+//// invalid user input with defaults.
 ////
 //// URL resolution follows a strict boundary:
 ////
@@ -32,18 +33,19 @@
 ////     reject them without losing their original meaning.
 ////
 //// This module imports the existing top-level `config` module to construct the
-//// current public `Config`, `MenuItem`, `Social`, and `Fonts` types. The public
-//// `config` module must not import `config/resolve`, otherwise the modules would
-//// form a dependency cycle.
+//// current public `Config`, `MenuItem`, `Social`, `Fonts`, and `FeedMode`
+//// types. The public `config` module must not import `config/resolve`,
+//// otherwise the modules would form a dependency cycle.
 
 import config
 import config/defaults
 import config/error.{type ConfigError}
 import config/raw.{
   type RawAnalytics, type RawAratafetch, type RawAssets, type RawComments,
-  type RawConfig, type RawFeatures, type RawFonts, type RawLatestPosts,
-  type RawMenuItem, type RawSite, type RawSocial, RawAratafetch, RawAssets,
-  RawFeatures, RawFonts, RawLatestPosts, RawSite,
+  type RawConfig, type RawFeatures, type RawFeedSetting, type RawFonts,
+  type RawLatestPosts, type RawMenuItem, type RawSite, type RawSocial,
+  FeedModeName, LegacyFeedEnabled, RawAratafetch, RawAssets, RawFeatures,
+  RawFonts, RawLatestPosts, RawSite,
 }
 import data/site.{
   type Analytics, type CommentsConfig, type SiteMeta, AnalyticsDisabled,
@@ -62,13 +64,13 @@ pub const default_source_path = "content/arata.toml"
 
 /// Fully resolved configuration shared by build-time and runtime preparation.
 ///
-/// `config` contains the existing SPA-facing configuration shape.
+/// `config` contains the SPA-facing configuration shape.
 ///
 /// `site_meta` contains canonical build metadata used by feeds, sitemap,
 /// crawler outputs, analytics, and comments.
 ///
 /// Both values are created from the same resolved inputs so their title,
-/// description, analytics, RSS state, and deployment path cannot drift.
+/// description, analytics, RSS availability, and deployment path cannot drift.
 pub type ResolvedConfig {
   ResolvedConfig(config: config.Config, site_meta: SiteMeta)
 }
@@ -85,12 +87,23 @@ pub fn resolve(raw: RawConfig) -> Result(ResolvedConfig, List(ConfigError)) {
 ///
 /// Present `menu` and `socials` lists replace the built-in lists completely.
 /// In particular, `Some([])` remains an explicit empty list.
+///
+/// The `features.rss` setting accepts both the legacy boolean form and explicit
+/// feed modes:
+///
+/// - `true` resolves to `Summary`;
+/// - `false` resolves to `Disabled`;
+/// - `"full"` resolves to `Full`;
+/// - `"summary"` resolves to `Summary`;
+/// - `"disabled"` resolves to `Disabled`.
+///
+/// Missing values preserve the existing built-in RSS default.
 pub fn resolve_from(
   source_path: String,
   raw: RawConfig,
 ) -> Result(ResolvedConfig, List(ConfigError)) {
   let site = resolve_site(raw.site)
-  let features = resolve_features(raw.features)
+  let features_result = resolve_features(source_path, raw.features)
   let latest_posts = resolve_latest_posts(raw.latest_posts)
   let aratafetch = resolve_aratafetch(raw.aratafetch)
   let fonts = resolve_fonts(raw.fonts)
@@ -102,11 +115,27 @@ pub fn resolve_from(
 
   let menu_result = resolve_menu(source_path, raw.menu, site.base_path)
 
+  // Social decoding is independent from feed-mode validation. When the feed
+  // mode is invalid, use the backward-compatible default only to continue
+  // collecting unrelated social-entry diagnostics. No resolved configuration
+  // is returned while the feed-mode error remains present.
+  let feed_mode_for_socials = case features_result {
+    Ok(features) -> features.feed_mode
+
+    Error(_) -> config.feed_mode_from_enabled(defaults.rss_enabled())
+  }
+
   let socials_result =
-    resolve_socials(source_path, raw.socials, site.base_path, features.rss)
+    resolve_socials(
+      source_path,
+      raw.socials,
+      site.base_path,
+      feed_mode_for_socials,
+    )
 
   let errors =
     []
+    |> append_result_errors(features_result)
     |> append_result_errors(analytics_result)
     |> append_result_errors(comments_result)
     |> append_result_errors(menu_result)
@@ -114,10 +143,13 @@ pub fn resolve_from(
 
   case errors {
     [] -> {
+      let assert Ok(features) = features_result
       let assert Ok(analytics) = analytics_result
       let assert Ok(comments) = comments_result
       let assert Ok(menu) = menu_result
       let assert Ok(socials) = socials_result
+
+      let rss_enabled = config.feeds_enabled(features.feed_mode)
 
       let runtime_config =
         config.Config(
@@ -128,7 +160,8 @@ pub fn resolve_from(
           socials: socials,
           logo: resolve_optional_asset_path(site.base_path, site.logo),
           favicon: resolve_optional_asset_path(site.base_path, site.favicon),
-          rss_enabled: features.rss,
+          rss_enabled: rss_enabled,
+          feed_mode: features.feed_mode,
           fonts: config.Fonts(
             text: fonts.text,
             header: fonts.header,
@@ -169,7 +202,7 @@ pub fn resolve_from(
           analytics: analytics,
           comments: comments,
           fediverse_creator: site.fediverse_creator,
-          rss_enabled: features.rss,
+          rss_enabled: rss_enabled,
         )
 
       Ok(ResolvedConfig(config: runtime_config, site_meta: site_meta))
@@ -203,7 +236,7 @@ type ResolvedSite {
 
 type ResolvedFeatures {
   ResolvedFeatures(
-    rss: Bool,
+    feed_mode: config.FeedMode,
     search: Bool,
     navbar_fixed: Bool,
     mathjax: Bool,
@@ -271,7 +304,10 @@ fn resolve_site(raw: Option(RawSite)) -> ResolvedSite {
   )
 }
 
-fn resolve_features(raw: Option(RawFeatures)) -> ResolvedFeatures {
+fn resolve_features(
+  source_path: String,
+  raw: Option(RawFeatures),
+) -> Result(ResolvedFeatures, List(ConfigError)) {
   let raw = case raw {
     Some(value) -> value
 
@@ -291,25 +327,73 @@ fn resolve_features(raw: Option(RawFeatures)) -> ResolvedFeatures {
       )
   }
 
-  ResolvedFeatures(
-    rss: unwrap(raw.rss, defaults.rss_enabled()),
-    search: unwrap(raw.search, defaults.search_enabled()),
-    navbar_fixed: unwrap(raw.navbar_fixed, defaults.navbar_fixed()),
-    mathjax: unwrap(raw.mathjax, defaults.mathjax_enabled()),
-    mermaid: unwrap(raw.mermaid, defaults.mermaid_enabled()),
-    syntax_highlight: unwrap(
-      raw.syntax_highlight,
-      defaults.syntax_highlight_enabled(),
-    ),
-    sidebar: unwrap(raw.sidebar, defaults.sidebar_enabled()),
-    floating_buttons: unwrap(
-      raw.floating_buttons,
-      defaults.floating_buttons_enabled(),
-    ),
-    aratafetch: unwrap(raw.aratafetch, defaults.aratafetch_enabled()),
-    lightbox: unwrap(raw.lightbox, defaults.lightbox_enabled()),
-    latest_posts: unwrap(raw.latest_posts, defaults.latest_posts_enabled()),
-  )
+  case resolve_feed_mode(source_path, raw.rss) {
+    Error(errors) -> Error(errors)
+
+    Ok(feed_mode) ->
+      Ok(ResolvedFeatures(
+        feed_mode: feed_mode,
+        search: unwrap(raw.search, defaults.search_enabled()),
+        navbar_fixed: unwrap(raw.navbar_fixed, defaults.navbar_fixed()),
+        mathjax: unwrap(raw.mathjax, defaults.mathjax_enabled()),
+        mermaid: unwrap(raw.mermaid, defaults.mermaid_enabled()),
+        syntax_highlight: unwrap(
+          raw.syntax_highlight,
+          defaults.syntax_highlight_enabled(),
+        ),
+        sidebar: unwrap(raw.sidebar, defaults.sidebar_enabled()),
+        floating_buttons: unwrap(
+          raw.floating_buttons,
+          defaults.floating_buttons_enabled(),
+        ),
+        aratafetch: unwrap(raw.aratafetch, defaults.aratafetch_enabled()),
+        lightbox: unwrap(raw.lightbox, defaults.lightbox_enabled()),
+        latest_posts: unwrap(raw.latest_posts, defaults.latest_posts_enabled()),
+      ))
+  }
+}
+
+/// Resolve the backward-compatible RSS setting into a trusted feed mode.
+///
+/// String values are trimmed and normalized to lowercase. Unsupported or empty
+/// values are rejected instead of silently falling back to a default.
+fn resolve_feed_mode(
+  source_path: String,
+  raw: Option(RawFeedSetting),
+) -> Result(config.FeedMode, List(ConfigError)) {
+  case raw {
+    None -> Ok(config.feed_mode_from_enabled(defaults.rss_enabled()))
+
+    Some(LegacyFeedEnabled(enabled)) ->
+      Ok(config.feed_mode_from_enabled(enabled))
+
+    Some(FeedModeName(name)) -> {
+      let normalized =
+        name
+        |> string.trim
+        |> string.lowercase
+
+      case normalized {
+        "full" -> Ok(config.Full)
+
+        "summary" -> Ok(config.Summary)
+
+        "disabled" -> Ok(config.Disabled)
+
+        _ ->
+          Error([
+            error.validation(
+              source_path,
+              Some("features"),
+              Some("rss"),
+              Some("full, summary, disabled, true, or false"),
+              Some(name),
+              "unsupported RSS feed mode",
+            ),
+          ])
+      }
+    }
+  }
 }
 
 fn resolve_latest_posts(raw: Option(RawLatestPosts)) -> ResolvedLatestPosts {
@@ -442,7 +526,7 @@ fn resolve_socials(
   source_path: String,
   raw: Option(List(RawSocial)),
   base_path: String,
-  rss_enabled: Bool,
+  feed_mode: config.FeedMode,
 ) -> Result(List(config.Social), List(ConfigError)) {
   let user_socials_result = case raw {
     None ->
@@ -465,10 +549,10 @@ fn resolve_socials(
     Error(errors) -> Error(errors)
 
     Ok(user_socials) -> {
-      let managed_rss = case rss_enabled {
-        False -> []
+      let managed_rss = case feed_mode {
+        config.Disabled -> []
 
-        True -> {
+        config.Full | config.Summary -> {
           let #(name, url, icon) = defaults.rss_social()
 
           [
