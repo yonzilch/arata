@@ -229,7 +229,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.6.4] — 2026-07-08
+## [v1.6.4] — 2026-07-08
 
 ### Changed
 
