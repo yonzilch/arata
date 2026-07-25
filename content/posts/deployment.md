@@ -135,7 +135,8 @@ command**, and set the publish(output) directory as `dist/`.
 
 ### Custom domain
 
-Set `base_url` in `src/data/config.gleam` to your domain before building.
+Set correct `base_url` in `arata/content/arata.toml` to your domain before building.
+
 It's used in feeds, the sitemap, OpenGraph meta tags, and so on.
 
 ---
