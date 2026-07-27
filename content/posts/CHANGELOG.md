@@ -20,7 +20,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.7.2] — 2026-07-24
+## [v1.7.2] — 2026-07-24
 
 ### Added
 
@@ -43,7 +43,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.7.1] — 2026-07-23
+## [v1.7.1] — 2026-07-23
 
 ### Fixed
 
@@ -61,7 +61,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.7.0-fix] — 2026-07-21
+## [v1.7.0-fix] — 2026-07-21
 
 ### Added
 
@@ -75,7 +75,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.7.0] — 2026-07-21
+## [v1.7.0] — 2026-07-21
 
 ### Added
 
@@ -128,7 +128,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.6.9] — 2026-07-19
+## [v1.6.9] — 2026-07-19
 
 ### Added
 
@@ -141,7 +141,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.6.8] — 2026-07-16
+## [v1.6.8] — 2026-07-16
 
 ### Added
 
@@ -162,7 +162,7 @@ For example, project-specific sections such as
 
 ---
 
-## [1.6.7] — 2026-07-16
+## [v1.6.7] — 2026-07-16
 
 ### Added
 
