@@ -18,6 +18,17 @@ changes in arata.
 For example, project-specific sections such as 
 `CI`, `Contributors`, `Documentation`, or `Internal` may be used when they make a release easier to understand.
 
+## [v1.7.3] — 2026-08-07
+
+### Fixed
+
+- Set correct URL for highlight.js
+- Serveral mistakes in docs are corrected
+
+### Changed
+
+- GitHub pages now deploy only from protected branches
+
 ---
 
 ## [v1.7.2] — 2026-07-24
