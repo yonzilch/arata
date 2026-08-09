@@ -97,6 +97,7 @@ pub type Model {
     search: SearchState,
     mobile_menu_open: Bool,
     toc_overlay_open: Bool,
+    sidebar_toc_expanded: Bool,
     lightbox: lightbox.State,
   )
 }
@@ -143,6 +144,7 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       search: closed_search(),
       mobile_menu_open: False,
       toc_overlay_open: False,
+      sidebar_toc_expanded: True,
       lightbox: lightbox.Closed,
     )
 
@@ -187,6 +189,7 @@ pub type Msg {
   SearchResultClicked(slug: String)
   UserToggledMobileMenu
   UserToggledTocOverlay
+  UserToggledSidebarToc
   UserScrolledToTop
   UserEnteredPageJump(page: String)
   LightboxOpened(src: String, alt: String)
@@ -207,6 +210,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
           active_heading: option.None,
           mobile_menu_open: False,
           toc_overlay_open: False,
+          sidebar_toc_expanded: True,
           lightbox: lightbox.Closed,
         )
 
@@ -310,6 +314,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               search: closed_search(),
               mobile_menu_open: False,
               toc_overlay_open: False,
+              sidebar_toc_expanded: True,
               lightbox: lightbox.Closed,
             )
 
@@ -389,27 +394,30 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         False -> #(model, effect.none())
       }
 
-    SearchResultClicked(slug) -> {
-      let target_route = route.Post(slug)
+      SearchResultClicked(slug) -> {
+        let target_route = route.Post(slug)
 
-      let new_model =
-        Model(
-          ..model,
-          route: target_route,
-          search: closed_search(),
-          active_heading: option.None,
-          lightbox: lightbox.Closed,
+        let new_model =
+          Model(
+            ..model,
+            route: target_route,
+            search: closed_search(),
+            active_heading: option.None,
+            mobile_menu_open: False,
+            toc_overlay_open: False,
+            sidebar_toc_expanded: True,
+            lightbox: lightbox.Closed,
+          )
+
+        #(
+          new_model,
+          effect.batch([
+            modem.push(route.href_url(target_route), option.None, option.None),
+            configured_post_effects(new_model),
+            lightbox_scroll_lock(False),
+          ]),
         )
-
-      #(
-        new_model,
-        effect.batch([
-          modem.push(route.href_url(target_route), option.None, option.None),
-          configured_post_effects(new_model),
-          lightbox_scroll_lock(False),
-        ]),
-      )
-    }
+      }
 
     UserToggledMobileMenu -> #(
       Model(..model, mobile_menu_open: !model.mobile_menu_open),
@@ -420,6 +428,15 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       Model(..model, toc_overlay_open: !model.toc_overlay_open),
       effect.none(),
     )
+
+    UserToggledSidebarToc -> #(
+      Model(
+        ..model,
+        sidebar_toc_expanded: !model.sidebar_toc_expanded,
+      ),
+      effect.none(),
+    )
+
 
     UserScrolledToTop -> {
       let scroll_effect =
@@ -442,6 +459,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               route: target_route,
               mobile_menu_open: False,
               toc_overlay_open: False,
+              sidebar_toc_expanded: True,
               lightbox: lightbox.Closed,
             )
 
@@ -830,6 +848,7 @@ fn handle_search_key(
               route: target_route,
               search: closed_search(),
               active_heading: option.None,
+              sidebar_toc_expanded: True,
               lightbox: lightbox.Closed,
             )
 
@@ -986,7 +1005,12 @@ fn view_route_content(model: Model) -> #(Element(Msg), Element(Msg)) {
           post_view.view(found, model.site_meta.comments),
           case model.config.sidebar_enabled {
             True ->
-              view_tags_and_toc(found.tags, found.toc, model.active_heading)
+              view_tags_and_toc(
+                found.tags,
+                found.toc,
+                model.active_heading,
+                model.sidebar_toc_expanded,
+              )
 
             False -> none()
           },
@@ -1076,7 +1100,10 @@ fn toc_fab_elements(model: Model) -> List(Element(Msg)) {
                             [] -> []
 
                             _ -> [
-                              toc_view.view(found.toc, model.active_heading),
+                              toc_view.view_static(
+                                found.toc,
+                                model.active_heading,
+                              ),
                             ]
                           },
                         ]),
@@ -1123,6 +1150,7 @@ fn view_tags_and_toc(
   post_tags: List(String),
   toc: List(post.TocEntry),
   active_heading: Option(String),
+  toc_expanded: Bool,
 ) -> Element(Msg) {
   case post_tags, toc {
     [], [] -> none()
@@ -1130,7 +1158,12 @@ fn view_tags_and_toc(
     _, _ ->
       html.div([], [
         view_tags_sidebar(post_tags),
-        toc_view.view(toc, active_heading),
+        toc_view.view(
+          toc,
+          active_heading,
+          toc_expanded,
+          UserToggledSidebarToc,
+        ),
       ])
   }
 }
