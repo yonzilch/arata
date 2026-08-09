@@ -31,3 +31,7 @@ html {
 .primary-color {
     color: var(--primary-color);
 }
+
+html {
+    scrollbar-gutter: stable;
+}
