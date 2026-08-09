@@ -18,6 +18,32 @@ changes in arata.
 For example, project-specific sections such as 
 `CI`, `Contributors`, `Documentation`, or `Internal` may be used when they make a release easier to understand.
 
+---
+
+## [v1.7.4] — 2026-08-09
+
+### Added
+
+- Added an accessible disclosure control to the right-side Table of Contents.
+- Added `▶` and `▼` Unicode indicators for the collapsed and expanded ToC states.
+- Added Lustre model state for expanding and collapsing the right-side ToC.
+- Added `aria-expanded` and `aria-controls` relationships between the ToC control and its entries.
+- Added automatic reset to the expanded state when navigating to another post.
+
+### Changed
+
+- Made the entire `Table of Contents` header clickable using native button semantics.
+- Kept the floating ToC and Tags overlay independent from the right-side ToC disclosure state.
+- Styled the disclosure control with theme-aware colors and visible focus indicators.
+- Disabled transitions and animations when expanding or collapsing the ToC.
+- Extended ToC tests to cover disclosure indicators, ARIA attributes, hidden state, nested active headings, empty content, and floating overlay isolation.
+
+### Fixed
+
+- Prevented horizontal layout shifts when navigating between short pages and scrollable routes such as `/posts` by reserving a stable scrollbar gutter.
+
+---
+
 ## [v1.7.3] — 2026-08-07
 
 ### Fixed
