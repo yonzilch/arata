@@ -169,7 +169,7 @@ pub fn syntax_highlight_enabled() -> Bool {
 
 /// Default Highlight.js runtime asset URL.
 pub fn syntax_highlight_url() -> String {
-  "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/es/highlight.min.js"
+  "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
 }
 
 /// Whether the post sidebar is enabled by default.
