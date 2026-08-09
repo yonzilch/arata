@@ -52,6 +52,63 @@
     color: var(--text-0);
 }
 
+/* The right-sidebar ToC heading acts as the disclosure control.
+   Native button styling is removed so it keeps the existing heading
+   appearance while the full row remains clickable. */
+.toc-toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-0);
+    font: inherit;
+    font-weight: 700;
+    line-height: inherit;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    transition: none;
+    animation: none;
+}
+
+.toc-toggle:hover {
+    color: var(--primary-color);
+    transition: none;
+}
+
+.toc-toggle:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+}
+
+/* Keep the heading text aligned when switching between the right-pointing
+   and downward-pointing Unicode disclosure indicators. */
+.toc-disclosure {
+    display: inline-flex;
+    flex: 0 0 1em;
+    width: 1em;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+    font-size: 0.75em;
+    line-height: 1;
+    color: currentColor;
+    user-select: none;
+    transition: none;
+    animation: none;
+}
+
+/* Preserve a valid aria-controls target while removing collapsed entries
+   from layout, keyboard navigation, and the accessibility tree. */
+.toc-list[hidden] {
+    display: none;
+}
+
 /* Hide native scrollbars in the right sidebar while keeping scroll behavior.
    The sidebar can still scroll with a mouse wheel, trackpad, or touch gesture;
    only the browser-provided scrollbar chrome is hidden. */
