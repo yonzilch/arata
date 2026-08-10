@@ -299,6 +299,7 @@ fn empty_raw_config() -> RawConfig {
     aratafetch: None,
     fonts: None,
     assets: None,
+    syntax_highlight_grammars: None,
     analytics: None,
     comments: None,
   )

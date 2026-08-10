@@ -172,6 +172,16 @@ pub fn syntax_highlight_url() -> String {
   "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
 }
 
+/// Default Gleam grammar asset URL.
+///
+/// Uses a pinned CDN release of a Highlight.js-compatible Gleam grammar.
+/// This is loaded on-demand by the syntax-highlighting FFI when a Gleam code
+/// block is encountered and the language is not already registered by the
+/// Highlight.js runtime bundle.
+pub fn syntax_highlight_gleam_grammar_url() -> String {
+  "https://cdn.jsdelivr.net/gh/atp-gh/highlightjs-gleam@v1.0.0/dist/gleam.min.js"
+}
+
 /// Whether the post sidebar is enabled by default.
 pub fn sidebar_enabled() -> Bool {
   True

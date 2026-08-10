@@ -111,6 +111,7 @@ fn decode_root(
       "aratafetch",
       "fonts",
       "assets",
+      "syntax_highlight_grammars",
       "analytics",
       "comments",
     ])
@@ -136,6 +137,9 @@ fn decode_root(
 
   let assets = optional_section(source_path, root, "assets", decode_assets)
 
+  let grammars =
+    optional_section(source_path, root, "syntax_highlight_grammars", decode_grammars)
+
   let analytics =
     optional_section(source_path, root, "analytics", decode_analytics)
 
@@ -152,6 +156,7 @@ fn decode_root(
     |> append_field_errors(aratafetch)
     |> append_field_errors(fonts)
     |> append_field_errors(assets)
+    |> append_field_errors(grammars)
     |> append_field_errors(analytics)
     |> append_field_errors(comments)
 
@@ -166,6 +171,7 @@ fn decode_root(
         aratafetch: aratafetch.value,
         fonts: fonts.value,
         assets: assets.value,
+        syntax_highlight_grammars: grammars.value,
         analytics: analytics.value,
         comments: comments.value,
       ))
@@ -440,6 +446,40 @@ fn decode_assets(
     )),
     errors: errors,
   )
+}
+
+fn decode_grammars(
+  source_path: String,
+  table: Dict(String, Toml),
+) -> Field(Dict(String, String)) {
+  let section = "syntax_highlight_grammars"
+
+  let result =
+    dict.fold(table, Ok(dict.new()), fn(acc, key, value) {
+      case acc {
+        Error(_) -> acc
+        Ok(entries) ->
+          case value {
+            tom.String(v) -> Ok(dict.insert(entries, string.lowercase(key), v))
+            other ->
+              Error([
+                error.decode(
+                  source_path,
+                  Some(section),
+                  Some(key),
+                  "a string",
+                  toml_type_name(other),
+                  "grammar URL must be a string",
+                ),
+              ])
+          }
+      }
+    })
+
+  case result {
+    Ok(entries) -> Field(value: Some(entries), errors: [])
+    Error(errors) -> Field(value: Some(dict.new()), errors: errors)
+  }
 }
 
 fn decode_analytics(
