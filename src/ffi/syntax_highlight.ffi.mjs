@@ -18,6 +18,12 @@
 //   - unsupported languages remain readable as plain code
 //   - failures never prevent Markdown content from rendering
 //   - newly mounted code blocks can be highlighted after SPA navigation
+//   - unregistered languages trigger on-demand grammar loading before being
+//     marked unsupported
+//   - each grammar URL is requested at most once
+//   - concurrent blocks sharing a language share one grammar-loading promise
+//   - language aliases are normalized before registration checks and resolution
+//   - the original author-facing language is preserved in data-lang
 //
 // Copy buttons, language labels, and horizontal-scroll behavior remain the
 // responsibility of `codeblock.ffi.mjs`.
@@ -76,6 +82,27 @@ let observerTimer = null;
 let loadedRuntimeUrl = null;
 let runtimePromise = null;
 
+// On-demand grammar loading state
+let grammarPromises = new Map(); // normalizedLanguage -> Promise<void|null>
+let grammarLoaded = new Set();   // normalizedLanguage
+
+/**
+ * Build a lookup map from the Gleam list of pairs.
+ *
+ * @param {Array<[string, string]>} pairs
+ * @returns {Map<string, string>}
+ */
+function buildGrammarMap(pairs) {
+  const map = new Map();
+  for (const [lang, url] of pairs) {
+    const normalized = normalizeRuntimeLanguage(lang);
+    if (normalized !== "" && !SKIPPED_LANGUAGES.has(normalized)) {
+      map.set(normalized, url);
+    }
+  }
+  return map;
+}
+
 /**
  * Highlight eligible Markdown code blocks.
  *
@@ -84,13 +111,15 @@ let runtimePromise = null;
  * eligible code blocks to appear.
  *
  * @param {string} cdnUrl
+ * @param {Array<[string, string]>} grammarPairs
  */
-export function enhance_code_blocks(cdnUrl) {
+export function enhance_code_blocks(cdnUrl, grammarPairs) {
   if (typeof window === "undefined" || typeof document === "undefined") {
     return;
   }
 
   const runtimeUrl = normalizeRuntimeUrl(cdnUrl);
+  const grammarMap = buildGrammarMap(grammarPairs);
 
   if (runtimeUrl === "" || scheduled) {
     return;
@@ -104,12 +133,12 @@ export function enhance_code_blocks(cdnUrl) {
     const blocks = findEligibleCodeBlocks();
 
     if (blocks.length === 0) {
-      observeUntilCodeBlocksExist(runtimeUrl);
+      observeUntilCodeBlocksExist(runtimeUrl, grammarMap);
       return;
     }
 
     stopObserver();
-    await enhanceBlocks(runtimeUrl, blocks);
+    await enhanceBlocks(runtimeUrl, grammarMap, blocks);
   });
 }
 
@@ -130,8 +159,9 @@ function afterPaint(callback) {
  * Wait briefly when the effect runs before Markdown content enters the DOM.
  *
  * @param {string} runtimeUrl
+ * @param {Map<string, string>} grammarMap
  */
-function observeUntilCodeBlocksExist(runtimeUrl) {
+function observeUntilCodeBlocksExist(runtimeUrl, grammarMap) {
   stopObserver();
 
   observer = new MutationObserver(() => {
@@ -142,7 +172,7 @@ function observeUntilCodeBlocksExist(runtimeUrl) {
     }
 
     stopObserver();
-    void enhanceBlocks(runtimeUrl, blocks);
+    void enhanceBlocks(runtimeUrl, grammarMap, blocks);
   });
 
   observer.observe(document.body, {
@@ -156,7 +186,7 @@ function observeUntilCodeBlocksExist(runtimeUrl) {
     stopObserver();
 
     if (blocks.length > 0) {
-      void enhanceBlocks(runtimeUrl, blocks);
+      void enhanceBlocks(runtimeUrl, grammarMap, blocks);
     }
   }, OBSERVE_TIMEOUT_MS);
 }
@@ -174,23 +204,6 @@ function stopObserver() {
     window.clearTimeout(observerTimer);
     observerTimer = null;
   }
-}
-
-/**
- * Load Highlight.js and process the supplied blocks.
- *
- * @param {string} runtimeUrl
- * @param {HTMLElement[]} blocks
- */
-async function enhanceBlocks(runtimeUrl, blocks) {
-  const highlighter = await loadHighlighter(runtimeUrl);
-
-  if (highlighter === null) {
-    markRuntimeFailure(blocks);
-    return;
-  }
-
-  highlightBlocks(highlighter, blocks);
 }
 
 /**
@@ -228,6 +241,24 @@ function findEligibleCodeBlocks() {
       return true;
     },
   );
+}
+
+/**
+ * Load Highlight.js and process the supplied blocks.
+ *
+ * @param {string} runtimeUrl
+ * @param {Map<string, string>} grammarMap
+ * @param {HTMLElement[]} blocks
+ */
+async function enhanceBlocks(runtimeUrl, grammarMap, blocks) {
+  const highlighter = await loadHighlighter(runtimeUrl);
+
+  if (highlighter === null) {
+    markRuntimeFailure(blocks);
+    return;
+  }
+
+  await highlightBlocks(highlighter, grammarMap, blocks);
 }
 
 /**
@@ -361,18 +392,137 @@ function findRuntimeScript(runtimeUrl) {
 }
 
 /**
- * Highlight each block independently.
- *
- * A failure in one block must not prevent subsequent blocks from being
- * processed.
+ * Highlight each block, loading required grammars on demand.
  *
  * @param {object} highlighter
+ * @param {Map<string, string>} grammarMap
  * @param {HTMLElement[]} blocks
  */
-function highlightBlocks(highlighter, blocks) {
+async function highlightBlocks(highlighter, grammarMap, blocks) {
+  // Group blocks by language
+  const groups = new Map();
+
   for (const codeBlock of blocks) {
-    highlightBlock(highlighter, codeBlock);
+    if (isAlreadyProcessed(codeBlock)) {
+      continue;
+    }
+
+    const pre = codeBlock.parentElement;
+    if (pre === null || isMermaidCodeBlock(codeBlock, pre)) {
+      continue;
+    }
+
+    const declaredLanguage = getDeclaredLanguage(codeBlock);
+    if (declaredLanguage === null || SKIPPED_LANGUAGES.has(declaredLanguage)) {
+      continue;
+    }
+
+    const runtimeLanguage = normalizeRuntimeLanguage(declaredLanguage);
+
+    if (!groups.has(runtimeLanguage)) {
+      groups.set(runtimeLanguage, []);
+    }
+    groups.get(runtimeLanguage).push(codeBlock);
   }
+
+  // Process each language group
+  for (const [runtimeLanguage, languageBlocks] of groups) {
+    const alreadyRegistered = highlighter.getLanguage(runtimeLanguage);
+
+    if (alreadyRegistered) {
+      for (const codeBlock of languageBlocks) {
+        highlightBlock(highlighter, codeBlock);
+      }
+      continue;
+    }
+
+    // Check if grammar is already loaded or loading
+    const cached = grammarLoaded.has(runtimeLanguage);
+
+    if (cached) {
+      for (const codeBlock of languageBlocks) {
+        highlightBlock(highlighter, codeBlock);
+      }
+      continue;
+    }
+
+    if (grammarPromises.has(runtimeLanguage)) {
+      await grammarPromises.get(runtimeLanguage);
+      for (const codeBlock of languageBlocks) {
+        highlightBlock(highlighter, codeBlock);
+      }
+      continue;
+    }
+
+    // Try to load grammar
+    const grammarUrl = grammarMap.get(runtimeLanguage);
+
+    if (grammarUrl === undefined) {
+      for (const codeBlock of languageBlocks) {
+        markUnsupportedLanguage(codeBlock);
+      }
+      continue;
+    }
+
+    const promise = loadGrammar(grammarUrl, runtimeLanguage);
+    grammarPromises.set(runtimeLanguage, promise);
+
+    await promise;
+
+    for (const codeBlock of languageBlocks) {
+      highlightBlock(highlighter, codeBlock);
+    }
+  }
+}
+
+/**
+ * Load a Highlight.js language grammar script.
+ *
+ * @param {string} url
+ * @param {string} language
+ * @returns {Promise<void | null>}
+ */
+function loadGrammar(url, language) {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+
+    script.src = url;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+
+    let settled = false;
+
+    const finish = (value) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+
+      script.removeEventListener("load", onLoad);
+      script.removeEventListener("error", onError);
+
+      if (value === true) {
+        grammarLoaded.add(language);
+      }
+
+      resolve(value ? undefined : null);
+    };
+
+    const onLoad = () => {
+      finish(true);
+    };
+
+    const onError = () => {
+      script.remove();
+      finish(false);
+    };
+
+    script.addEventListener("load", onLoad, { once: true });
+    script.addEventListener("error", onError, { once: true });
+
+    document.head.appendChild(script);
+  });
 }
 
 /**

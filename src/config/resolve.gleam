@@ -51,6 +51,7 @@ import data/site.{
   type Analytics, type CommentsConfig, type SiteMeta, AnalyticsDisabled,
   CommentsDisabled, Giscus, GoatCounter, Liwan, SiteMeta, Umami, Utterances,
 }
+import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -108,6 +109,7 @@ pub fn resolve_from(
   let aratafetch = resolve_aratafetch(raw.aratafetch)
   let fonts = resolve_fonts(raw.fonts)
   let assets = resolve_assets(raw.assets)
+  let grammars = resolve_grammars(raw.syntax_highlight_grammars)
 
   let analytics_result = resolve_analytics(source_path, raw.analytics)
 
@@ -185,6 +187,7 @@ pub fn resolve_from(
             site.base_path,
             assets.syntax_highlight_url,
           ),
+          syntax_highlight_grammars: grammars,
           sidebar_enabled: features.sidebar,
           floating_buttons_enabled: features.floating_buttons,
           aratafetch_enabled: features.aratafetch,
@@ -453,6 +456,16 @@ fn resolve_assets(raw: Option(RawAssets)) -> ResolvedAssets {
       defaults.syntax_highlight_url(),
     ),
   )
+}
+
+fn resolve_grammars(raw: Option(Dict(String, String))) -> Dict(String, String) {
+  let default_grammar = dict.new()
+  |> dict.insert("gleam", defaults.syntax_highlight_gleam_grammar_url())
+
+  case raw {
+    Some(user_map) -> dict.merge(default_grammar, user_map)
+    None -> default_grammar
+  }
 }
 
 fn resolve_menu(

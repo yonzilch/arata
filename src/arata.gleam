@@ -34,6 +34,7 @@ import effect/search as search_effect
 import effect/syntax_highlight as syntax_highlight_effect
 import effect/theme as theme_effect
 import effect/toc as toc_effect
+import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option.{type Option}
@@ -566,6 +567,10 @@ fn configured_lightbox_effect(
 }
 
 fn configured_post_effects(model: Model) -> effect.Effect(Msg) {
+  let grammar_list =
+    model.config.syntax_highlight_grammars
+    |> dict.to_list
+
   post_effects_for(
     model.route,
     is_effective_dark(model.theme, model.system_prefers_dark),
@@ -575,6 +580,7 @@ fn configured_post_effects(model: Model) -> effect.Effect(Msg) {
     model.config.mermaid_cdn_url,
     model.config.syntax_highlight_enabled,
     model.config.syntax_highlight_cdn_url,
+    grammar_list,
   )
 }
 
@@ -665,6 +671,7 @@ fn post_effects_for(
   mermaid_cdn_url: String,
   syntax_highlight_enabled: Bool,
   syntax_highlight_cdn_url: String,
+  grammar_list: List(#(String, String)),
 ) -> effect.Effect(Msg) {
   case route {
     Post(_) -> {
@@ -690,6 +697,7 @@ fn post_effects_for(
           syntax_highlight_effect.enhance(
             syntax_highlight_enabled,
             syntax_highlight_cdn_url,
+            grammar_list,
           ),
           fn(_) { NoOp },
         )

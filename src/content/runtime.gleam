@@ -180,6 +180,10 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     "syntax_highlight_cdn_url",
     decode.string,
   )
+  use syntax_highlight_grammars <- decode.field(
+    "syntax_highlight_grammars",
+    decode.dict(decode.string, decode.string),
+  )
   use sidebar_enabled <- decode.field("sidebar_enabled", decode.bool)
   use floating_buttons_enabled <- decode.field(
     "floating_buttons_enabled",
@@ -215,6 +219,7 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     mermaid_cdn_url: mermaid_cdn_url,
     syntax_highlight_enabled: syntax_highlight_enabled,
     syntax_highlight_cdn_url: syntax_highlight_cdn_url,
+    syntax_highlight_grammars: syntax_highlight_grammars,
     sidebar_enabled: sidebar_enabled,
     floating_buttons_enabled: floating_buttons_enabled,
     aratafetch_enabled: aratafetch_enabled,
