@@ -160,7 +160,7 @@ Should be resolved to `markdown`.
 
 ## Third-party (`gleam`)
 
-Use [gleam highlight cdn](https://cdn.jsdelivr.net/gh/gleam-lang/gleam-highlight.js@main/dist/gleam.min.js") to render.
+Use [gleam highlight cdn](https://cdn.jsdelivr.net/gh/gleam-lang/gleam-highlight.js@main/dist/gleam.min.js) to render.
 
 ```gleam
 import gleam/io
