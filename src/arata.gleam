@@ -395,30 +395,30 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         False -> #(model, effect.none())
       }
 
-      SearchResultClicked(slug) -> {
-        let target_route = route.Post(slug)
+    SearchResultClicked(slug) -> {
+      let target_route = route.Post(slug)
 
-        let new_model =
-          Model(
-            ..model,
-            route: target_route,
-            search: closed_search(),
-            active_heading: option.None,
-            mobile_menu_open: False,
-            toc_overlay_open: False,
-            sidebar_toc_expanded: True,
-            lightbox: lightbox.Closed,
-          )
-
-        #(
-          new_model,
-          effect.batch([
-            modem.push(route.href_url(target_route), option.None, option.None),
-            configured_post_effects(new_model),
-            lightbox_scroll_lock(False),
-          ]),
+      let new_model =
+        Model(
+          ..model,
+          route: target_route,
+          search: closed_search(),
+          active_heading: option.None,
+          mobile_menu_open: False,
+          toc_overlay_open: False,
+          sidebar_toc_expanded: True,
+          lightbox: lightbox.Closed,
         )
-      }
+
+      #(
+        new_model,
+        effect.batch([
+          modem.push(route.href_url(target_route), option.None, option.None),
+          configured_post_effects(new_model),
+          lightbox_scroll_lock(False),
+        ]),
+      )
+    }
 
     UserToggledMobileMenu -> #(
       Model(..model, mobile_menu_open: !model.mobile_menu_open),
@@ -431,13 +431,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
     )
 
     UserToggledSidebarToc -> #(
-      Model(
-        ..model,
-        sidebar_toc_expanded: !model.sidebar_toc_expanded,
-      ),
+      Model(..model, sidebar_toc_expanded: !model.sidebar_toc_expanded),
       effect.none(),
     )
-
 
     UserScrolledToTop -> {
       let scroll_effect =
@@ -1166,12 +1162,7 @@ fn view_tags_and_toc(
     _, _ ->
       html.div([], [
         view_tags_sidebar(post_tags),
-        toc_view.view(
-          toc,
-          active_heading,
-          toc_expanded,
-          UserToggledSidebarToc,
-        ),
+        toc_view.view(toc, active_heading, toc_expanded, UserToggledSidebarToc),
       ])
   }
 }

@@ -459,8 +459,9 @@ fn resolve_assets(raw: Option(RawAssets)) -> ResolvedAssets {
 }
 
 fn resolve_grammars(raw: Option(Dict(String, String))) -> Dict(String, String) {
-  let default_grammar = dict.new()
-  |> dict.insert("gleam", defaults.syntax_highlight_gleam_grammar_url())
+  let default_grammar =
+    dict.new()
+    |> dict.insert("gleam", defaults.syntax_highlight_gleam_grammar_url())
 
   case raw {
     Some(user_map) -> dict.merge(default_grammar, user_map)

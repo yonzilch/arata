@@ -138,7 +138,12 @@ fn decode_root(
   let assets = optional_section(source_path, root, "assets", decode_assets)
 
   let grammars =
-    optional_section(source_path, root, "syntax_highlight_grammars", decode_grammars)
+    optional_section(
+      source_path,
+      root,
+      "syntax_highlight_grammars",
+      decode_grammars,
+    )
 
   let analytics =
     optional_section(source_path, root, "analytics", decode_analytics)

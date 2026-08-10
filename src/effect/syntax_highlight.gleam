@@ -33,7 +33,11 @@ import lustre/effect.{type Effect}
 /// loading. Languages already registered by the runtime are highlighted
 /// immediately; unregistered languages trigger a grammar script load before
 /// being marked unsupported.
-pub fn enhance(enabled: Bool, cdn_url: String, grammar_map: List(#(String, String))) -> Effect(Nil) {
+pub fn enhance(
+  enabled: Bool,
+  cdn_url: String,
+  grammar_map: List(#(String, String)),
+) -> Effect(Nil) {
   case enabled {
     False -> effect.none()
 
@@ -50,6 +54,9 @@ pub fn enhance(enabled: Bool, cdn_url: String, grammar_map: List(#(String, Strin
 /// The fallback body keeps non-JavaScript targets buildable without performing
 /// any syntax-highlighting work.
 @external(javascript, "../ffi/syntax_highlight.ffi.mjs", "enhance_code_blocks")
-fn enhance_code_blocks(_cdn_url: String, _grammar_map: List(#(String, String))) -> Nil {
+fn enhance_code_blocks(
+  _cdn_url: String,
+  _grammar_map: List(#(String, String)),
+) -> Nil {
   Nil
 }
