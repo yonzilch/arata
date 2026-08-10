@@ -310,6 +310,7 @@ Here is a brief overview of the configuration sections in `content/arata.toml`:
 * **`[aratafetch]`** — `maintained_for` (string): Optional display value for the `maintained` row.
 * **`[fonts]`** — CSS `font-family` declarations for `text`, `header`, and `code`.
 * **`[assets]`** — Runtime asset URLs for `mathjax_url`, `mermaid_url`, and `syntax_highlight_url`. A URL is required when its corresponding feature is enabled.
+* **`[syntax_highlight_grammars]`**: Optional language-to-URL mapping for Highlight.js grammars not included in the runtime bundle. Keys are language names; values are URLs or site-relative paths. `Gleam` is pre-configured and loaded on demand.
 * **`[analytics]`** — Analytics provider configuration. Supported providers: `disabled`, `goatcounter`, `umami`, `liwan`. Provider-specific values belong in this table. (Google Analytics is intentionally not supported).
 * **`[comments]`** — Comments provider configuration. Supported providers: `disabled`, `giscus`, `utterances`. Provider-specific values belong in this table.
 * **Accent/Primary color** — edit `--primary-color` in `src/css/theme.css` to recolor accent surfaces. Arata defines separate light and dark accent values in `:root` and `:root.dark` for better contrast across themes.
