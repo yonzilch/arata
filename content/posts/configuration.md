@@ -685,6 +685,46 @@ other site-local path).
 * `syntax_highlight_url` — used only when `features.syntax_highlight =
   true`. Should point to a pinned, browser-compatible Highlight.js bundle.
 
+### `[syntax_highlight_grammars]`
+
+Arata uses Highlight.js for runtime syntax highlighting. The configured browser
+bundle includes a common subset of languages. Additional languages can be
+supported through on-demand grammar loading.
+
+Documentation and examples classify languages into three categories:
+
+* **Default languages**: grammars already included in the configured
+  Highlight.js bundle and available without additional configuration.
+* **Additional languages**: grammars registered through
+  `[syntax_highlight_grammars]` and loaded on demand when first encountered.
+* **Unsupported languages**: languages for which no matching Highlight.js
+  grammar is available. These blocks remain readable as plain code, but no
+  syntax highlighting is applied.
+
+**On-demand grammars** (`syntax_highlight_grammars`):
+
+Configure additional grammars in `content/arata.toml`:
+
+```toml
+[syntax_highlight_grammars]
+gleam = "https://cdn.jsdelivr.net/gh/atp-gh/highlightjs-gleam@v1.0.0/dist/gleam.min.js"
+elixir = "/assets/grammars/elixir.min.js"
+```
+**Vendored local asset path**
+
+Grammar URLs may reference either external CDN resources or site-local files.
+
+Arata copies all files under `static/` into the generated site output during
+the build process. This allows language grammars to be vendored locally instead
+of being loaded from a third-party CDN.
+
+For example, if you place a grammar file at `static/assets/grammars/elixir.min.js`.
+
+```toml
+[syntax_highlight_grammars]
+elixir = "/assets/grammars/elixir.min.js"
+```
+
 ### `[analytics]`
 
 ```toml

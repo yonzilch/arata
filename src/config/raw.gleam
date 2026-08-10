@@ -23,6 +23,7 @@
 //// Keeping the raw input model isolated prevents malformed or incomplete user
 //// configuration from entering the build pipeline as trusted configuration.
 
+import gleam/dict.{type Dict}
 import gleam/option.{type Option}
 
 /// Raw representation of `content/arata.toml`.
@@ -45,6 +46,7 @@ pub type RawConfig {
     aratafetch: Option(RawAratafetch),
     fonts: Option(RawFonts),
     assets: Option(RawAssets),
+    syntax_highlight_grammars: Option(Dict(String, String)),
     analytics: Option(RawAnalytics),
     comments: Option(RawComments),
   )

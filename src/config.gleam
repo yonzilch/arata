@@ -29,6 +29,7 @@
 import config/defaults
 import config/url as config_url
 import data/site.{type Analytics, type SiteMeta, SiteMeta}
+import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 
@@ -147,6 +148,10 @@ pub type Config {
     syntax_highlight_enabled: Bool,
     /// Resolved public syntax-highlighting runtime asset URL.
     syntax_highlight_cdn_url: String,
+    /// Explicit grammar URLs for languages not included in the Highlight.js
+    /// runtime bundle. Keys are normalized language names; values are URLs or
+    /// site-relative paths to Highlight.js-compatible grammar scripts.
+    syntax_highlight_grammars: Dict(String, String),
     /// Whether the post sidebar is rendered.
     sidebar_enabled: Bool,
     /// Whether floating post controls are rendered.
@@ -238,6 +243,7 @@ pub fn default() -> Config {
       base_path,
       defaults.syntax_highlight_url(),
     ),
+    syntax_highlight_grammars: dict.new(),
     sidebar_enabled: defaults.sidebar_enabled(),
     floating_buttons_enabled: defaults.floating_buttons_enabled(),
     aratafetch_enabled: defaults.aratafetch_enabled(),
