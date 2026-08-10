@@ -317,6 +317,7 @@ SPA 运行时和构建流水线都从此处读取配置，因此标题、描述�
 * **`[aratafetch]`** —— `maintained_for` (string)： `maintained` 行的可选显示值。
 * **`[fonts]`** —— `text`、`header` 和 `code` 的 CSS `font-family` 声明。
 * **`[assets]`** —— `mathjax_url`、`mermaid_url` 和 `syntax_highlight_url` 的运行时资源 URL。当其对应功能启用时，必须提供 URL。
+* **`[syntax_highlight_grammars]`**: 可选的 Highlight.js 语言语法映射配置，用于注册运行时默认包中未包含的语言。键为语言名称，值为对应语法文件的 URL 或站点内路径。`Gleam`已预先配置，并会在首次使用时按需加载。
 * **`[analytics]`** —— 统计分析提供方配置。支持的提供方：`disabled`、`goatcounter`、`umami`、`liwan`。特定于提供方的值应放在此表中。（有意不支持 Google Analytics）。
 * **`[comments]`** —— 评论提供方配置。支持的提供方：`disabled`、`giscus`、`utterances`。特定于提供方的值应放在此表中。
 * **强调色/主色** —— 编辑 `src/css/theme.css` 中的 `--primary-color` 即可修改强调色表面。Arata 在 `:root` 与 `:root.dark` 中分别定义了浅色与深色的强调色值，以获得更好的主题对比度。

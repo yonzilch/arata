@@ -28,13 +28,22 @@ import lustre/effect.{type Effect}
 /// When disabled, this returns no effects and does not call the JavaScript FFI.
 /// The FFI is responsible for avoiding unnecessary network requests when the
 /// current document contains no eligible code blocks.
-pub fn enhance(enabled: Bool, cdn_url: String) -> Effect(Nil) {
+///
+/// `grammar_map` is a normalized language-to-URL map for on-demand grammar
+/// loading. Languages already registered by the runtime are highlighted
+/// immediately; unregistered languages trigger a grammar script load before
+/// being marked unsupported.
+pub fn enhance(
+  enabled: Bool,
+  cdn_url: String,
+  grammar_map: List(#(String, String)),
+) -> Effect(Nil) {
   case enabled {
     False -> effect.none()
 
     True -> {
       use _ <- effect.from
-      enhance_code_blocks(cdn_url)
+      enhance_code_blocks(cdn_url, grammar_map)
       Nil
     }
   }
@@ -45,6 +54,9 @@ pub fn enhance(enabled: Bool, cdn_url: String) -> Effect(Nil) {
 /// The fallback body keeps non-JavaScript targets buildable without performing
 /// any syntax-highlighting work.
 @external(javascript, "../ffi/syntax_highlight.ffi.mjs", "enhance_code_blocks")
-fn enhance_code_blocks(_cdn_url: String) -> Nil {
+fn enhance_code_blocks(
+  _cdn_url: String,
+  _grammar_map: List(#(String, String)),
+) -> Nil {
   Nil
 }

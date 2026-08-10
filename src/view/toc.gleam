@@ -97,9 +97,7 @@ pub fn view(
         ),
         html.ul(
           entries_attributes,
-          list.map(entries, fn(entry) {
-            view_entry(entry, active_heading)
-          }),
+          list.map(entries, fn(entry) { view_entry(entry, active_heading) }),
         ),
       ])
     }
@@ -115,11 +113,7 @@ fn view_entry(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
   let is_parent =
     is_selected || any_child_active(entry.children, active_heading)
 
-  let link =
-    html.a(
-      [attribute.href("#" <> entry.id)],
-      [html.text(entry.title)],
-    )
+  let link = html.a([attribute.href("#" <> entry.id)], [html.text(entry.title)])
 
   let children = case entry.children {
     [] -> []
@@ -127,9 +121,7 @@ fn view_entry(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
     _ -> [
       html.ul(
         [],
-        list.map(entry.children, fn(child) {
-          view_child(child, active_heading)
-        }),
+        list.map(entry.children, fn(child) { view_child(child, active_heading) }),
       ),
     ]
   }
@@ -153,11 +145,7 @@ fn view_entry(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
 fn view_child(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
   let is_selected = is_active(entry.id, active_heading)
 
-  let link =
-    html.a(
-      [attribute.href("#" <> entry.id)],
-      [html.text(entry.title)],
-    )
+  let link = html.a([attribute.href("#" <> entry.id)], [html.text(entry.title)])
 
   let children = case entry.children {
     [] -> []
@@ -165,17 +153,12 @@ fn view_child(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
     _ -> [
       html.ul(
         [],
-        list.map(entry.children, fn(child) {
-          view_child(child, active_heading)
-        }),
+        list.map(entry.children, fn(child) { view_child(child, active_heading) }),
       ),
     ]
   }
 
-  html.li(
-    [attribute.classes([#("selected", is_selected)])],
-    [link, ..children],
-  )
+  html.li([attribute.classes([#("selected", is_selected)])], [link, ..children])
 }
 
 fn is_active(id: String, active_heading: Option(String)) -> Bool {
@@ -208,15 +191,10 @@ pub fn view_static(
 
     _ ->
       html.div([attribute.class("toc")], [
-        html.div(
-          [attribute.class("heading")],
-          [html.text("Table of Contents")],
-        ),
+        html.div([attribute.class("heading")], [html.text("Table of Contents")]),
         html.ul(
           [attribute.class("toc-list")],
-          list.map(entries, fn(entry) {
-            view_entry(entry, active_heading)
-          }),
+          list.map(entries, fn(entry) { view_entry(entry, active_heading) }),
         ),
       ])
   }

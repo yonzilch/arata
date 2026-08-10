@@ -154,6 +154,14 @@ mermaid_url = "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min
 syntax_highlight_url = "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
 
 
+[syntax_highlight_grammars]
+# Additional Highlight.js language grammars loaded at runtime.
+#
+# The value must be a JavaScript module URL that registers the language with Highlight.js.
+# Only languages not included in the default Highlight.js bundle need to be configured here.
+gleam = "https://cdn.jsdelivr.net/gh/gleam-lang/gleam-highlight.js@main/dist/gleam.min.js"
+
+
 [analytics]
 # Supported providers:
 #   disabled

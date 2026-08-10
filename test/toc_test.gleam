@@ -230,12 +230,7 @@ pub fn toc_renders_nested_heading_links_test() {
 
 pub fn active_top_level_heading_is_selected_and_parent_test() {
   let rendered =
-    toc.view(
-      sample_entries(),
-      option.Some("installation"),
-      True,
-      ToggleToc,
-    )
+    toc.view(sample_entries(), option.Some("installation"), True, ToggleToc)
     |> element.to_string
 
   rendered
@@ -245,12 +240,7 @@ pub fn active_top_level_heading_is_selected_and_parent_test() {
 
 pub fn active_nested_heading_marks_top_level_parent_test() {
   let rendered =
-    toc.view(
-      sample_entries(),
-      option.Some("configuration"),
-      True,
-      ToggleToc,
-    )
+    toc.view(sample_entries(), option.Some("configuration"), True, ToggleToc)
     |> element.to_string
 
   rendered
@@ -264,12 +254,7 @@ pub fn active_nested_heading_marks_top_level_parent_test() {
 
 pub fn active_deeply_nested_heading_marks_top_level_parent_test() {
   let rendered =
-    toc.view(
-      sample_entries(),
-      option.Some("advanced-options"),
-      True,
-      ToggleToc,
-    )
+    toc.view(sample_entries(), option.Some("advanced-options"), True, ToggleToc)
     |> element.to_string
 
   rendered
@@ -283,12 +268,7 @@ pub fn active_deeply_nested_heading_marks_top_level_parent_test() {
 
 pub fn unknown_active_heading_selects_no_entry_test() {
   let rendered =
-    toc.view(
-      sample_entries(),
-      option.Some("missing-heading"),
-      True,
-      ToggleToc,
-    )
+    toc.view(sample_entries(), option.Some("missing-heading"), True, ToggleToc)
     |> element.to_string
 
   rendered
@@ -302,27 +282,15 @@ pub fn unknown_active_heading_selects_no_entry_test() {
 
 fn sample_entries() -> List(TocEntry) {
   [
-    TocEntry(
-      id: "installation",
-      title: "Installation",
-      children: [
+    TocEntry(id: "installation", title: "Installation", children: [
+      TocEntry(id: "configuration", title: "Configuration", children: [
         TocEntry(
-          id: "configuration",
-          title: "Configuration",
-          children: [
-            TocEntry(
-              id: "advanced-options",
-              title: "Advanced options",
-              children: [],
-            ),
-          ],
+          id: "advanced-options",
+          title: "Advanced options",
+          children: [],
         ),
-      ],
-    ),
-    TocEntry(
-      id: "deployment",
-      title: "Deployment",
-      children: [],
-    ),
+      ]),
+    ]),
+    TocEntry(id: "deployment", title: "Deployment", children: []),
   ]
 }
