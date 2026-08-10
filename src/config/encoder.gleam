@@ -100,11 +100,7 @@ pub fn application_to_json(application: config.Config) -> json.Json {
     ),
     #(
       "syntax_highlight_grammars",
-      json.dict(
-        application.syntax_highlight_grammars,
-        fn(k) { k },
-        json.string,
-      ),
+      json.dict(application.syntax_highlight_grammars, fn(k) { k }, json.string),
     ),
     #("sidebar_enabled", json.bool(application.sidebar_enabled)),
     #(
