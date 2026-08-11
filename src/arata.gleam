@@ -21,7 +21,7 @@ import config
 import content/runtime as content_runtime
 import data/link.{type Link}
 import data/page.{type Page}
-import data/post.{type Post}
+import data/post.{type Post, order_posts}
 import data/project.{type Project}
 import data/search.{type SearchResult}
 import data/site.{type SiteMeta, SiteMeta}
@@ -306,7 +306,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               ..model,
               config: application_config,
               site_meta: site_meta,
-              posts: content.posts,
+              posts: order_posts(content.posts),
               pages: content.pages,
               homepage: content.homepage,
               links: content.links,

@@ -242,6 +242,10 @@ fn load_post(path: String, filename: String) -> Result(Post, Nil) {
     Ok(b) -> b
     Error(_) -> False
   }
+  let pinned = case tom.get_bool(toml, ["pinned"]) {
+    Ok(b) -> b
+    Error(_) -> False
+  }
   let tldr = case tom.get_string(toml, ["tldr"]) {
     Ok(t) -> Some(t)
     Error(_) -> None
@@ -264,6 +268,7 @@ fn load_post(path: String, filename: String) -> Result(Post, Nil) {
     toc: toc,
     tags: tags,
     draft: draft,
+    pinned: pinned,
     tldr: tldr,
     word_count: word_count,
     reading_time: reading_time,

@@ -383,6 +383,7 @@ fn decode_post() -> decode.Decoder(Post) {
   use toc <- decode.field("toc", decode.list(decode_toc_entry()))
   use tags <- decode.field("tags", decode.list(decode.string))
   use draft <- decode.optional_field("draft", False, decode.bool)
+  use pinned <- decode.optional_field("pinned", False, decode.bool)
   use tldr <- decode.optional_field(
     "tldr",
     option.None,
@@ -401,6 +402,7 @@ fn decode_post() -> decode.Decoder(Post) {
     toc: toc,
     tags: tags,
     draft: draft,
+    pinned: pinned,
     tldr: tldr,
     word_count: word_count,
     reading_time: reading_time,
