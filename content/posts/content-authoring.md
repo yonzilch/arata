@@ -55,6 +55,7 @@ updated = "2026-01-20"          # optional
 description = "A short description for the post list and SEO."
 tags = ["gleam", "lustre"]
 draft = false                   # optional, default false
+pinned = false                  # optional, default false
 tldr = "A one-line summary."    # optional
 +++
 
@@ -69,6 +70,7 @@ Fields:
 * `description` — summary used in the post list, search, and metadata.
 * `tags` — optional list of taxonomy tags.
 * `draft` — optional boolean. Draft posts show a `DRAFT` badge.
+* `pinned` — optional boolean. Pinned posts appear before regular posts in post listings, keeping their date-based order among themselves.
 * `tldr` — optional summary box rendered above the post body.
 
 Behavior:
@@ -81,6 +83,7 @@ Behavior:
 * `word_count` and `reading_time` are computed automatically.
 * `word_count` is also used by aratafetch's total word-count summary.
 * Draft posts are excluded from aratafetch statistics.
+* Pinned posts are placed before regular posts in the post list, on the homepage's latest-posts section, and in pagination. Within each pinned/non-pinned group, posts keep their newest-first date order.
 
 ## Projects
 
