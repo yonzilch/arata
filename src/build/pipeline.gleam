@@ -475,6 +475,7 @@ fn content_index_json(
         #("toc", json.array(post.toc, toc_entry_json)),
         #("tags", json.array(post.tags, json.string)),
         #("draft", json.bool(post.draft)),
+        #("pinned", json.bool(post.pinned)),
         #("tldr", case post.tldr {
           Some(value) -> json.string(value)
           None -> json.null()
