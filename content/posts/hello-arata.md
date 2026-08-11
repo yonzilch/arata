@@ -5,6 +5,7 @@ updated = "2026-07-04"
 description = "Introducing Arata — a faithful reimplementation of the apollo blog theme in Gleam and Lustre."
 tags = ["gleam", "lustre"]
 draft = false
+pinned = true
 tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app with client-side routing and a hand-ported CSS design system."
 +++
 

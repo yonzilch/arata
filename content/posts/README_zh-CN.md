@@ -204,7 +204,7 @@ arata/
 
 所有内容都存放在 `content/` 目录下的四个子目录中。每个 Markdown 文件使用由 `+++ ... +++` 分隔的 **TOML frontmatter**。
 
-只有必填字段才需要出现。像 `description`、`tags`、`draft` 和 `tldr` 这样的可选字段，在不需要时可以省略。
+只有必填字段才需要出现。像 `description`、`tags`、`draft`、`pinned` 和 `tldr` 这样的可选字段，在不需要时可以省略。
 
 ```toml
 +++
@@ -213,6 +213,7 @@ date = "2026-06-21"
 description = "Introducing Arata"
 tags = ["gleam", "lustre"]
 draft = false
+pinned = false
 tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app with client-side routing and a hand-ported CSS design system."
 +++
 
@@ -221,7 +222,7 @@ tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app w
 
 | 目录                    | 类型    | Frontmatter 字段                                                                                            |
 | ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `content/posts/*.md`    | Post    | `title`、`date`、`updated`、`description`、`tags`、`draft`、`tldr`                                          |
+| `content/posts/*.md`    | Post    | `title`、`date`、`updated`、`description`、`tags`、`draft`、`pinned`、`tldr`                                          |
 | `content/pages/*.md`    | Page    | `title`、`subtitle`                                                                                         |
 | `content/links/*.md`    | Link    | `title`、`url` 或 `[extra].link_to`、`description`、`image` 或 `[extra].remote_image`、`weight`             |
 | `content/projects/*.md` | Project | `title`、`description`、`link_to`、`image`、`github`、`gitlab`、`codeberg`、`forgejo`、`demo`、`tags`       |
