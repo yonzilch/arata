@@ -197,7 +197,7 @@ arata/
 
 All content lives under `content/` in four subdirectories. Each Markdown file uses **TOML frontmatter** delimited by `+++ ... +++`.
 
-Only the required fields need to be present. Fields such as `description`, `tags`, `draft`, and `tldr` are optional and may be omitted when they are not needed.
+Only the required fields need to be present. Fields such as `description`, `tags`, `draft`, `pinned` and `tldr` are optional and may be omitted when they are not needed.
 
 ```toml
 +++
@@ -206,6 +206,7 @@ date = "2026-06-21"
 description = "Introducing Arata"
 tags = ["gleam", "lustre"]
 draft = false
+pinned = false
 tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app with client-side routing and a hand-ported CSS design system."
 +++
 
@@ -214,7 +215,7 @@ Body in Markdown — parsed by mork at build time.
 
 | Directory               | Type    | Frontmatter                                                                                                 |
 | ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `content/posts/*.md`    | Post    | `title`, `date`, `updated`, `description`, `tags`, `draft`, `tldr`                                          |
+| `content/posts/*.md`    | Post    | `title`, `date`, `updated`, `description`, `tags`, `draft`, `pinned`, `tldr`                                |
 | `content/pages/*.md`    | Page    | `title`, `subtitle`                                                                                         |
 | `content/links/*.md`    | Link    | `title`, `url` or `[extra].link_to`, `description`, `image` or `[extra].remote_image`, `weight`             |
 | `content/projects/*.md` | Project | `title`, `description`, `link_to`, `image`, `github`, `gitlab`, `codeberg`, `forgejo`, `demo`, `tags`       |
