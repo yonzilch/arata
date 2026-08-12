@@ -128,6 +128,10 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+
+    transition:
+        min-width 150ms ease,
+        min-height 150ms ease;
 }
 
 .lightbox-image-frame--zoomed {
@@ -139,7 +143,39 @@
     cursor: grabbing;
 }
 
-/* Preview image. Zoom transform is applied by the FFI as an inline style. */
+/* Loading placeholder: keeps a stable preview area and shows a spinner while
+   an image has not decoded yet. Toggled by the lightbox FFI. */
+.lightbox-image-frame--loading {
+    min-width: min(70vw, 32rem);
+    min-height: 40vh;
+}
+
+.lightbox-image-frame--loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+
+    width: 2.5rem;
+    height: 2.5rem;
+
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.16);
+    border-top-color: var(--primary-color);
+
+    animation: lightbox-spin 700ms linear infinite;
+    opacity: 0.9;
+}
+
+@keyframes lightbox-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Preview image. Zoom transform is applied by the FFI as an inline style.
+   The opacity transition fades freshly loaded images back in after the FFI
+   hides the previous frame during navigation. */
 .lightbox-image {
     display: block;
     max-width: 100%;
@@ -149,6 +185,7 @@
     -webkit-user-drag: none;
 
     animation: lightbox-image-fade 140ms ease;
+    transition: opacity 140ms ease;
     will-change: opacity, transform;
     backface-visibility: hidden;
     contain: paint;
@@ -302,6 +339,11 @@
         height: 2.5rem;
 
         font-size: 1.7rem;
+    }
+
+    .lightbox-image-frame--loading {
+        min-width: 80vw;
+        min-height: 35vh;
     }
 
     .lightbox-image {

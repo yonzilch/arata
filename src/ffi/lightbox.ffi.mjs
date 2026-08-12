@@ -14,6 +14,9 @@
 //   - lock/unlock page scrolling while the lightbox is open
 //   - zoom/pan the lightbox preview (click toggle, wheel zoom, drag pan,
 //     two-finger pinch on touch devices)
+//   - hide the previous frame and show a loading placeholder while a new
+//     lightbox image loads, so a still-loading image never shows the
+//     previously decoded frame or a bare black preview
 //   - report coarse zoom state changes to Gleam so the model stays truthful
 //
 // Important:
@@ -57,6 +60,8 @@ let lastZoomed = false;
 let activePointers = new Map();
 let pinchState = null; // { lastDistance }
 
+let lightboxImageObserver = null;
+
 export function subscribe_to_lightbox_events(
   onOpen,
   onClose,
@@ -80,9 +85,55 @@ export function subscribe_to_lightbox_events(
   document.addEventListener("pointerup", handleLightboxPointerUp);
   document.addEventListener("pointercancel", handleLightboxPointerUp);
   document.addEventListener("load", handleLightboxImageLoad, true);
+  document.addEventListener("error", handleLightboxImageError, true);
+
+  ensureLightboxImageObserver();
 
   subscribed = true;
 }
+
+function ensureLightboxImageObserver() {
+  if (lightboxImageObserver) return;
+
+  lightboxImageObserver = new MutationObserver(handleLightboxImageMutations);
+  lightboxImageObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["src"],
+    subtree: true,
+  });
+}
+
+// Lustre reuses the lightbox `<img>` node when navigating and only patches its
+// `src` attribute. Browsers keep displaying the previously decoded frame while
+// the new source is still loading. The node must NOT be replaced — Lustre's
+// reconciler caches node references, so swapping the element would make later
+// patches target a detached node. Instead the old frame is hidden with opacity
+// and a loading placeholder is shown until the new source decodes; the
+// load/error handlers fade the new image back in.
+function handleLightboxImageMutations(mutations) {
+  for (const mutation of mutations) {
+    if (mutation.type !== "attributes") continue;
+    const image = mutation.target;
+    if (!(image instanceof HTMLImageElement)) continue;
+    if (!image.classList.contains("lightbox-image")) continue;
+
+    // Already decoded (cached or previously shown): the browser swaps the
+    // frame immediately, so there is nothing stale to hide.
+    if (image.complete && image.naturalWidth > 0) continue;
+
+    // Hide the previous frame and show the loading placeholder while the new
+    // source loads.
+    markLightboxImageLoading(image);
+    return;
+  }
+}
+
+function markLightboxImageLoading(image) {
+  const frame = image.closest(".lightbox-image-frame");
+  if (frame) frame.classList.add("lightbox-image-frame--loading");
+  image.style.opacity = "0";
+}
+
 
 export function set_lightbox_scroll_lock(locked) {
   if (typeof document === "undefined") return;
@@ -94,6 +145,17 @@ export function set_lightbox_scroll_lock(locked) {
 
   html.classList.toggle("lightbox-open", Boolean(locked));
   body.classList.toggle("lightbox-open", Boolean(locked));
+
+  // When opening, the overlay is rendered after this effect runs, so mark the
+  // preview as loading on the next frame if its image has not decoded yet.
+  if (locked) {
+    window.requestAnimationFrame(() => {
+      const image = document.querySelector(".lightbox-image");
+      if (!image) return;
+      if (image.complete && image.naturalWidth > 0) return;
+      markLightboxImageLoading(image);
+    });
+  }
 
   // The lightbox lifecycle always starts and ends at fit zoom.
   reset_lightbox_zoom();
@@ -112,6 +174,7 @@ export function reset_lightbox_zoom() {
   if (frame) {
     frame.classList.remove("lightbox-image-frame--dragging");
     frame.classList.remove("lightbox-image-frame--animating");
+    frame.classList.remove("lightbox-image-frame--loading");
     const image = frame.querySelector(".lightbox-image");
     if (image) image.style.transform = "";
   }
@@ -370,15 +433,32 @@ function pointerDistance(a, b) {
 }
 
 function handleLightboxImageLoad(event) {
-  if (!isLightboxOpen()) return;
   const target = event.target;
   if (!(target instanceof HTMLImageElement)) return;
   if (!target.classList.contains("lightbox-image")) return;
+
+  // Fade the freshly loaded image back in and hide the loading placeholder.
+  target.style.opacity = "";
+  const frame = target.closest(".lightbox-image-frame");
+  if (frame) frame.classList.remove("lightbox-image-frame--loading");
+
+  if (!isLightboxOpen()) return;
 
   // Re-derive pan bounds once the image dimensions are known, so a zoom
   // performed before the preview finished loading can still be panned.
   clampPan();
   applyZoom();
+}
+
+function handleLightboxImageError(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLImageElement)) return;
+  if (!target.classList.contains("lightbox-image")) return;
+
+  // Never leave a failed image hidden or stuck on the loading placeholder.
+  target.style.opacity = "";
+  const frame = target.closest(".lightbox-image-frame");
+  if (frame) frame.classList.remove("lightbox-image-frame--loading");
 }
 
 function toggleZoomAt(clientX, clientY) {
