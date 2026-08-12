@@ -20,6 +20,31 @@ For example, project-specific sections such as
 
 ---
 
+## [v1.7.5] — 2026-08-12
+
+### Added
+
+- Added optional `pinned` boolean field in post frontmatter so important posts (announcements, release notes) stay visible regardless of date.
+- Added `order_posts` function that sorts posts pinned-first, then by date descending (newest first), with slug as a deterministic tiebreak for identical dates.
+- Added `[syntax_highlight_grammars]` configuration section for on-demand Highlight.js language grammar loading.
+  - Maps language names to JavaScript module URLs.
+  - Grammars are loaded only when a code block in that language is encountered.
+  - Each grammar is requested at most once; concurrent blocks sharing a language share one loading promise.
+  - Language aliases are normalized before registration checks, and the original author-facing language is preserved in `data-lang`.
+  - Unregistered languages fall back to the existing unsupported rendering path.
+
+### Changed
+
+- Included the default Gleam Highlight.js grammar in the built-in `syntax_highlight_grammars` configuration.
+- Expanded syntax highlighting documentation to cover the `[syntax_highlight_grammars]` section, on-demand loading behavior, and the Gleam grammar.
+- Added a syntax highlighting test post demonstrating supported language grammars.
+
+### Fixed
+
+- Corrected the default Highlight.js CDN URL to use the standard browser bundle instead of the ESM build.
+
+---
+
 ## [v1.7.4] — 2026-08-09
 
 ### Added
