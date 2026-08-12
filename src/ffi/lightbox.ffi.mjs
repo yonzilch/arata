@@ -134,7 +134,6 @@ function markLightboxImageLoading(image) {
   image.style.opacity = "0";
 }
 
-
 export function set_lightbox_scroll_lock(locked) {
   if (typeof document === "undefined") return;
 
@@ -505,7 +504,7 @@ function setZoomState(scale, tx, ty) {
 
   // Animate discrete zoom steps but keep drag panning instant.
   const frame = document.querySelector(".lightbox-image-frame");
-  if (frame && wasZoomed !== (zoomState.scale > 1)) {
+  if (frame && wasZoomed !== zoomState.scale > 1) {
     frame.classList.add("lightbox-image-frame--animating");
     window.setTimeout(() => {
       frame.classList.remove("lightbox-image-frame--animating");
@@ -524,8 +523,7 @@ function applyZoom() {
     image.style.transform = "";
   } else {
     image.style.transformOrigin = "0 0";
-    image.style.transform =
-      `translate(${zoomState.tx}px, ${zoomState.ty}px) scale(${zoomState.scale})`;
+    image.style.transform = `translate(${zoomState.tx}px, ${zoomState.ty}px) scale(${zoomState.scale})`;
   }
 
   syncZoomedFlag(zoomState.scale > 1);
