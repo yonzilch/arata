@@ -2,15 +2,19 @@
 ////
 //// The lightbox state is owned by `arata.gleam`. JavaScript FFI should only
 //// detect clicks on Markdown body images and dispatch gallery data back into
-//// the app.
+//// the app. The FFI also applies the zoom transform to the rendered image;
+//// Lustre tracks a coarse `zoomed` flag so the overlay can reset zoom on
+//// close, navigation, and gallery changes.
 ////
 //// Invariants:
 ////   - Closed renders `none()`
 ////   - Open renders one fixed-position overlay
-////   - Open stores a page-local image gallery and the current index
+////   - Open stores a page-local image gallery, the current index, and whether
+////     the preview is zoomed
 ////   - the current image is selected safely from the gallery
 ////   - the caption is derived from image alt/title text supplied by the FFI
 ////   - closing/previous/next are represented by messages provided by caller
+////   - previous/next always reset zoom to fit
 ////
 //// Interaction model:
 ////   - close button closes the overlay
@@ -18,6 +22,7 @@
 ////   - clicking the image/dialog itself does not close via bubbling
 ////   - previous/next buttons are shown only when there is more than one image
 ////   - keyboard previous/next is handled by FFI + arata.gleam
+////   - zoom toggling/panning is handled by the FFI on the rendered DOM
 
 import gleam/int
 import gleam/list
@@ -32,7 +37,53 @@ pub type Image {
 
 pub type State {
   Closed
-  Open(images: List(Image), index: Int)
+  Open(images: List(Image), index: Int, zoomed: Bool)
+}
+
+/// Move to the previous image, resetting zoom to fit.
+pub fn previous(state: State) -> State {
+  case state {
+    Closed -> Closed
+
+    Open(..) as open -> {
+      let total = list.length(open.images)
+
+      case total <= 1 {
+        True -> state
+
+        False ->
+          Open(..open, index: previous_index(open.index, total), zoomed: False)
+      }
+    }
+  }
+}
+
+/// Move to the next image, resetting zoom to fit.
+pub fn next(state: State) -> State {
+  case state {
+    Closed -> Closed
+
+    Open(..) as open -> {
+      let total = list.length(open.images)
+
+      case total <= 1 {
+        True -> state
+
+        False ->
+          Open(..open, index: next_index(open.index, total), zoomed: False)
+      }
+    }
+  }
+}
+
+/// Update the zoomed flag. The FFI applies the visual transform and reports
+/// zoom state changes back through this function.
+pub fn set_zoomed(state: State, zoomed: Bool) -> State {
+  case state {
+    Closed -> Closed
+
+    Open(..) as open -> Open(..open, zoomed: zoomed)
+  }
 }
 
 pub fn view(
@@ -44,10 +95,18 @@ pub fn view(
   case state {
     Closed -> none()
 
-    Open(images, index) ->
+    Open(images, index, zoomed) ->
       case current_image(images, index) {
         Ok(#(image, safe_index, total)) ->
-          view_open(image, safe_index, total, on_close, on_previous, on_next)
+          view_open(
+            image,
+            safe_index,
+            total,
+            zoomed,
+            on_close,
+            on_previous,
+            on_next,
+          )
 
         Error(Nil) -> none()
       }
@@ -58,10 +117,20 @@ fn view_open(
   image: Image,
   index: Int,
   total: Int,
+  zoomed: Bool,
   on_close: msg,
   on_previous: msg,
   on_next: msg,
 ) -> Element(msg) {
+  let frame_attributes = case zoomed {
+    True -> [
+      attribute.class("lightbox-image-frame"),
+      attribute.class("lightbox-image-frame--zoomed"),
+    ]
+
+    False -> [attribute.class("lightbox-image-frame")]
+  }
+
   html.div(
     [
       attribute.class("lightbox-backdrop"),
@@ -97,8 +166,8 @@ fn view_open(
           ),
           html.div(
             [
-              attribute.class("lightbox-image-frame"),
               attribute.attribute("data-lightbox-src", image.src),
+              ..frame_attributes
             ],
             [
               html.img([
@@ -184,6 +253,20 @@ fn clamp_index(index: Int, total: Int) -> Int {
     True -> 0
 
     False -> int.max(0, int.min(index, total - 1))
+  }
+}
+
+fn previous_index(index: Int, total: Int) -> Int {
+  case index <= 0 {
+    True -> total - 1
+    False -> index - 1
+  }
+}
+
+fn next_index(index: Int, total: Int) -> Int {
+  case index >= total - 1 {
+    True -> 0
+    False -> index + 1
   }
 }
 

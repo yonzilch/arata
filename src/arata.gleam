@@ -198,6 +198,7 @@ pub type Msg {
   LightboxPrevious
   LightboxNext
   LightboxClosed
+  LightboxZoomChanged(zoomed: Bool)
   LightboxEventReceived(event: lightbox_effect.Event)
 }
 
@@ -483,6 +484,9 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         lightbox_effect.PreviousPressed -> update(model, LightboxPrevious)
 
         lightbox_effect.NextPressed -> update(model, LightboxNext)
+
+        lightbox_effect.ZoomChanged(zoomed) ->
+          update(model, LightboxZoomChanged(zoomed))
       }
 
     LightboxOpened(src, alt) ->
@@ -505,6 +509,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
                 lightbox: lightbox.Open(
                   images: images,
                   index: clamp_index(index, list.length(images)),
+                  zoomed: False,
                 ),
               ),
               lightbox_scroll_lock(True),
@@ -519,18 +524,23 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       }
 
     LightboxPrevious -> #(
-      Model(..model, lightbox: lightbox_previous(model.lightbox)),
-      effect.none(),
+      Model(..model, lightbox: lightbox.previous(model.lightbox)),
+      lightbox_reset_zoom(),
     )
 
     LightboxNext -> #(
-      Model(..model, lightbox: lightbox_next(model.lightbox)),
-      effect.none(),
+      Model(..model, lightbox: lightbox.next(model.lightbox)),
+      lightbox_reset_zoom(),
     )
 
     LightboxClosed -> #(
       Model(..model, lightbox: lightbox.Closed),
       lightbox_scroll_lock(False),
+    )
+
+    LightboxZoomChanged(zoomed) -> #(
+      Model(..model, lightbox: lightbox.set_zoomed(model.lightbox, zoomed)),
+      effect.none(),
     )
   }
 }
@@ -584,6 +594,10 @@ fn lightbox_scroll_lock(locked: Bool) -> effect.Effect(Msg) {
   effect.map(lightbox_effect.set_scroll_lock(locked), fn(_) { NoOp })
 }
 
+fn lightbox_reset_zoom() -> effect.Effect(Msg) {
+  effect.map(lightbox_effect.reset_zoom(), fn(_) { NoOp })
+}
+
 fn lightbox_images(
   srcs: List(String),
   alts: List(String),
@@ -608,53 +622,6 @@ fn clamp_index(index: Int, total: Int) -> Int {
     True -> 0
 
     False -> int.max(0, int.min(index, total - 1))
-  }
-}
-
-fn lightbox_previous(state: lightbox.State) -> lightbox.State {
-  case state {
-    lightbox.Closed -> lightbox.Closed
-
-    lightbox.Open(images, index) -> {
-      let total = list.length(images)
-
-      case total <= 1 {
-        True -> state
-
-        False ->
-          lightbox.Open(images: images, index: previous_index(index, total))
-      }
-    }
-  }
-}
-
-fn lightbox_next(state: lightbox.State) -> lightbox.State {
-  case state {
-    lightbox.Closed -> lightbox.Closed
-
-    lightbox.Open(images, index) -> {
-      let total = list.length(images)
-
-      case total <= 1 {
-        True -> state
-
-        False -> lightbox.Open(images: images, index: next_index(index, total))
-      }
-    }
-  }
-}
-
-fn previous_index(index: Int, total: Int) -> Int {
-  case index <= 0 {
-    True -> total - 1
-    False -> index - 1
-  }
-}
-
-fn next_index(index: Int, total: Int) -> Int {
-  case index >= total - 1 {
-    True -> 0
-    False -> index + 1
   }
 }
 
