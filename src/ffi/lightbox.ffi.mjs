@@ -12,7 +12,8 @@
 //   - dispatch gallery srcs/alts as separator-joined strings plus clicked index
 //   - dispatch Escape / ArrowLeft / ArrowRight key presses to Gleam
 //   - lock/unlock page scrolling while the lightbox is open
-//   - zoom/pan the lightbox preview (click toggle, wheel zoom, drag pan)
+//   - zoom/pan the lightbox preview (click toggle, wheel zoom, drag pan,
+//     two-finger pinch on touch devices)
 //   - report coarse zoom state changes to Gleam so the model stays truthful
 //
 // Important:
@@ -51,6 +52,10 @@ let dragged = false;
 let dragStart = null;
 let suppressClick = false;
 let lastZoomed = false;
+
+// Active pointers on the preview frame, used to detect pinch gestures.
+let activePointers = new Map();
+let pinchState = null; // { lastDistance }
 
 export function subscribe_to_lightbox_events(
   onOpen,
@@ -100,6 +105,8 @@ export function reset_lightbox_zoom() {
   dragged = false;
   dragStart = null;
   suppressClick = false;
+  activePointers.clear();
+  pinchState = null;
 
   const frame = document.querySelector(".lightbox-image-frame");
   if (frame) {
@@ -239,21 +246,69 @@ function handleLightboxPointerDown(event) {
   if (!(target instanceof Element)) return;
   if (!target.closest(".lightbox-image-frame")) return;
 
-  // Panning only makes sense while zoomed in.
+  const frame = target.closest(".lightbox-image-frame");
+
+  // A second finger on the preview begins a pinch gesture.
+  if (activePointers.size === 1) {
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const points = framePointers();
+    pinchState = { lastDistance: pointerDistance(points[0], points[1]) };
+
+    // A pinch supersedes any in-progress single-finger pan.
+    isDragging = false;
+    dragged = false;
+    dragStart = null;
+    frame.classList.remove("lightbox-image-frame--dragging");
+
+    event.preventDefault();
+    return;
+  }
+
+  // The pinch pair is the first two fingers; extra fingers are ignored.
+  if (activePointers.size >= 2) return;
+
+  activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+  // Single-finger panning only makes sense while zoomed in.
   if (zoomState.scale <= 1) return;
 
   isDragging = true;
   dragged = false;
-  dragStart = { x: event.clientX, y: event.clientY, tx: zoomState.tx, ty: zoomState.ty };
-  target.closest(".lightbox-image-frame").classList.add(
-    "lightbox-image-frame--dragging",
-  );
+  dragStart = {
+    x: event.clientX,
+    y: event.clientY,
+    tx: zoomState.tx,
+    ty: zoomState.ty,
+  };
+  frame.classList.add("lightbox-image-frame--dragging");
 
   // Prevent native image drag, text selection, and touch gestures.
   event.preventDefault();
 }
 
 function handleLightboxPointerMove(event) {
+  if (!activePointers.has(event.pointerId)) return;
+  activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+  // Two-finger pinch: zoom around the midpoint of the fingers.
+  if (pinchState && activePointers.size === 2) {
+    const points = framePointers();
+    const distance = pointerDistance(points[0], points[1]);
+
+    if (pinchState.lastDistance > 0) {
+      const factor = distance / pinchState.lastDistance;
+      if (Math.abs(factor - 1) > 0.005) {
+        zoomAt(
+          (points[0].x + points[1].x) / 2,
+          (points[0].y + points[1].y) / 2,
+          factor,
+        );
+      }
+    }
+    pinchState.lastDistance = distance;
+    return;
+  }
+
   if (!isDragging || !dragStart) return;
 
   dragged = true;
@@ -263,7 +318,30 @@ function handleLightboxPointerMove(event) {
   applyZoom();
 }
 
-function handleLightboxPointerUp() {
+function handleLightboxPointerUp(event) {
+  if (!activePointers.has(event.pointerId)) return;
+  activePointers.delete(event.pointerId);
+
+  // End of a pinch: if one finger remains while zoomed, resume panning with it.
+  if (pinchState) {
+    pinchState = null;
+
+    if (activePointers.size === 1 && zoomState.scale > 1) {
+      const remaining = framePointers()[0];
+      isDragging = true;
+      dragged = false;
+      dragStart = {
+        x: remaining.x,
+        y: remaining.y,
+        tx: zoomState.tx,
+        ty: zoomState.ty,
+      };
+      const frame = document.querySelector(".lightbox-image-frame");
+      if (frame) frame.classList.add("lightbox-image-frame--dragging");
+    }
+    return;
+  }
+
   if (!isDragging) return;
 
   isDragging = false;
@@ -281,6 +359,14 @@ function handleLightboxPointerUp() {
 
   const frame = document.querySelector(".lightbox-image-frame");
   if (frame) frame.classList.remove("lightbox-image-frame--dragging");
+}
+
+function framePointers() {
+  return Array.from(activePointers.values());
+}
+
+function pointerDistance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 function handleLightboxImageLoad(event) {
