@@ -45,9 +45,9 @@ gleam add modem
 
 Arata is built on a deliberately small stack.
 
-* **Gleam** provides the typed, functional foundation for the application.
-* **Lustre** provides the UI runtime and Elm-style architecture.
-* **modem** handles client-side routing over the browser History API.
+- **Gleam** provides the typed, functional foundation for the application.
+- **Lustre** provides the UI runtime and Elm-style architecture.
+- **modem** handles client-side routing over the browser History API.
 
 The goal was never to accumulate tooling. It was to keep the implementation clear, explicit, and easy to extend.
 
@@ -59,12 +59,12 @@ Internal navigation uses ordinary `<a>` elements. Clicks are intercepted, transl
 
 Arata is built around a few simple goals:
 
-* keep the interface visually quiet
-* make state transitions explicit
-* preserve semantic HTML where possible
-* stay small, readable, and easy to extend
-* port the original design language carefully, rather than loosely imitating it
-* care about performance and feel — fast loads, smooth transitions, and an interface that never disrupts the users.
+- keep the interface visually quiet
+- make state transitions explicit
+- preserve semantic HTML where possible
+- stay small, readable, and easy to extend
+- port the original design language carefully, rather than loosely imitating it
+- care about performance and feel — fast loads, smooth transitions, and an interface that never disrupts the users.
 
 The CSS was hand-ported as a design system, not copied over mechanically. That makes the theme easier to maintain, and gives it room to keep growing on its own terms.
 
