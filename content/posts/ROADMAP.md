@@ -41,12 +41,14 @@ runnable, reviewable increment.
 ## 1. Project goals & scope
 
 ### 1.1 Goal
+
 Reproduce apollo's **visual design, content model, and feature set** as a
 Gleam/Lustre single-page application (SPA), so that an apollo-authored blog
 renders — pixel-for-pixel at the same breakpoints, with the same interactions —
 inside arata.
 
 ### 1.2 In scope
+
 - All apollo page templates: homepage, section (post list), single post/page,
   cards (projects), talks, taxonomy list, taxonomy single, 404.
 - The full apollo feature set (theme switching, syntax highlighting, TOC,
@@ -57,6 +59,7 @@ inside arata.
   emission, minification.
 
 ### 1.3 Out of scope
+
 - apollo's Playwright visual-regression test suite, Lighthouse CI, Nix/Docker
   scaffolding (these are test/infra, not the theme).
 - `lustre/ui` (unreleased at time of writing).
@@ -64,6 +67,7 @@ inside arata.
   late, optional phase).
 
 ### 1.4 Fidelity target
+
 At the end of Phase 17, the same `content/` tree rendered through apollo (Zola)
 and through arata (Lustre SPA) should be visually indistinguishable at every
 breakpoint in §5.5, and every interaction in §4 should behave identically.
@@ -92,6 +96,7 @@ arata/
 ```
 
 ### Build & run
+
 ```sh
 gleam build                    # type-check + compile to JavaScript (works today)
 gleam run -m lustre/dev start  # dev server on http://localhost:1234 (needs Erlang)
@@ -108,6 +113,7 @@ gleam run -m lustre/dev build --minify --outdir=dist  # production bundle
 ## 3. Architecture
 
 ### 3.1 The Elm Architecture (Lustre)
+
 arata follows Lustre's Model-View-Update with managed effects:
 
 - `init(flags) -> #(Model, Effect(Msg))` — build the initial model and kick off
@@ -119,6 +125,7 @@ arata follows Lustre's Model-View-Update with managed effects:
   `init` intercepts `<a>` clicks and dispatches `UserNavigatedTo(Route)`.
 
 ### 3.2 Target module layout (end state)
+
 The scaffold already seeds this; phases expand each module.
 
 ```
@@ -181,24 +188,26 @@ src/
 ```
 
 ### 3.3 Routing table
+
 apollo is multi-page (one HTML file per URL). arata is an SPA with a
 History-API router (modem). Routes:
 
-| Route | apollo template | Notes |
-|---|---|---|
-| `/` | `homepage.html` | Custom homepage (no post list). |
-| `/posts` | `section.html` | Paginated post list (`paginate_by` from section frontmatter). |
-| `/posts/<slug>` | `page.html` | Single post. |
-| `/projects` | `cards.html` | Project card grid (column-balanced). |
-| `/projects/<slug>` | `page.html` or external | Single project. |
-| `/talks` | `talks.html` | Talk card grid. |
-| `/talks/<slug>` | `page.html` or external | Single talk. |
-| `/tags` | `taxonomy_list.html` | Tag index. |
-| `/tags/<tag>` | `taxonomy_single.html` | Posts with tag. |
-| `/<page>` | `page.html` | Standalone page (e.g. `/about`). |
-| `*` | `404.html` | |
+| Route              | apollo template         | Notes                                                         |
+| ------------------ | ----------------------- | ------------------------------------------------------------- |
+| `/`                | `homepage.html`         | Custom homepage (no post list).                               |
+| `/posts`           | `section.html`          | Paginated post list (`paginate_by` from section frontmatter). |
+| `/posts/<slug>`    | `page.html`             | Single post.                                                  |
+| `/projects`        | `cards.html`            | Project card grid (column-balanced).                          |
+| `/projects/<slug>` | `page.html` or external | Single project.                                               |
+| `/talks`           | `talks.html`            | Talk card grid.                                               |
+| `/talks/<slug>`    | `page.html` or external | Single talk.                                                  |
+| `/tags`            | `taxonomy_list.html`    | Tag index.                                                    |
+| `/tags/<tag>`      | `taxonomy_single.html`  | Posts with tag.                                               |
+| `/<page>`          | `page.html`             | Standalone page (e.g. `/about`).                              |
+| `*`                | `404.html`              |                                                               |
 
 ### 3.4 Data flow
+
 ```
 content/*.md  --(Phase 17 build pipeline)--> content_index.json + search_index.json
                                                        |
@@ -218,51 +227,51 @@ content/*.md  --(Phase 17 build pipeline)--> content_index.json + search_index.j
 Every apollo feature (50 enumerated in the research notes) maps to an arata
 implementation. "Phase" refers to §7.
 
-| apollo feature | arata implementation | Phase |
-|---|---|---|
-| Theme switching (5 modes: light/dark/auto/toggle/toggle-auto) | `Theme` + `ThemeMode` model; `effect/theme.gleam` (localStorage + matchMedia); `Msg = UserToggledTheme \| SystemPrefersDarkChanged(Bool) \| ThemeSaved(Theme) \| ApplyTheme` | 10 |
-| FOUC prevention (`<html class="dark light">` + always-load light CSS) | Emitted in the SSR `index.html` (Phase 17); SPA hydrates onto matching DOM | 10, 17 |
-| Syntax highlighting (syntect class-based + `giallo-{light,dark}.css`) | Build-time highlighting emitting `giallo` class names; `giallo-*.css` copied verbatim | 11, 17 |
-| Fancy code blocks (copy button + language label) | `view_code_block`; `Msg = UserCopiedCode(String)`; `effect/clipboard.gleam`; `$language-colors` → Gleam `dict` | 11 |
-| Copy code button (strips line-number spans) | `effect/clipboard.gleam` + 2s icon swap | 11 |
-| Table of contents (3-level, IntersectionObserver highlight) | `view/toc.gleam` + `effect/toc.gleam`; `Msg = TocActiveHeadingChanged(String)` | 6 |
-| Pagination (Prev/Next only) | `Paginator` model field; `<a href>` links via `route.href` | 5 |
-| Search (elasticlunr, Cmd/Ctrl+K modal, lazy index load) | `view/search_modal.gleam` + `effect/search.gleam`; keep elasticlunr core, rewrite the 635-line modal controller in Lustre | 12 |
-| RSS / Atom feeds | `build/feeds.gleam` emits `atom.xml`/`rss.xml`; `<link rel="alternate">` in head | 17 |
-| Taxonomies (tags) | `pages/taxonomy_{list,single}.gleam`; sort by name or page_count | 8 |
-| Authors taxonomy (optional) | Same pattern as tags, `@`-prefixed links | 8 |
-| Social links (44 icons) | `view/header.gleam` + `view/footer.gleam`; `static/icons/social/*` copied verbatim | 3 |
-| Navbar menu (`/posts` style) | `view/header.gleam`; `config.menu` | 3 |
-| Logo | `view/header.gleam`; `config.logo` | 3 |
-| Analytics (GoatCounter/Umami/Google) | Head `<script>`s in `index.html`; vendored `count.js`/`imamu.js` kept as-is | 15 |
-| MathJax (global + per-page) | Head script in `index.html` + `effect/script.gleam` calls `MathJax.typesetPromise()` after view patch | 14 |
-| Mermaid diagrams | `<pre class="mermaid">` + `effect/script.gleam` calls `mermaid.run()` after view patch; vendored `mermaid.js` kept | 14 |
-| Notes (static & dynamic) | `shortcodes/note.gleam`; `open_notes: Set(String)`; `Msg = UserToggledNote(String)` | 13 |
-| Character shortcode | `shortcodes/character.gleam` (avatar + speech bubble, left/right flip) | 13 |
-| Image shortcode (avif/webp resize, aspect-ratio) | `shortcodes/image.gleam` + `build/image.gleam` (libvips/imagemagick) | 13, 17 |
-| Custom homepage | `pages/home.gleam` | 9 |
-| Cards page (projects, column-balanced) | `pages/cards.gleam` + `view/card.gleam`; pure `reorder_for_columns(items, cols)` | 7 |
-| Talks page (row→column flip) | `pages/talks.gleam` + `view/talk_card.gleam` | 7 |
-| Comments (giscus/utterances) | `view/post.gleam` emits `<div class="giscus">` + script; `effect/script.gleam` re-injects on route change | 15 |
-| SEO meta tags (title/og:description, dedup, `extra.meta`) | `view_head`/`index.html` head builder; pure dedup logic | 15 |
-| Fediverse attribution | One conditional `<meta>` in head | 15 |
-| Favicon | `<link rel="icon">` in head | 3 |
-| Word count / reading time | Computed at build time; shown in meta row per config | 6, 17 |
-| Source-code link on posts | `view/post.gleam`; `repo_url <> relative_path` | 6 |
-| tl;dr box | `view/post.gleam` | 6 |
-| Draft label | `view/post.gleam` + `view/post_list.gleam` | 6 |
-| Anchor links in headings | Build-time heading-id generator; `.zola-anchor` class | 6, 17 |
-| Custom stylesheets | `config.stylesheets` → `<link>`s in head | 15 |
-| Custom HTML injection (4 points) | `head_start/head_end/body_start/body_end` raw-HTML strings via `element.unsafe_raw_html` | 15 |
-| Open Graph | Auto-emitted in head builder | 15 |
-| External-link indicator (`↗`, "Read original ⟶") | `view/post_list.gleam` + `view/card.gleam` | 5, 7 |
-| Theme persistence (`localStorage["theme-storage"]`) | `effect/theme.gleam` | 10 |
-| System-pref change (auto mode) | `matchMedia` subscription → `SystemPrefersDarkChanged` | 10 |
-| Build minification | `build/minify.gleam` (esbuild/lightningcss or shell-out) | 17 |
-| SCSS compilation | **Hand-ported** to plain CSS (no SCSS toolchain) | 1 |
-| Sitemap | `build/feeds.gleam` emits `sitemap.xml` | 17 |
-| Image format defaults (avif/webp, quality) | `build/image.gleam` | 17 |
-| Lazy loading images | `<img loading="lazy" decoding="async">` in shortcodes | 13 |
+| apollo feature                                                        | arata implementation                                                                                                                                                         | Phase  |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Theme switching (5 modes: light/dark/auto/toggle/toggle-auto)         | `Theme` + `ThemeMode` model; `effect/theme.gleam` (localStorage + matchMedia); `Msg = UserToggledTheme \| SystemPrefersDarkChanged(Bool) \| ThemeSaved(Theme) \| ApplyTheme` | 10     |
+| FOUC prevention (`<html class="dark light">` + always-load light CSS) | Emitted in the SSR `index.html` (Phase 17); SPA hydrates onto matching DOM                                                                                                   | 10, 17 |
+| Syntax highlighting (syntect class-based + `giallo-{light,dark}.css`) | Build-time highlighting emitting `giallo` class names; `giallo-*.css` copied verbatim                                                                                        | 11, 17 |
+| Fancy code blocks (copy button + language label)                      | `view_code_block`; `Msg = UserCopiedCode(String)`; `effect/clipboard.gleam`; `$language-colors` → Gleam `dict`                                                               | 11     |
+| Copy code button (strips line-number spans)                           | `effect/clipboard.gleam` + 2s icon swap                                                                                                                                      | 11     |
+| Table of contents (3-level, IntersectionObserver highlight)           | `view/toc.gleam` + `effect/toc.gleam`; `Msg = TocActiveHeadingChanged(String)`                                                                                               | 6      |
+| Pagination (Prev/Next only)                                           | `Paginator` model field; `<a href>` links via `route.href`                                                                                                                   | 5      |
+| Search (elasticlunr, Cmd/Ctrl+K modal, lazy index load)               | `view/search_modal.gleam` + `effect/search.gleam`; keep elasticlunr core, rewrite the 635-line modal controller in Lustre                                                    | 12     |
+| RSS / Atom feeds                                                      | `build/feeds.gleam` emits `atom.xml`/`rss.xml`; `<link rel="alternate">` in head                                                                                             | 17     |
+| Taxonomies (tags)                                                     | `pages/taxonomy_{list,single}.gleam`; sort by name or page_count                                                                                                             | 8      |
+| Authors taxonomy (optional)                                           | Same pattern as tags, `@`-prefixed links                                                                                                                                     | 8      |
+| Social links (44 icons)                                               | `view/header.gleam` + `view/footer.gleam`; `static/icons/social/*` copied verbatim                                                                                           | 3      |
+| Navbar menu (`/posts` style)                                          | `view/header.gleam`; `config.menu`                                                                                                                                           | 3      |
+| Logo                                                                  | `view/header.gleam`; `config.logo`                                                                                                                                           | 3      |
+| Analytics (GoatCounter/Umami/Google)                                  | Head `<script>`s in `index.html`; vendored `count.js`/`imamu.js` kept as-is                                                                                                  | 15     |
+| MathJax (global + per-page)                                           | Head script in `index.html` + `effect/script.gleam` calls `MathJax.typesetPromise()` after view patch                                                                        | 14     |
+| Mermaid diagrams                                                      | `<pre class="mermaid">` + `effect/script.gleam` calls `mermaid.run()` after view patch; vendored `mermaid.js` kept                                                           | 14     |
+| Notes (static & dynamic)                                              | `shortcodes/note.gleam`; `open_notes: Set(String)`; `Msg = UserToggledNote(String)`                                                                                          | 13     |
+| Character shortcode                                                   | `shortcodes/character.gleam` (avatar + speech bubble, left/right flip)                                                                                                       | 13     |
+| Image shortcode (avif/webp resize, aspect-ratio)                      | `shortcodes/image.gleam` + `build/image.gleam` (libvips/imagemagick)                                                                                                         | 13, 17 |
+| Custom homepage                                                       | `pages/home.gleam`                                                                                                                                                           | 9      |
+| Cards page (projects, column-balanced)                                | `pages/cards.gleam` + `view/card.gleam`; pure `reorder_for_columns(items, cols)`                                                                                             | 7      |
+| Talks page (row→column flip)                                          | `pages/talks.gleam` + `view/talk_card.gleam`                                                                                                                                 | 7      |
+| Comments (giscus/utterances)                                          | `view/post.gleam` emits `<div class="giscus">` + script; `effect/script.gleam` re-injects on route change                                                                    | 15     |
+| SEO meta tags (title/og:description, dedup, `extra.meta`)             | `view_head`/`index.html` head builder; pure dedup logic                                                                                                                      | 15     |
+| Fediverse attribution                                                 | One conditional `<meta>` in head                                                                                                                                             | 15     |
+| Favicon                                                               | `<link rel="icon">` in head                                                                                                                                                  | 3      |
+| Word count / reading time                                             | Computed at build time; shown in meta row per config                                                                                                                         | 6, 17  |
+| Source-code link on posts                                             | `view/post.gleam`; `repo_url <> relative_path`                                                                                                                               | 6      |
+| tl;dr box                                                             | `view/post.gleam`                                                                                                                                                            | 6      |
+| Draft label                                                           | `view/post.gleam` + `view/post_list.gleam`                                                                                                                                   | 6      |
+| Anchor links in headings                                              | Build-time heading-id generator; `.zola-anchor` class                                                                                                                        | 6, 17  |
+| Custom stylesheets                                                    | `config.stylesheets` → `<link>`s in head                                                                                                                                     | 15     |
+| Custom HTML injection (4 points)                                      | `head_start/head_end/body_start/body_end` raw-HTML strings via `element.unsafe_raw_html`                                                                                     | 15     |
+| Open Graph                                                            | Auto-emitted in head builder                                                                                                                                                 | 15     |
+| External-link indicator (`↗`, "Read original ⟶")                      | `view/post_list.gleam` + `view/card.gleam`                                                                                                                                   | 5, 7   |
+| Theme persistence (`localStorage["theme-storage"]`)                   | `effect/theme.gleam`                                                                                                                                                         | 10     |
+| System-pref change (auto mode)                                        | `matchMedia` subscription → `SystemPrefersDarkChanged`                                                                                                                       | 10     |
+| Build minification                                                    | `build/minify.gleam` (esbuild/lightningcss or shell-out)                                                                                                                     | 17     |
+| SCSS compilation                                                      | **Hand-ported** to plain CSS (no SCSS toolchain)                                                                                                                             | 1      |
+| Sitemap                                                               | `build/feeds.gleam` emits `sitemap.xml`                                                                                                                                      | 17     |
+| Image format defaults (avif/webp, quality)                            | `build/image.gleam`                                                                                                                                                          | 17     |
+| Lazy loading images                                                   | `<img loading="lazy" decoding="async">` in shortcodes                                                                                                                        | 13     |
 
 ---
 
@@ -271,20 +280,21 @@ implementation. "Phase" refers to §7.
 This is the port target for Phase 1. Source: `apollo/sass/`.
 
 ### 5.1 Color palette
+
 CSS custom properties on `:root.light` and `:root.dark`.
 
-| Variable | Light | Dark |
-|---|---|---|
-| `--bg-0` (page bg) | `#ffffff` | `#121212` |
-| `--bg-1` (code/card/bubble bg) | `#fafafa` | `#1c1c1c` |
-| `--bg-2` (borders/hover/note header) | `#f0f0f0` | `#262626` |
-| `--text-0` (primary text) | `#151515` | `#f0f0f0` |
-| `--text-1` (muted: dates, captions) | `#666666` | `#999999` |
-| `--text-2` (very muted: TOC) | `#b3b3b3` | `#737373` |
-| `--border-color` | `var(--bg-2)` | `var(--bg-2)` |
-| `--primary-color` (the only accent) | `#ef5350` | `#ef5350` |
-| `--hover-color` (text on primary bg) | `white` | `white` |
-| `--icon-filter` | `none` | `invert(1)` |
+| Variable                             | Light         | Dark          |
+| ------------------------------------ | ------------- | ------------- |
+| `--bg-0` (page bg)                   | `#ffffff`     | `#121212`     |
+| `--bg-1` (code/card/bubble bg)       | `#fafafa`     | `#1c1c1c`     |
+| `--bg-2` (borders/hover/note header) | `#f0f0f0`     | `#262626`     |
+| `--text-0` (primary text)            | `#151515`     | `#f0f0f0`     |
+| `--text-1` (muted: dates, captions)  | `#666666`     | `#999999`     |
+| `--text-2` (very muted: TOC)         | `#b3b3b3`     | `#737373`     |
+| `--border-color`                     | `var(--bg-2)` | `var(--bg-2)` |
+| `--primary-color` (the only accent)  | `#ef5350`     | `#ef5350`     |
+| `--hover-color` (text on primary bg) | `white`       | `white`       |
+| `--icon-filter`                      | `none`        | `invert(1)`   |
 
 Other constants: blockquote text `#737373`; table borders `#dfe2e5`; selection
 bg `--primary-color` / fg `--hover-color`. Code-language label colors come from
@@ -293,16 +303,18 @@ the `$language-colors` SCSS map (26 languages, e.g. rust `#ff4647`, python
 default `#333`); label text color `--label-color: #f0f0f0`.
 
 ### 5.2 Fonts
-| Variable | Family | Source |
-|---|---|---|
-| `--text-font` | `"ZedTextFtl"` | `static/fonts/zed-fonts/ZedTextL-{Regular,Bold}.woff2` |
-| `--header-font` | `"ZedDisplayFtl" "Space Grotesk", "Helvetica", sans-serif` | `ZedDisplayL-Heavy.woff2` + `SpaceGrotesk-*.ttf` |
-| `--mono-text-font` / `--code-font` | `"Jetbrains Mono"` | `static/fonts/JetbrainsMono/JetBrainsMono-*.ttf` |
+
+| Variable                           | Family                                                     | Source                                                 |
+| ---------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------ |
+| `--text-font`                      | `"ZedTextFtl"`                                             | `static/fonts/zed-fonts/ZedTextL-{Regular,Bold}.woff2` |
+| `--header-font`                    | `"ZedDisplayFtl" "Space Grotesk", "Helvetica", sans-serif` | `ZedDisplayL-Heavy.woff2` + `SpaceGrotesk-*.ttf`       |
+| `--mono-text-font` / `--code-font` | `"Jetbrains Mono"`                                         | `static/fonts/JetbrainsMono/JetBrainsMono-*.ttf`       |
 
 > Replicate the `use_cdn = true` quirk: when CDN mode is on, Zed fonts are
 > dropped (not on a CDN) and Space Grotesk becomes the fallback for everything.
 
 ### 5.3 Typography scale
+
 - `--font-size-base: 16px` on `:root`; `--line-height: 1.5`.
 - `html` font-size scales at breakpoints: `992px→0.97×`, `768px→0.95×`,
   `576px→0.92×`.
@@ -318,10 +330,11 @@ default `#333`); label text color `--label-color: #f0f0f0`.
 - `.modal h1` (search): `1.2rem`.
 
 ### 5.4 Layout
+
 - `--page-width: 920px` (max width of `.content`).
 - `body`: `display:flex`, `padding: 0.9rem 0.9rem 1.5rem`,
   `min-height: calc(100vh - 150px)`. ≥992px: `flex-direction:row;
-  justify-content:center; align-items:flex-start`.
+justify-content:center; align-items:flex-start`.
 - Three columns ≥992px: `.left-content` (spacer, `flex:1 1 0`), `.content`
   (`max-width: var(--page-width); flex-shrink:0`), `.right-content` (sticky TOC,
   `position:sticky; top:60px; max-height:calc(100vh - 100px); overflow-y:auto`).
@@ -333,20 +346,22 @@ default `#333`); label text color `--label-color: #f0f0f0`.
 - `.post-list .post-header`: 2-col grid ≥640px (`auto 1fr`), 2-row below.
 
 ### 5.5 Responsive breakpoints
-| Breakpoint | Effect |
-|---|---|
-| `max-width: 1365px` | `.toc` hidden |
-| `max-width: 1023.98px` | talks cards stack vertically |
-| `min-width: 1024px` | talks cards become horizontal |
-| `min-width: 992px` | body becomes 3-column flex |
-| `max-width: 992px` | font-size 0.97× |
-| `max-width: 768px` | font-size 0.95× |
-| `max-width: 720px` | cards padding 16px, card-media height 160px |
-| `max-width: 640px` | post-list stacks; cards → 1 column |
-| `max-width: 600px` | nav wraps vertically; search modal 92% width |
-| `max-width: 576px` | font-size 0.92× |
+
+| Breakpoint             | Effect                                       |
+| ---------------------- | -------------------------------------------- |
+| `max-width: 1365px`    | `.toc` hidden                                |
+| `max-width: 1023.98px` | talks cards stack vertically                 |
+| `min-width: 1024px`    | talks cards become horizontal                |
+| `min-width: 992px`     | body becomes 3-column flex                   |
+| `max-width: 992px`     | font-size 0.97×                              |
+| `max-width: 768px`     | font-size 0.95×                              |
+| `max-width: 720px`     | cards padding 16px, card-media height 160px  |
+| `max-width: 640px`     | post-list stacks; cards → 1 column           |
+| `max-width: 600px`     | nav wraps vertically; search modal 92% width |
+| `max-width: 576px`     | font-size 0.92×                              |
 
 ### 5.6 Animations / hover (deliberately minimal)
+
 - `a:hover` → `background: var(--primary-color); color: var(--hover-color)`
   (same for `a:hover > code`).
 - `main a` → `border-bottom: 2px solid var(--primary-color)` (disabled in
@@ -360,6 +375,7 @@ default `#333`); label text color `--label-color: #f0f0f0`.
   `.toc { transition: none }`. **No keyframes, no fade/slide-in.**
 
 ### 5.7 Icons
+
 - Theme toggle / search / calendar / presentation / code / map-pin: Feather
   24×24 line icons (`stroke=currentColor stroke-width=2`).
 - Social icons (44 SVGs in `static/icons/social/`): Font Awesome Pro 6.2.0 solid
@@ -370,6 +386,7 @@ default `#333`); label text color `--label-color: #f0f0f0`.
 ## 6. Content model & configuration
 
 ### 6.1 Frontmatter (TOML `+++ … +++`)
+
 **Built-in fields:** `title` (required), `date`, `updated`, `description`,
 `weight`, `path`, `template`, `sort_by`, `paginate_by`, `insert_anchor_links`,
 `draft`, `taxonomies.tags`, `taxonomies.authors`, `summary` (auto from
@@ -383,26 +400,27 @@ default `#333`); label text color `--label-color: #f0f0f0`.
 `section_path`.
 
 ### 6.2 Site config (`config.toml` `[extra]`)
-| Key | Type | Default | Effect |
-|---|---|---|---|
-| `theme` | string | `"toggle"` | `light\|dark\|auto\|toggle\|toggle-auto` |
-| `toc` | bool | `false` | Enable TOC |
-| `use_cdn` | bool | `false` | Load fonts from jsDelivr |
-| `favicon` | string | `/icons/favicon.png` | Favicon path |
-| `fancy_code` | bool | `false` | Copy button + language label |
-| `dynamic_note` | bool | `false` | Toggling note shortcode |
-| `mathjax` | bool | `false` | Global MathJax |
-| `repo_url` | string | — | Base for "Source Code" links |
-| `repo_view` | bool | `false` | Global source-code link |
-| `word_count` | bool | `false` | Show word count |
-| `logo` | string | — | Replace site-title with `<img>` |
-| `fediverse` | bool | `false` | Emit fediverse:creator meta |
-| `fediverse_creator` | string | `""` | Handle |
-| `menu` | `[{name,url,weight}]` | `[]` | Nav menu |
-| `socials` | `[{name,url,icon}]` | `[]` | Social links |
-| `stylesheets` | `[string]` | `[]` | Extra CSS |
-| `[extra.taxonomies]` | table | — | `sort_by`, `reverse` |
-| `[extra.analytics]` | table | — | `enabled` + provider sub-tables |
+
+| Key                  | Type                  | Default              | Effect                                   |
+| -------------------- | --------------------- | -------------------- | ---------------------------------------- |
+| `theme`              | string                | `"toggle"`           | `light\|dark\|auto\|toggle\|toggle-auto` |
+| `toc`                | bool                  | `false`              | Enable TOC                               |
+| `use_cdn`            | bool                  | `false`              | Load fonts from jsDelivr                 |
+| `favicon`            | string                | `/icons/favicon.png` | Favicon path                             |
+| `fancy_code`         | bool                  | `false`              | Copy button + language label             |
+| `dynamic_note`       | bool                  | `false`              | Toggling note shortcode                  |
+| `mathjax`            | bool                  | `false`              | Global MathJax                           |
+| `repo_url`           | string                | —                    | Base for "Source Code" links             |
+| `repo_view`          | bool                  | `false`              | Global source-code link                  |
+| `word_count`         | bool                  | `false`              | Show word count                          |
+| `logo`               | string                | —                    | Replace site-title with `<img>`          |
+| `fediverse`          | bool                  | `false`              | Emit fediverse:creator meta              |
+| `fediverse_creator`  | string                | `""`                 | Handle                                   |
+| `menu`               | `[{name,url,weight}]` | `[]`                 | Nav menu                                 |
+| `socials`            | `[{name,url,icon}]`   | `[]`                 | Social links                             |
+| `stylesheets`        | `[string]`            | `[]`                 | Extra CSS                                |
+| `[extra.taxonomies]` | table                 | —                    | `sort_by`, `reverse`                     |
+| `[extra.analytics]`  | table                 | —                    | `enabled` + provider sub-tables          |
 
 arata's `config.gleam` reads these from the `config` object in
 `content_index.json` (emitted by the Phase 17 build pipeline).
@@ -416,6 +434,7 @@ increment. Conventional Commits are used per phase (e.g.
 `feat(theme): implement 5-mode theme switching`).
 
 ### Phase 0 — Scaffold ✅ DONE
+
 - gleam project (`javascript` target), lustre + modem + gleam_json +
   lustre_dev_tools deps pinned, `[tools.lustre.html]` config, stub module
   layout, minimal bootable `arata.gleam`.
@@ -423,12 +442,14 @@ increment. Conventional Commits are used per phase (e.g.
   placeholder page.
 
 ### Phase 1 — Visual design system & static assets ✅ DONE
+
 **Goal:** port apollo's SCSS to plain CSS and copy static assets so the
 placeholder page already looks like apollo.
 
 **Apollo reference:** `apollo/sass/**`, `apollo/static/{fonts,icons,giallo-*.css}`.
 
 **Files:**
+
 - `src/arata.css` — concatenate `main.scss` + `sass/parts/_*.scss` with SCSS
   vars inlined (`--page-width`, `--font-size-base`, font-family vars,
   `$language-colors` → CSS).
@@ -439,6 +460,7 @@ placeholder page already looks like apollo.
 - `static/icons/` — copy `social/` (44) + UI icons verbatim.
 
 **Steps:**
+
 1. Copy fonts, icons, `giallo-*.css` from the cloned apollo repo into
    `arata/static/`.
 2. Hand-port `sass/theme/light.scss` → `static/theme/light.css`.
@@ -453,6 +475,7 @@ placeholder page already looks like apollo.
 `.page-header` typography in both light and dark (toggle via devtools).
 
 ### Phase 2 — Routing & app shell ✅ DONE
+
 **Goal:** wire modem + the `Route` type so navigation works end-to-end (pages
 can be empty placeholders).
 
@@ -463,12 +486,13 @@ can be empty placeholders).
 `src/config.gleam` (stub).
 
 **Steps:**
+
 1. Implement `route.parse_route(Uri) -> Route` covering every entry in §3.3.
 2. Implement `route.href(Route) -> Attribute(msg)` (the inverse).
 3. Define `Model` (route + config + content placeholders + theme + search + toc)
    and `Msg` (`UserNavigatedTo(Route)` first).
 4. Switch `arata.gleam` from `lustre.simple` to `lustre.application(init,
-   update, view)`; call `modem.init(...)` in `init`; parse `modem.initial_uri()`
+update, view)`; call `modem.init(...)` in `init`; parse `modem.initial_uri()`
    for the first route.
 5. `view` pattern-matches on `model.route` and renders a per-route placeholder.
 6. Make every internal link use `route.href` so modem intercepts clicks.
@@ -478,6 +502,7 @@ without a full page reload; deep links load the right route; unknown paths hit
 `NotFound`.
 
 ### Phase 3 — Layout, header, footer, nav ✅ DONE
+
 **Goal:** the chrome around every page — header (logo/title, menu, socials,
 search button, theme toggle), footer (socials, copyright), 3-column layout.
 
@@ -487,6 +512,7 @@ search button, theme toggle), footer (socials, copyright), 3-column layout.
 **Files:** `src/view/{layout,header,footer,icon_button}.gleam`, `src/config.gleam`.
 
 **Steps:**
+
 1. Implement `layout.view(content)` producing the 3-column flex skeleton
    (`.left-content` / `.content` / `.right-content`) + header + footer.
 2. Implement `header.view` with `.left-nav` (title or `<img class="logo">`) and
@@ -500,6 +526,7 @@ search button, theme toggle), footer (socials, copyright), 3-column layout.
 render from config; active nav link is highlighted (`attribute.classes`).
 
 ### Phase 4 — Content pipeline (build step, part 1) ✅ DONE
+
 **Goal:** read `content/`, parse frontmatter, render markdown to HTML, emit
 `content_index.json` for the SPA to consume.
 
@@ -509,6 +536,7 @@ render from config; active nav link is highlighted (`attribute.classes`).
 directory with sample apollo posts.
 
 **Steps:**
+
 1. Choose a markdown renderer (comrak via FFI, or a pure-Gleam CommonMark port).
 2. Write `frontmatter.parse` for TOML `+++ … +++` (use `gleam/toml` or a TOML
    lib).
@@ -524,6 +552,7 @@ directory with sample apollo posts.
 `content_index.json`; the SPA can `rsvp.get` it and log the post count.
 
 ### Phase 5 — Post list & pagination ✅ DONE
+
 **Goal:** the `/posts` page renders a chronological, paginated post list.
 
 **Apollo reference:** `templates/section.html`, `macros/macros.html::list_post`.
@@ -531,6 +560,7 @@ directory with sample apollo posts.
 **Files:** `src/view/post_list.gleam`, `src/pages/section.gleam`, `src/data/{post,content}.gleam`.
 
 **Steps:**
+
 1. Decode `content_index.json` into `ContentTree` (posts sorted by date desc).
 2. Implement `post_list.view(posts)` using `keyed.ul` keyed by slug.
 3. Implement `list_post` (the per-item view: title link, date, description,
@@ -542,6 +572,7 @@ directory with sample apollo posts.
 `DRAFT` label; external-link posts show `↗`.
 
 ### Phase 6 — Single post, TOC, meta ✅ DONE
+
 **Goal:** the `/posts/<slug>` page renders a full article with TOC and meta row.
 
 **Apollo reference:** `templates/page.html`, `partials/toc.html`, `static/js/toc.js`.
@@ -549,6 +580,7 @@ directory with sample apollo posts.
 **Files:** `src/view/{post,toc}.gleam`, `src/effect/toc.gleam`, `src/ffi/observer.ffi.mjs`.
 
 **Steps:**
+
 1. Implement `post.view(post)`: `.page-header` (title + meta row), optional
    `.tldr`, `<section class="body">` (rendered HTML), anchor links on headings.
 2. Meta row: date, `:: Updated on`, word count (if `extra.word_count`), reading
@@ -564,6 +596,7 @@ directory with sample apollo posts.
 heading; meta row shows the right fields per frontmatter.
 
 ### Phase 7 — Projects (cards) & Talks grids ✅ DONE
+
 **Goal:** `/projects` and `/talks` render their card grids.
 
 **Apollo reference:** `templates/cards.html`, `templates/talks.html`.
@@ -571,6 +604,7 @@ heading; meta row shows the right fields per frontmatter.
 **Files:** `src/pages/{cards,talks}.gleam`, `src/view/{card,talk_card}.gleam`.
 
 **Steps:**
+
 1. Implement `reorder_for_columns(items, cols)` (column-balanced reordering).
 2. Implement `card.view(project)`: media (local/remote image/video), title,
    description, `#tag` chips, github/demo icon-buttons, external `link_to`.
@@ -583,6 +617,7 @@ heading; meta row shows the right fields per frontmatter.
 1024px; icon-buttons link correctly.
 
 ### Phase 8 — Taxonomy (tags) ✅ DONE
+
 **Goal:** `/tags` and `/tags/<tag>` pages.
 
 **Apollo reference:** `templates/taxonomy_{list,single}.html`.
@@ -590,6 +625,7 @@ heading; meta row shows the right fields per frontmatter.
 **Files:** `src/pages/taxonomy_{list,single}.gleam`.
 
 **Steps:**
+
 1. Build the tag index from `ContentTree` (name, slug, page_count, pages).
 2. `taxonomy_list.view`: sorted by `name` or `page_count` per
    `[extra.taxonomies]`.
@@ -599,6 +635,7 @@ heading; meta row shows the right fields per frontmatter.
 **Acceptance:** `/tags` lists all tags; `/tags/<tag>` lists that tag's posts.
 
 ### Phase 9 — Homepage, standalone pages, 404 ✅ DONE
+
 **Goal:** `/`, `/<page>`, and the 404.
 
 **Apollo reference:** `templates/homepage.html`, `page.html`, `404.html`.
@@ -606,6 +643,7 @@ heading; meta row shows the right fields per frontmatter.
 **Files:** `src/pages/{home,not_found}.gleam`, `src/view/page.gleam`.
 
 **Steps:**
+
 1. `home.view`: render the homepage markdown body (no post list, unless the
    homepage frontmatter opts into a recent-posts slice).
 2. `page.view`: standalone page (about, etc.).
@@ -615,6 +653,7 @@ heading; meta row shows the right fields per frontmatter.
 URL shows the 404.
 
 ### Phase 10 — Theme system (5 modes, FOUC, persistence) ✅ DONE
+
 **Goal:** faithful theme switching with all 5 modes.
 
 **Apollo reference:** `partials/header.html` (lines 179–261),
@@ -623,6 +662,7 @@ URL shows the 404.
 **Files:** `src/effect/theme.gleam`, `src/ffi/theme.ffi.mjs`, `src/models.gleam`.
 
 **Steps:**
+
 1. Define `Theme { Light; Dark; Auto }` and
    `ThemeMode { LightOnly; DarkOnly; AutoOnly; Toggle; ToggleAuto }`.
 2. `init` reads `localStorage["theme-storage"]` via FFI; falls back to system
@@ -639,6 +679,7 @@ URL shows the 404.
 reload; system-pref change updates `auto` mode live.
 
 ### Phase 11 — Syntax highlighting & fancy code blocks ✅ DONE
+
 **Goal:** highlighted code with copy button + language label.
 
 **Apollo reference:** `[markdown.highlighting]`, `static/js/codeblock.js`,
@@ -648,6 +689,7 @@ reload; system-pref change updates `auto` mode live.
 `src/effect/clipboard.gleam`, `src/ffi/clipboard.ffi.mjs`.
 
 **Steps:**
+
 1. Build-time: highlight code emitting `giallo` class names (`pre.giallo`,
    `.giallo-l`, `.giallo-ln`, `.z-hl`).
 2. `view_code_block(lang, code)`: inject `.clipboard-button` +
@@ -661,6 +703,7 @@ reload; system-pref change updates `auto` mode live.
 button; copied text has no line numbers.
 
 ### Phase 12 — Search (elasticlunr, Cmd/Ctrl+K modal) ✅ DONE
+
 **Goal:** the search modal with keyboard navigation.
 
 **Apollo reference:** `partials/nav.html`, `static/js/searchElasticlunr.js`
@@ -671,6 +714,7 @@ lines 2569–3202, in Lustre).
 `src/ffi/search.ffi.mjs`, `src/build/search_index.gleam`.
 
 **Steps:**
+
 1. Build-time: emit `search_index.<lang>.json` (elasticlunr format).
 2. `SearchState { open, query, results, selected_index, index_loaded }`.
 3. `Msg = UserOpenedSearch \| UserClosedSearch \| UserEnteredSearchQuery(String) \| SearchReturnedResults(List) \| UserPressedSearchKey(Key) \| UserClearedSearch \| IndexLoaded`.
@@ -684,6 +728,7 @@ lines 2569–3202, in Lustre).
 navigation works; results link to posts.
 
 ### Phase 13 — Shortcodes (note, character, image, mermaid) ✅ DONE
+
 **Goal:** all four shortcodes render correctly inside markdown bodies.
 
 **Apollo reference:** `templates/shortcodes/{note,character,mermaid,image}.html`.
@@ -692,6 +737,7 @@ navigation works; results link to posts.
 `src/build/markdown.gleam` (integrate).
 
 **Steps:**
+
 1. `note.view`: static (`.note-header` + `.note-content`) or dynamic
    (`<button class="note-toggle">` toggling `open_notes: Set(String)`).
 2. `character.view`: 80×80 avatar + speech bubble, left/right flip.
@@ -702,6 +748,7 @@ navigation works; results link to posts.
 **Acceptance:** posts using each shortcode render identically to apollo.
 
 ### Phase 14 — MathJax & Mermaid rendering ✅ DONE
+
 **Goal:** math typesets and mermaid diagrams render after navigation.
 
 **Apollo reference:** `partials/header.html` (MathJax config),
@@ -711,6 +758,7 @@ navigation works; results link to posts.
 `index.html`.
 
 **Steps:**
+
 1. Emit MathJax config + CDN script in `index.html` head (global or per-page).
 2. Emit the vendored `mermaid.js` in `index.html`.
 3. `effect/script.gleam`: after each post view patch, call
@@ -722,6 +770,7 @@ navigation works; results link to posts.
 changes; mermaid re-themes on toggle.
 
 ### Phase 15 — Comments, analytics, SEO, feeds, sitemap, injection points ✅ DONE
+
 **Goal:** the long tail of site-wide features.
 
 **Apollo reference:** `partials/header.html`, `base.html` injection points,
@@ -731,6 +780,7 @@ changes; mermaid re-themes on toggle.
 `src/view/head.gleam`.
 
 **Steps:**
+
 1. Comments: `view/post.gleam` emits `<div class="giscus">` + script when
    `extra.comment`; `effect/script.gleam` re-injects giscus on route change.
 2. Analytics: emit GoatCounter/Umami/Google scripts in head when enabled; copy
@@ -746,6 +796,7 @@ changes; mermaid re-themes on toggle.
 correct meta; feeds and sitemap validate.
 
 ### Phase 16 — Static-site generation / build pipeline ✅ DONE
+
 **Goal:** replace Zola end-to-end: `content/` → `dist/` with a hydratable SPA,
 search index, feeds, sitemap, minified assets.
 
@@ -753,6 +804,7 @@ search index, feeds, sitemap, minified assets.
 template.
 
 **Steps:**
+
 1. `pipeline.run`: walk `content/` → `content_index.json` + per-page HTML +
    `search_index.json` + `atom.xml`/`rss.xml` + `sitemap.xml`.
 2. `build/image.gleam`: shell out to `libvips`/`imagemagick` for
@@ -770,9 +822,11 @@ template.
 statically, behaves identically to `zola build` on the same content.
 
 ### Phase 17 — Polish, accessibility, responsive, tests ✅ DONE
+
 **Goal:** production quality.
 
 **Steps:**
+
 1. Audit semantic HTML (`main`, `header`, `nav`, `article`, `footer`), ARIA
    (search modal roles, note `aria-expanded`, TOC nav).
 2. Keyboard navigation across all interactive elements; visible focus states.
@@ -787,7 +841,9 @@ statically, behaves identically to `zola build` on the same content.
 test suite green.
 
 ### Phase 18 — Release & docs ✅ DONE
+
 **Steps:**
+
 1. Write a `docs/` guide (config reference, content authoring, shortcode
    reference, deployment).
 2. Tag `v0.1.0`; publish a demo deployment.
@@ -937,8 +993,7 @@ catch-all ordering.
 
 The `#tag` chips on project cards now use a 0.5rem gap, horizontal padding,
 and a rounded background, so the chips read as a grouped pill row rather than
-plain text. Post titles on cards also moved to font-weight 700 (was inherited
-400) for clearer contrast against the 400-weight body copy.
+plain text. Post titles on cards also moved to font-weight 700 (was inherited 400) for clearer contrast against the 400-weight body copy.
 
 ### CJK word count
 
@@ -1074,17 +1129,17 @@ static host.
 
 ## 10. Version pins & dependencies
 
-| Package | Pin | Purpose |
-|---|---|---|
-| `gleam` | `1.14.0` (installed from source) | language/toolchain |
-| `lustre` | `>= 5.7.0 and < 6.0.0` | UI framework (v6 may rename APIs) |
-| `lustre_dev_tools` | `>= 2.3.6 and < 3.0.0` | dev server + build |
-| `modem` | `>= 2.1.3 and < 3.0.0` | client-side routing |
-| `gleam_json` | `>= 3.1.0 and < 4.0.0` | JSON encode/decode |
-| `gleam_stdlib` | `>= 0.44.0 and < 2.0.0` | stdlib |
-| `rsvp` | `>= 1.0.1 and < 2.0.0` | HTTP (content index fetch) — add in Phase 4 |
-| `formal` | `>= 3.0.0 and < 4.0.0` | form parsing (if needed) |
-| `gleeunit` | `>= 1.0.0 and < 2.0.0` | tests (dev) |
+| Package            | Pin                              | Purpose                                     |
+| ------------------ | -------------------------------- | ------------------------------------------- |
+| `gleam`            | `1.14.0` (installed from source) | language/toolchain                          |
+| `lustre`           | `>= 5.7.0 and < 6.0.0`           | UI framework (v6 may rename APIs)           |
+| `lustre_dev_tools` | `>= 2.3.6 and < 3.0.0`           | dev server + build                          |
+| `modem`            | `>= 2.1.3 and < 3.0.0`           | client-side routing                         |
+| `gleam_json`       | `>= 3.1.0 and < 4.0.0`           | JSON encode/decode                          |
+| `gleam_stdlib`     | `>= 0.44.0 and < 2.0.0`          | stdlib                                      |
+| `rsvp`             | `>= 1.0.1 and < 2.0.0`           | HTTP (content index fetch) — add in Phase 4 |
+| `formal`           | `>= 3.0.0 and < 4.0.0`           | form parsing (if needed)                    |
+| `gleeunit`         | `>= 1.0.0 and < 2.0.0`           | tests (dev)                                 |
 
 API notes (current names — older tutorials may differ): use `lustre.simple` /
 `lustre.application` / `lustre.component` (not `full_app`); `lustre.start(app,
@@ -1123,6 +1178,6 @@ arata is "done" when **all** of the following hold:
 
 ## 13. Follow-up Notes
 
-Following the release of v1.0.0, the ROADMAP has fulfilled its purpose. 
+Following the release of v1.0.0, the ROADMAP has fulfilled its purpose.
 
 Please refer to CHANGELOG for subsequent versions.

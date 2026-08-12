@@ -32,13 +32,13 @@ note.view("Click to expand", "<p>Hidden content.</p>", True, True, True)
 
 **Parameters:**
 
-| Param | Type | Description |
-|---|---|---|
-| `header` | String | The header text. |
-| `body` | String | The body HTML. |
-| `clickable` | Bool | When `True`, the header becomes a toggle button. |
-| `hidden` | Bool | When `True` and clickable, the body starts hidden. |
-| `center` | Bool | When `True`, the header is centered instead of using an icon. |
+| Param       | Type   | Description                                                   |
+| ----------- | ------ | ------------------------------------------------------------- |
+| `header`    | String | The header text.                                              |
+| `body`      | String | The body HTML.                                                |
+| `clickable` | Bool   | When `True`, the header becomes a toggle button.              |
+| `hidden`    | Bool   | When `True` and clickable, the body starts hidden.            |
+| `center`    | Bool   | When `True`, the header is centered instead of using an icon. |
 
 ## character
 
@@ -52,12 +52,12 @@ character.view("hooded", "<p>The hooded figure speaks.</p>", "right", "")
 
 **Parameters:**
 
-| Param | Type | Description |
-|---|---|---|
-| `name` | String | Character name, used for CSS classes and the default image. |
-| `body` | String | The speech text HTML. |
-| `position` | String | `"left"` or `"right"`, which flips the row direction. |
-| `image` | String | Optional image filename. Defaults to `hooded.png` when `name` is `"hooded"`. |
+| Param      | Type   | Description                                                                  |
+| ---------- | ------ | ---------------------------------------------------------------------------- |
+| `name`     | String | Character name, used for CSS classes and the default image.                  |
+| `body`     | String | The speech text HTML.                                                        |
+| `position` | String | `"left"` or `"right"`, which flips the row direction.                        |
+| `image`    | String | Optional image filename. Defaults to `hooded.png` when `name` is `"hooded"`. |
 
 ## image
 
@@ -71,13 +71,13 @@ image.view("/images/photo.png", "Alt text", 800, 600, "lazy", "async")
 
 **Parameters:**
 
-| Param | Type | Description |
-|---|---|---|
-| `path` | String | The image src URL. |
-| `alt` | String | The alt text. |
-| `width` | Int | Used for the `aspect-ratio` attribute. |
-| `height` | Int | Used for the `aspect-ratio` attribute. |
-| `loading` | String | `"lazy"` or `"eager"`. |
-| `decoding` | String | `"async"` or `"sync"`. |
+| Param      | Type   | Description                            |
+| ---------- | ------ | -------------------------------------- |
+| `path`     | String | The image src URL.                     |
+| `alt`      | String | The alt text.                          |
+| `width`    | Int    | Used for the `aspect-ratio` attribute. |
+| `height`   | Int    | Used for the `aspect-ratio` attribute. |
+| `loading`  | String | `"lazy"` or `"eager"`.                 |
+| `decoding` | String | `"async"` or `"sync"`.                 |
 
 Image resizing, such as AVIF/WebP derivatives, is deferred to the build pipeline.

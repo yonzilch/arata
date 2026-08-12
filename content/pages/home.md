@@ -46,6 +46,7 @@ bun run dev
 ```
 
 4. **Write content as markdown files in**
+
 ```
 content/posts/
 content/pages/

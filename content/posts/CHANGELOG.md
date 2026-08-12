@@ -15,7 +15,7 @@ This changelog generally follows the Keep a Changelog structure, but the section
 names and grouping may be adjusted when needed to better reflect the actual
 changes in arata.
 
-For example, project-specific sections such as 
+For example, project-specific sections such as
 `CI`, `Contributors`, `Documentation`, or `Internal` may be used when they make a release easier to understand.
 
 ---
@@ -218,12 +218,14 @@ For example, project-specific sections such as
 ## [v1.6.6] — 2026-07-09
 
 ### Added
+
 - Added initial GitHub issue template configuration.
 - Added `CONTRIBUTING.md` with repository contribution guidelines.
 - Added `Arata Lighthouse Score` to the README.
 - Added `perfect-lighthouse-score.svg`.
 
 ### Changed
+
 - Updated README links for `[Status]` and `[Latest Tag]`.
 - Set the default port for `bun run serve` to `3333`.
 
@@ -241,28 +243,28 @@ For example, project-specific sections such as
   ```
 
 * Added configurable runtime asset URLs for MathJax and Mermaid:
-  * `mathjax_cdn_url`
-  * `mermaid_cdn_url`
+  - `mathjax_cdn_url`
+  - `mermaid_cdn_url`
 
 * Added `mermaid_enabled` to control Mermaid runtime loading.
 
 ### Changed
 
-* Mermaid diagrams are now a first-class Markdown feature instead of a shortcode feature.
-* MathJax is now lazy-loaded only when rendered post content appears to contain TeX.
-* Runtime script loading now flows through config → effect → FFI instead of relying on hardcoded URLs.
-* Updated README and shortcode documentation to reflect native Mermaid fenced-block usage.
+- Mermaid diagrams are now a first-class Markdown feature instead of a shortcode feature.
+- MathJax is now lazy-loaded only when rendered post content appears to contain TeX.
+- Runtime script loading now flows through config → effect → FFI instead of relying on hardcoded URLs.
+- Updated README and shortcode documentation to reflect native Mermaid fenced-block usage.
 
 ### Fixed
 
-* Fixed native ` ```mermaid ` fenced blocks not rendering in post content.
-* Fixed Mermaid rendering timing after SPA DOM updates.
-* Fixed Mermaid blocks being decorated by the regular code-block enhancer before rendering.
-* Fixed Mermaid-only posts unnecessarily loading MathJax.
+- Fixed native ` ```mermaid ` fenced blocks not rendering in post content.
+- Fixed Mermaid rendering timing after SPA DOM updates.
+- Fixed Mermaid blocks being decorated by the regular code-block enhancer before rendering.
+- Fixed Mermaid-only posts unnecessarily loading MathJax.
 
 ### Removed
 
-* `src/shortcodes/mermaid.gleam`
+- `src/shortcodes/mermaid.gleam`
 
 ---
 
@@ -304,9 +306,11 @@ For example, project-specific sections such as
 A follow-up patch to v1.6.2 tightening up local build reproducibility.
 
 ### Fixed
+
 - `preview` script now runs a full clean before rebuilding, preventing stale `build/` artifacts from affecting the previewed output.
 
 ### Changed
+
 - Restructured `deployment.md` to lead with local setup, hot reload, and deploy steps, moving pipeline internals to an appendix.
 - Updated deployment docs to reflect current `package.json` scripts and added guidance for git-push-based PaaS deploys that require committing `dist/`.
 
@@ -684,12 +688,12 @@ This release makes local development smoother, CI feedback clearer, and brand as
 - Added `data-no-lightbox` opt-out support.
   - Individual images or wrappers can opt out of lightbox behavior with:
     ```html
-    <img data-no-lightbox ...>
+    <img data-no-lightbox ... />
     ```
     or:
     ```html
     <span data-no-lightbox>
-      <img ...>
+      <img ... />
     </span>
     ```
 
@@ -729,6 +733,7 @@ This release makes local development smoother, CI feedback clearer, and brand as
 - Improved theme-toggle icon visibility across Light, Dark, and Auto states.
 
 ---
+
 ## [v1.3.0] — 2026-06-24
 
 ### Added
@@ -886,7 +891,6 @@ These fixes remove two major sources of user-visible inconsistency in authored c
   - Controlled by `Config.aratafetch_enabled`.
   - Supports an optional `Config.aratafetch_maintained_for` display string for the `maintained` row.
   - Summarizes loaded runtime content:
-
   1. site title
   2. published post count
   3. total word count

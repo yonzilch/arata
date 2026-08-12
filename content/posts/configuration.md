@@ -95,12 +95,12 @@ fediverse_creator = ""
 
 The canonical, public URL the site is deployed at. Used by:
 
-* feeds
-* the sitemap
-* `robots.txt`
-* `llms.txt`
-* absolute canonical resource links
-* deriving the runtime deployment base path for every root-relative path in
+- feeds
+- the sitemap
+- `robots.txt`
+- `llms.txt`
+- absolute canonical resource links
+- deriving the runtime deployment base path for every root-relative path in
   this file
 
 For a root-domain deployment:
@@ -158,9 +158,9 @@ base_url = "https://example.com/blog/"
 
 Site-wide title and description.
 
-* `title` is used by the header when no `logo` is configured, and for SEO
+- `title` is used by the header when no `logo` is configured, and for SEO
   and feed metadata.
-* `description` is used for metadata, feeds, and content index
+- `description` is used for metadata, feeds, and content index
   configuration.
 
 Because both the SPA runtime and the build pipeline read the same resolved
@@ -246,15 +246,15 @@ url = "/tags"
 
 Rules:
 
-* `name` is the displayed label.
-* Internal URLs must be root-relative, beginning with `/`. Arata adds the
+- `name` is the displayed label.
+- Internal URLs must be root-relative, beginning with `/`. Arata adds the
   deployment base path derived from `site.base_url` automatically during
   configuration resolution — do **not** hardcode a subdirectory yourself
   (e.g. write `/posts`, never `/arata/posts`), even for project-site
   deployments.
-* External URLs may use an absolute HTTP or HTTPS URL and are left
+- External URLs may use an absolute HTTP or HTTPS URL and are left
   untouched.
-* Internal routes are handled by modem as SPA navigation.
+- Internal routes are handled by modem as SPA navigation.
 
 Common internal routes:
 
@@ -288,10 +288,10 @@ icon = "github"
 
 Fields:
 
-* `name` — accessible label.
-* `url` — link target. Internal targets are root-relative and receive the
+- `name` — accessible label.
+- `url` — link target. Internal targets are root-relative and receive the
   base path automatically, same as `[[menu]]`.
-* `icon` — SVG filename without extension, under `static/icons/social/`. For
+- `icon` — SVG filename without extension, under `static/icons/social/`. For
   example, `icon = "github"` resolves to `/icons/social/github.svg`.
 
 The RSS social entry is managed automatically through `features.rss` and
@@ -380,10 +380,10 @@ In `"full"` mode:
 
 When `true`:
 
-* the search button is rendered.
-* the search modal is mounted.
-* Cmd/Ctrl+K opens search.
-* `dist/search_index.json` is generated and used by the SPA.
+- the search button is rendered.
+- the search modal is mounted.
+- Cmd/Ctrl+K opens search.
+- `dist/search_index.json` is generated and used by the SPA.
 
 When `false`, search UI is omitted and the global search shortcut is not
 subscribed to.
@@ -395,13 +395,13 @@ viewport while scrolling.
 
 When `true`:
 
-* the `<nav>` element receives the `.navbar-fixed` class.
-* the navbar uses `position: sticky` and stays visible at the top.
+- the `<nav>` element receives the `.navbar-fixed` class.
+- the navbar uses `position: sticky` and stays visible at the top.
 
 When `false`:
 
-* the `<nav>` element receives the `.navbar-static` class.
-* the navbar participates in normal document flow (`position: static`) and
+- the `<nav>` element receives the `.navbar-static` class.
+- the navbar participates in normal document flow (`position: static`) and
   scrolls out of view with the content.
 
 Set it to `false` if you prefer a more traditional scrolling layout or want
@@ -464,15 +464,15 @@ Markdown body from `content/pages/home.md`.
 It gives visitors a compact CLI-style overview of the site, computed from
 the already-loaded runtime content model:
 
-* friend link count
-* published post count (drafts excluded)
-* total word count
-* project count
-* unique tag count (case-insensitive)
-* site title
-* base URL
-* site description
-* the optional `[aratafetch].maintained_for` string (see below)
+- friend link count
+- published post count (drafts excluded)
+- total word count
+- project count
+- unique tag count (case-insensitive)
+- site title
+- base URL
+- site description
+- the optional `[aratafetch].maintained_for` string (see below)
 
 Rows with unavailable or empty values are omitted: numeric rows are omitted
 when `0`, text rows are omitted when empty, and `maintain` is omitted when
@@ -512,14 +512,14 @@ When enabled, clicking images inside rendered post/page Markdown opens a
 fullscreen overlay managed entirely by the Lustre application model,
 supporting:
 
-* fullscreen image preview
-* page-local image galleries
-* previous/next navigation
-* keyboard navigation (`Escape` closes, `ArrowLeft`/`ArrowRight` navigate)
-* backdrop click to close
-* body scroll locking while the overlay is open
-* image captions derived from `alt` or `title`
-* mobile/touch navigation controls
+- fullscreen image preview
+- page-local image galleries
+- previous/next navigation
+- keyboard navigation (`Escape` closes, `ArrowLeft`/`ArrowRight` navigate)
+- backdrop click to close
+- body scroll locking while the overlay is open
+- image captions derived from `alt` or `title`
+- mobile/touch navigation controls
 
 When `false`, Markdown images render normally: no lightbox overlay DOM is
 emitted, no lightbox event listeners are subscribed, and no scroll locking
@@ -533,12 +533,12 @@ decorative images.
 Individual images or wrappers may opt out with `data-no-lightbox`:
 
 ```html
-<img data-no-lightbox ...>
+<img data-no-lightbox ... />
 ```
 
 ```html
 <span data-no-lightbox>
-  <img ...>
+  <img ... />
 </span>
 ```
 
@@ -558,9 +558,9 @@ archive page.
 
 The section:
 
-* appears below the homepage Markdown body and above aratafetch
-* displays published posts only, using the existing runtime post ordering
-* does not render when there are no posts
+- appears below the homepage Markdown body and above aratafetch
+- displays published posts only, using the existing runtime post ordering
+- does not render when there are no posts
 
 The number of posts shown is controlled by `[latest_posts].count` (see
 below). Example layout:
@@ -639,14 +639,14 @@ The rest of the stylesheet resolves fonts through those variables.
 Two optional font packages are known to work well and can be installed and
 referenced from `[fonts]`:
 
-* [**Maple Font**](https://github.com/subframe7536/maple-font) — a
+- [**Maple Font**](https://github.com/subframe7536/maple-font) — a
   programming font with ligatures. Set:
 
   ```toml
   code = "\"Maple Mono NF\", \"Maple Mono\", monospace"
   ```
 
-* [**Sarasa Gothic**](https://github.com/be5invis/sarasa-gothic) — a
+- [**Sarasa Gothic**](https://github.com/be5invis/sarasa-gothic) — a
   CJK-friendly font. Set either:
 
   ```toml
@@ -678,13 +678,13 @@ These values may point to pinned CDN resources or to root-relative vendored
 assets under `static/` (resolved against the deployment base path like any
 other site-local path).
 
-* `mathjax_url` — used only when `features.mathjax = true`. Replace with
+- `mathjax_url` — used only when `features.mathjax = true`. Replace with
   another CDN or a vendored local asset if you need to avoid jsDelivr.
-* `mermaid_url` — used only when `features.mermaid = true`. Must point to a
+- `mermaid_url` — used only when `features.mermaid = true`. Must point to a
   browser-importable ESM bundle exposing Mermaid's `initialize` and `render`
   APIs, such as jsDelivr's `mermaid.esm.min.mjs`.
-* `syntax_highlight_url` — used only when `features.syntax_highlight =
-  true`. Should point to a pinned, browser-compatible Highlight.js bundle.
+- `syntax_highlight_url` — used only when `features.syntax_highlight =
+true`. Should point to a pinned, browser-compatible Highlight.js bundle.
 
 ### `[syntax_highlight_grammars]`
 
@@ -694,11 +694,11 @@ supported through on-demand grammar loading.
 
 Documentation and examples classify languages into three categories:
 
-* **Default languages**: grammars already included in the configured
+- **Default languages**: grammars already included in the configured
   Highlight.js bundle and available without additional configuration.
-* **Additional languages**: grammars registered through
+- **Additional languages**: grammars registered through
   `[syntax_highlight_grammars]` and loaded on demand when first encountered.
-* **Unsupported languages**: languages for which no matching Highlight.js
+- **Unsupported languages**: languages for which no matching Highlight.js
   grammar is available. These blocks remain readable as plain code, but no
   syntax highlighting is applied.
 
@@ -711,6 +711,7 @@ Configure additional grammars in `content/arata.toml`:
 gleam = "https://cdn.jsdelivr.net/gh/atp-gh/highlightjs-gleam@v1.0.0/dist/gleam.min.js"
 elixir = "/assets/grammars/elixir.min.js"
 ```
+
 **Vendored local asset path**
 
 Grammar URLs may reference either external CDN resources or site-local files.
@@ -820,21 +821,21 @@ site — use `content/arata.toml` for that.
 
 The important modules are:
 
-* **`src/config.gleam`** — the stable, public runtime API: the `Config`,
+- **`src/config.gleam`** — the stable, public runtime API: the `Config`,
   `Social`, `MenuItem`, and `Fonts` types, plus backward-compatible
   `config.default()` and `config.site_meta()` accessors that return Arata's
   built-in defaults without reading `arata.toml`. Existing views, effects,
   routes, and build modules consume `Config` through this module.
-* **`src/data/site.gleam`** — shared metadata types only: `SiteMeta`,
+- **`src/data/site.gleam`** — shared metadata types only: `SiteMeta`,
   `Analytics`, and `CommentsConfig`.
-* **`config/defaults`** — the built-in fallback values used to fill in
+- **`config/defaults`** — the built-in fallback values used to fill in
   anything left unset in `RawConfig`.
-* **`config/url`** — deployment path derivation and URL resolution:
+- **`config/url`** — deployment path derivation and URL resolution:
   `canonical_base_url`, `base_path_from_url`, `normalize_base_path`,
   `with_base_path`, `resolve_site_url`, `is_external_or_special_url`,
   `is_http_url`, and `is_site_local_url`. `config.gleam` re-exports these as
   compatibility wrappers.
-* **`config/resolve`** — loads `content/arata.toml`, decodes it into
+- **`config/resolve`** — loads `content/arata.toml`, decodes it into
   `RawConfig`, and produces the final resolved `Config`/`SiteMeta` pair
   consumed by the build pipeline and the SPA. Production build code should
   call this once at the build entry point and pass the result downstream,
@@ -851,7 +852,7 @@ Build-only metadata not directly consumed by application views and effects
 lives in `SiteMeta` (`src/data/site.gleam`), populated from the same
 resolved `arata.toml` input as `Config`:
 
-* `base_url`, `title`, `description`, `analytics`, `comments`,
+- `base_url`, `title`, `description`, `analytics`, `comments`,
   `fediverse_creator`, and `rss_enabled`.
 
 Because `Config` and `SiteMeta` are both derived from one resolved
@@ -909,13 +910,13 @@ tags = ["gleam", "lustre"]
 
 Fields:
 
-* `title` — post title.
-* `date` — publish date.
-* `updated` — optional update date.
-* `description` — summary used in lists/search.
-* `tags` — optional list of tags.
-* `draft` — optional bool, default `false`.
-* `tldr` — optional summary box above the post body.
+- `title` — post title.
+- `date` — publish date.
+- `updated` — optional update date.
+- `description` — summary used in lists/search.
+- `tags` — optional list of tags.
+- `draft` — optional bool, default `false`.
+- `tldr` — optional summary box above the post body.
 
 Posts are sorted by date descending.
 
@@ -1006,21 +1007,21 @@ link_to = "https://www.fovir.fyi/"
 
 Supported fields:
 
-* `title`
-* `description`
-* `url`
-* `image`
-* `weight`
-* `[extra].link_to`
-* `[extra].remote_image`
+- `title`
+- `description`
+- `url`
+- `image`
+- `weight`
+- `[extra].link_to`
+- `[extra].remote_image`
 
 Resolution rules:
 
-* `url` is used first.
-* if `url` is missing, `[extra].link_to` is used.
-* `image` is used first.
-* if `image` is missing, `[extra].remote_image` is used.
-* missing `weight` defaults to `999`.
+- `url` is used first.
+- if `url` is missing, `[extra].link_to` is used.
+- `image` is used first.
+- if `image` is missing, `[extra].remote_image` is used.
+- missing `weight` defaults to `999`.
 
 ### Link ordering
 
@@ -1074,10 +1075,10 @@ tags = ["gleam", "lustre", "blog"]
 
 Supported hosting fields:
 
-* `github`
-* `gitlab`
-* `codeberg`
-* `forgejo`
+- `github`
+- `gitlab`
+- `codeberg`
+- `forgejo`
 
 Projects are sorted by slug.
 
@@ -1114,14 +1115,14 @@ Generated as Markdown for LLM/agent consumers.
 
 It includes:
 
-* H1 title
-* site description
-* core links
-* posts
-* pages
-* projects
-* external links
-* sitemap link
+- H1 title
+- site description
+- core links
+- posts
+- pages
+- projects
+- external links
+- sitemap link
 
 The file is intended as a concise map of important site resources.
 
@@ -1333,6 +1334,6 @@ bun run dev
 
 This serves the site at `http://localhost:3333` and:
 
-* Performs an initial full-site build.
-* Watches `src/`, `content/` (including `arata.toml`), `static/`, and `gleam.toml`.
-* Rebuilds automatically on changes and triggers live-reload in your browser.
+- Performs an initial full-site build.
+- Watches `src/`, `content/` (including `arata.toml`), `static/`, and `gleam.toml`.
+- Rebuilds automatically on changes and triggers live-reload in your browser.

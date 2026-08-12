@@ -92,18 +92,18 @@ flowchart TD
 - [Bun](https://bun.com/)
 - [Gleam](https://gleam.run/)
 
-| 包名                  | 版本约束                       | 用途 |
-|----------------------|-------------------------------|---------|
-| `gleam_stdlib`       | `>= 0.44.0 and < 2.0.0`        | 标准库 |
-| `lustre`             | `>= 5.7.0 and < 6.0.0`         | UI 框架（Elm 架构） |
-| `modem`              | `>= 2.1.3 and < 3.0.0`         | 客户端路由 |
-| `gleam_json`         | `>= 3.1.0 and < 4.0.0`         | JSON 编解码 |
-| `simplifile`         | `>= 2.4.0 and < 3.0.0`         | 构建时文件 I/O |
-| `mork`               | `>= 1.12.1 and < 2.0.0`        | CommonMark + GFM Markdown 解析器 |
-| `mork_to_lustre`     | `>= 1.0.0 and < 2.0.0`         | mork → Lustre 元素桥接 |
-| `tom`                | `>= 2.1.0 and < 3.0.0`         | TOML frontmatter 解析器 |
-| `rsvp`               | `>= 2.0.0 and < 3.0.0`         | HTTP（内容索引获取） |
-| `gleeunit` *（开发依赖）*   | `>= 1.0.0 and < 2.0.0`         | 单元测试 |
+| 包名                      | 版本约束                | 用途                             |
+| ------------------------- | ----------------------- | -------------------------------- |
+| `gleam_stdlib`            | `>= 0.44.0 and < 2.0.0` | 标准库                           |
+| `lustre`                  | `>= 5.7.0 and < 6.0.0`  | UI 框架（Elm 架构）              |
+| `modem`                   | `>= 2.1.3 and < 3.0.0`  | 客户端路由                       |
+| `gleam_json`              | `>= 3.1.0 and < 4.0.0`  | JSON 编解码                      |
+| `simplifile`              | `>= 2.4.0 and < 3.0.0`  | 构建时文件 I/O                   |
+| `mork`                    | `>= 1.12.1 and < 2.0.0` | CommonMark + GFM Markdown 解析器 |
+| `mork_to_lustre`          | `>= 1.0.0 and < 2.0.0`  | mork → Lustre 元素桥接           |
+| `tom`                     | `>= 2.1.0 and < 3.0.0`  | TOML frontmatter 解析器          |
+| `rsvp`                    | `>= 2.0.0 and < 3.0.0`  | HTTP（内容索引获取）             |
+| `gleeunit` _（开发依赖）_ | `>= 1.0.0 and < 2.0.0`  | 单元测试                         |
 
 ## 快速开始
 
@@ -124,7 +124,7 @@ bun run dev
 
 http://localhost:3333/
 
-````
+```
 
 构建流水线是自包含的：它读取 `content/` 目录下的 `.md` 文件，使用 `tom` 解析 TOML frontmatter，使用 `mork` 渲染 Markdown 正文，将所有内容序列化为 `dist/content_index.json` 和 `dist/search_index.json`，生成订阅源、站点地图、`robots.txt` 以及 `llms.txt`，写入带有内联 CSS 的 `index.html` 和 `404.html`，将 `static/` 复制到 `dist/`，并通过 `bun run build` 将 SPA 打包为 `dist/app.mjs`。
 
@@ -220,12 +220,12 @@ tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app w
 正文使用 Markdown 编写 —— 在构建时由 mork 解析。
 ```
 
-| 目录                    | 类型    | Frontmatter 字段                                                                                            |
-| ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `content/posts/*.md`    | Post    | `title`、`date`、`updated`、`description`、`tags`、`draft`、`pinned`、`tldr`                                          |
-| `content/pages/*.md`    | Page    | `title`、`subtitle`                                                                                         |
-| `content/links/*.md`    | Link    | `title`、`url` 或 `[extra].link_to`、`description`、`image` 或 `[extra].remote_image`、`weight`             |
-| `content/projects/*.md` | Project | `title`、`description`、`link_to`、`image`、`github`、`gitlab`、`codeberg`、`forgejo`、`demo`、`tags`       |
+| 目录                    | 类型    | Frontmatter 字段                                                                                      |
+| ----------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `content/posts/*.md`    | Post    | `title`、`date`、`updated`、`description`、`tags`、`draft`、`pinned`、`tldr`                          |
+| `content/pages/*.md`    | Page    | `title`、`subtitle`                                                                                   |
+| `content/links/*.md`    | Link    | `title`、`url` 或 `[extra].link_to`、`description`、`image` 或 `[extra].remote_image`、`weight`       |
+| `content/projects/*.md` | Project | `title`、`description`、`link_to`、`image`、`github`、`gitlab`、`codeberg`、`forgejo`、`demo`、`tags` |
 
 Markdown 正文在构建时由 mork 渲染为 HTML，并存储在 `content_index.json` 中。SPA 在启动时只获取一次此 JSON —— 浏览器中不会进行任何 Markdown 解析。
 
@@ -235,11 +235,11 @@ Markdown 正文在构建时由 mork 渲染为 HTML，并存储在 `content_index
 
 Arata 启用了 mork 的以下扩展选项：
 
-* GFM 表格
-* 任务列表项
-* emoji 短代码
-* 自动链接
-* 脚注
+- GFM 表格
+- 任务列表项
+- emoji 短代码
+- 自动链接
+- 脚注
 
 标题 ID 由 arata 自身的内容加载器处理，而非 mork 内置的标题 ID 选项，因此 CJK 标题可以回退到稳定的 ASCII ID，例如 `heading-1`、`heading-2` 等。
 
@@ -294,34 +294,34 @@ SPA 运行时和构建流水线都从此处读取配置，因此标题、描述�
 
 以下是 `content/arata.toml` 中各配置部分的简要说明：
 
-* **`[site]`** —— 基础站点元数据：
-  * `base_url`： 部署站点的公开规范 URL（支持根路径或子目录部署）。
-  * `title` & `description`： 用于 SEO 和 meta 标签的站点标题与描述。
-  * `logo`： 可选的导航栏 Logo 路径（留空则将站点标题渲染为文本链接）。
-  * `favicon`： 可选的 favicon 路径（留空则回退至 Arata 的默认 favicon）。
-  * `fediverse_creator`： 可选的 Fediverse 创建者归属（例如 `@user@example.social`）。
-* **`[[menu]]`** —— 按声明顺序渲染的导航项。内部 URL 必须是根相对路径。
-* **`[[socials]]`** —— 在页头渲染的社交链接。`icon` 对应 `static/icons/social/` 下的 SVG 文件名。
-* **`[features]`** —— 各种运行时与构建功能的开关：
-  * `rss`： 生成 `atom.xml` 和 `rss.xml` 并添加托管的 RSS 社交链接。
-  * `search` (bool)： 启用页面内搜索弹窗及 `Cmd/Ctrl+K` 快捷键。
-  * `navbar_fixed` (bool)： 滚动时保持导航栏固定。
-  * `mathjax` (bool)： 在包含可能 TeX 定界符的文章页启用 MathJax 渲染。
-  * `mermaid` (bool)： 为原生 Mermaid 围栏代码块启用渲染。
-  * `syntax_highlight` (bool)： 为围栏代码块启用运行时语法高亮。
-  * `sidebar` (bool)： 在文章页渲染右侧标签和目录边栏。
-  * `floating_buttons` (bool)： 渲染悬浮目录/标签按钮及滚动到顶部控件。
-  * `aratafetch` (bool)： 在首页渲染 aratafetch 站点摘要。
-  * `lightbox` (bool)： 在内置灯箱中打开 Markdown 正文图片。
-  * `latest_posts` (bool)： 在首页渲染最新发布文章部分。
-* **`[latest_posts]`** —— `count` (int)： 首页最新文章部分展示的最大已发布文章数。
-* **`[aratafetch]`** —— `maintained_for` (string)： `maintained` 行的可选显示值。
-* **`[fonts]`** —— `text`、`header` 和 `code` 的 CSS `font-family` 声明。
-* **`[assets]`** —— `mathjax_url`、`mermaid_url` 和 `syntax_highlight_url` 的运行时资源 URL。当其对应功能启用时，必须提供 URL。
-* **`[syntax_highlight_grammars]`**: 可选的 Highlight.js 语言语法映射配置，用于注册运行时默认包中未包含的语言。键为语言名称，值为对应语法文件的 URL 或站点内路径。`Gleam`已预先配置，并会在首次使用时按需加载。
-* **`[analytics]`** —— 统计分析提供方配置。支持的提供方：`disabled`、`goatcounter`、`umami`、`liwan`。特定于提供方的值应放在此表中。（有意不支持 Google Analytics）。
-* **`[comments]`** —— 评论提供方配置。支持的提供方：`disabled`、`giscus`、`utterances`。特定于提供方的值应放在此表中。
-* **强调色/主色** —— 编辑 `src/css/theme.css` 中的 `--primary-color` 即可修改强调色表面。Arata 在 `:root` 与 `:root.dark` 中分别定义了浅色与深色的强调色值，以获得更好的主题对比度。
+- **`[site]`** —— 基础站点元数据：
+  - `base_url`： 部署站点的公开规范 URL（支持根路径或子目录部署）。
+  - `title` & `description`： 用于 SEO 和 meta 标签的站点标题与描述。
+  - `logo`： 可选的导航栏 Logo 路径（留空则将站点标题渲染为文本链接）。
+  - `favicon`： 可选的 favicon 路径（留空则回退至 Arata 的默认 favicon）。
+  - `fediverse_creator`： 可选的 Fediverse 创建者归属（例如 `@user@example.social`）。
+- **`[[menu]]`** —— 按声明顺序渲染的导航项。内部 URL 必须是根相对路径。
+- **`[[socials]]`** —— 在页头渲染的社交链接。`icon` 对应 `static/icons/social/` 下的 SVG 文件名。
+- **`[features]`** —— 各种运行时与构建功能的开关：
+  - `rss`： 生成 `atom.xml` 和 `rss.xml` 并添加托管的 RSS 社交链接。
+  - `search` (bool)： 启用页面内搜索弹窗及 `Cmd/Ctrl+K` 快捷键。
+  - `navbar_fixed` (bool)： 滚动时保持导航栏固定。
+  - `mathjax` (bool)： 在包含可能 TeX 定界符的文章页启用 MathJax 渲染。
+  - `mermaid` (bool)： 为原生 Mermaid 围栏代码块启用渲染。
+  - `syntax_highlight` (bool)： 为围栏代码块启用运行时语法高亮。
+  - `sidebar` (bool)： 在文章页渲染右侧标签和目录边栏。
+  - `floating_buttons` (bool)： 渲染悬浮目录/标签按钮及滚动到顶部控件。
+  - `aratafetch` (bool)： 在首页渲染 aratafetch 站点摘要。
+  - `lightbox` (bool)： 在内置灯箱中打开 Markdown 正文图片。
+  - `latest_posts` (bool)： 在首页渲染最新发布文章部分。
+- **`[latest_posts]`** —— `count` (int)： 首页最新文章部分展示的最大已发布文章数。
+- **`[aratafetch]`** —— `maintained_for` (string)： `maintained` 行的可选显示值。
+- **`[fonts]`** —— `text`、`header` 和 `code` 的 CSS `font-family` 声明。
+- **`[assets]`** —— `mathjax_url`、`mermaid_url` 和 `syntax_highlight_url` 的运行时资源 URL。当其对应功能启用时，必须提供 URL。
+- **`[syntax_highlight_grammars]`**: 可选的 Highlight.js 语言语法映射配置，用于注册运行时默认包中未包含的语言。键为语言名称，值为对应语法文件的 URL 或站点内路径。`Gleam`已预先配置，并会在首次使用时按需加载。
+- **`[analytics]`** —— 统计分析提供方配置。支持的提供方：`disabled`、`goatcounter`、`umami`、`liwan`。特定于提供方的值应放在此表中。（有意不支持 Google Analytics）。
+- **`[comments]`** —— 评论提供方配置。支持的提供方：`disabled`、`giscus`、`utterances`。特定于提供方的值应放在此表中。
+- **强调色/主色** —— 编辑 `src/css/theme.css` 中的 `--primary-color` 即可修改强调色表面。Arata 在 `:root` 与 `:root.dark` 中分别定义了浅色与深色的强调色值，以获得更好的主题对比度。
 
 完整的配置指南请参见 [configuration.md](configuration)。
 
@@ -347,7 +347,7 @@ syntax.css
 lightbox.css
 aratafetch.css
 accessibility.css
-````
+```
 
 在构建过程中，这些模块会被复制到 `dist/css/`，以便检查和调试。
 

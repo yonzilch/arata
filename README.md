@@ -85,18 +85,18 @@ flowchart TD
 - [Bun](https://bun.com/)
 - [Gleam](https://gleam.run/)
 
-| Package              | Version constraint            | Purpose |
-|----------------------|-------------------------------|---------|
-| `gleam_stdlib`       | `>= 0.44.0 and < 2.0.0`        | stdlib |
-| `lustre`             | `>= 5.7.0 and < 6.0.0`         | UI framework (Elm Architecture) |
-| `modem`              | `>= 2.1.3 and < 3.0.0`         | client-side routing |
-| `gleam_json`         | `>= 3.1.0 and < 4.0.0`         | JSON encode/decode |
-| `simplifile`         | `>= 2.4.0 and < 3.0.0`         | build-time file I/O |
-| `mork`               | `>= 1.12.1 and < 2.0.0`        | CommonMark + GFM markdown parser |
-| `mork_to_lustre`     | `>= 1.0.0 and < 2.0.0`         | mork → Lustre element bridge |
-| `tom`                | `>= 2.1.0 and < 3.0.0`         | TOML frontmatter parser |
-| `rsvp`               | `>= 2.0.0 and < 3.0.0`         | HTTP (content index fetch) |
-| `gleeunit` *(dev)*   | `>= 1.0.0 and < 2.0.0`         | unit tests |
+| Package            | Version constraint      | Purpose                          |
+| ------------------ | ----------------------- | -------------------------------- |
+| `gleam_stdlib`     | `>= 0.44.0 and < 2.0.0` | stdlib                           |
+| `lustre`           | `>= 5.7.0 and < 6.0.0`  | UI framework (Elm Architecture)  |
+| `modem`            | `>= 2.1.3 and < 3.0.0`  | client-side routing              |
+| `gleam_json`       | `>= 3.1.0 and < 4.0.0`  | JSON encode/decode               |
+| `simplifile`       | `>= 2.4.0 and < 3.0.0`  | build-time file I/O              |
+| `mork`             | `>= 1.12.1 and < 2.0.0` | CommonMark + GFM markdown parser |
+| `mork_to_lustre`   | `>= 1.0.0 and < 2.0.0`  | mork → Lustre element bridge     |
+| `tom`              | `>= 2.1.0 and < 3.0.0`  | TOML frontmatter parser          |
+| `rsvp`             | `>= 2.0.0 and < 3.0.0`  | HTTP (content index fetch)       |
+| `gleeunit` _(dev)_ | `>= 1.0.0 and < 2.0.0`  | unit tests                       |
 
 ## Quick start
 
@@ -117,7 +117,7 @@ bun run dev
 
 http://localhost:3333/
 
-````
+```
 
 The build pipeline is self-contained: it reads the `.md` files under `content/`, parses the TOML frontmatter with `tom`, renders the Markdown bodies with `mork`, serializes everything to `dist/content_index.json` and `dist/search_index.json`, emits feeds, sitemap, `robots.txt`, and `llms.txt`, writes `index.html` and `404.html` with inline CSS, copies `static/` to `dist/`, and bundles the SPA into `dist/app.mjs` via `bun run build`.
 
@@ -213,12 +213,12 @@ tldr = "Arata rebuilds the apollo blog theme as a Gleam/Lustre single-page app w
 Body in Markdown — parsed by mork at build time.
 ```
 
-| Directory               | Type    | Frontmatter                                                                                                 |
-| ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `content/posts/*.md`    | Post    | `title`, `date`, `updated`, `description`, `tags`, `draft`, `pinned`, `tldr`                                |
-| `content/pages/*.md`    | Page    | `title`, `subtitle`                                                                                         |
-| `content/links/*.md`    | Link    | `title`, `url` or `[extra].link_to`, `description`, `image` or `[extra].remote_image`, `weight`             |
-| `content/projects/*.md` | Project | `title`, `description`, `link_to`, `image`, `github`, `gitlab`, `codeberg`, `forgejo`, `demo`, `tags`       |
+| Directory               | Type    | Frontmatter                                                                                           |
+| ----------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `content/posts/*.md`    | Post    | `title`, `date`, `updated`, `description`, `tags`, `draft`, `pinned`, `tldr`                          |
+| `content/pages/*.md`    | Page    | `title`, `subtitle`                                                                                   |
+| `content/links/*.md`    | Link    | `title`, `url` or `[extra].link_to`, `description`, `image` or `[extra].remote_image`, `weight`       |
+| `content/projects/*.md` | Project | `title`, `description`, `link_to`, `image`, `github`, `gitlab`, `codeberg`, `forgejo`, `demo`, `tags` |
 
 The Markdown body is rendered to HTML by mork at build time and stored in `content_index.json`. The SPA fetches this JSON once at boot — there is no Markdown parsing in the browser.
 
@@ -228,11 +228,11 @@ See [content-authoring.md](content/posts/content-authoring.md) for the full cont
 
 Arata enables mork's extended options for:
 
-* GFM tables
-* task list items
-* emoji shortcodes
-* autolinks
-* footnotes
+- GFM tables
+- task list items
+- emoji shortcodes
+- autolinks
+- footnotes
 
 Heading IDs are handled by arata's own content loader instead of mork's built-in heading ID option, so CJK headings can fall back to stable ASCII IDs such as `heading-1`, `heading-2`, and so on.
 
@@ -287,34 +287,34 @@ Both the SPA runtime and build pipeline read from this configuration so title, d
 
 Here is a brief overview of the configuration sections in `content/arata.toml`:
 
-* **`[site]`** — Basic site metadata:
-  * `base_url`: Public canonical URL of the deployed site (supports root or subdirectory deployments).
-  * `title` & `description`: Site title and description used for SEO and meta tags.
-  * `logo`: Optional navigation logo path (use an empty string to render the site title as a text link).
-  * `favicon`: Optional favicon path (falls back to Arata's default if empty).
-  * `fediverse_creator`: Optional Fediverse creator attribution (e.g., `@user@example.social`).
-* **`[[menu]]`** — Navigation items rendered in the declared order. Internal URLs must be root-relative.
-* **`[[socials]]`** — Social links rendered in the header. `icon` maps to an SVG filename under `static/icons/social/`.
-* **`[features]`** — Toggles for various runtime and build features:
-  * `rss`: Generate `atom.xml` and `rss.xml` and add the managed RSS social link.
-  * `search` (bool): Enable the in-page search modal and `Cmd/Ctrl+K` shortcut.
-  * `navbar_fixed` (bool): Keep the navigation bar pinned while scrolling.
-  * `mathjax` (bool): Enable MathJax rendering on post pages containing likely TeX delimiters.
-  * `mermaid` (bool): Enable Mermaid rendering for native fenced Mermaid code blocks.
-  * `syntax_highlight` (bool): Enable runtime syntax highlighting for fenced code blocks.
-  * `sidebar` (bool): Render the right-hand Tags and table-of-contents sidebar on post pages.
-  * `floating_buttons` (bool): Render the floating ToC/tags button and scroll-to-top control.
-  * `aratafetch` (bool): Render the aratafetch site summary on the homepage.
-  * `lightbox` (bool): Open Markdown body images in the built-in lightbox.
-  * `latest_posts` (bool): Render the latest published posts section on the homepage.
-* **`[latest_posts]`** — `count` (int): Maximum number of published posts shown in the homepage latest-posts section.
-* **`[aratafetch]`** — `maintained_for` (string): Optional display value for the `maintained` row.
-* **`[fonts]`** — CSS `font-family` declarations for `text`, `header`, and `code`.
-* **`[assets]`** — Runtime asset URLs for `mathjax_url`, `mermaid_url`, and `syntax_highlight_url`. A URL is required when its corresponding feature is enabled.
-* **`[syntax_highlight_grammars]`**: Optional language-to-URL mapping for Highlight.js grammars not included in the runtime bundle. Keys are language names; values are URLs or site-relative paths. `Gleam` is pre-configured and loaded on demand.
-* **`[analytics]`** — Analytics provider configuration. Supported providers: `disabled`, `goatcounter`, `umami`, `liwan`. Provider-specific values belong in this table. (Google Analytics is intentionally not supported).
-* **`[comments]`** — Comments provider configuration. Supported providers: `disabled`, `giscus`, `utterances`. Provider-specific values belong in this table.
-* **Accent/Primary color** — edit `--primary-color` in `src/css/theme.css` to recolor accent surfaces. Arata defines separate light and dark accent values in `:root` and `:root.dark` for better contrast across themes.
+- **`[site]`** — Basic site metadata:
+  - `base_url`: Public canonical URL of the deployed site (supports root or subdirectory deployments).
+  - `title` & `description`: Site title and description used for SEO and meta tags.
+  - `logo`: Optional navigation logo path (use an empty string to render the site title as a text link).
+  - `favicon`: Optional favicon path (falls back to Arata's default if empty).
+  - `fediverse_creator`: Optional Fediverse creator attribution (e.g., `@user@example.social`).
+- **`[[menu]]`** — Navigation items rendered in the declared order. Internal URLs must be root-relative.
+- **`[[socials]]`** — Social links rendered in the header. `icon` maps to an SVG filename under `static/icons/social/`.
+- **`[features]`** — Toggles for various runtime and build features:
+  - `rss`: Generate `atom.xml` and `rss.xml` and add the managed RSS social link.
+  - `search` (bool): Enable the in-page search modal and `Cmd/Ctrl+K` shortcut.
+  - `navbar_fixed` (bool): Keep the navigation bar pinned while scrolling.
+  - `mathjax` (bool): Enable MathJax rendering on post pages containing likely TeX delimiters.
+  - `mermaid` (bool): Enable Mermaid rendering for native fenced Mermaid code blocks.
+  - `syntax_highlight` (bool): Enable runtime syntax highlighting for fenced code blocks.
+  - `sidebar` (bool): Render the right-hand Tags and table-of-contents sidebar on post pages.
+  - `floating_buttons` (bool): Render the floating ToC/tags button and scroll-to-top control.
+  - `aratafetch` (bool): Render the aratafetch site summary on the homepage.
+  - `lightbox` (bool): Open Markdown body images in the built-in lightbox.
+  - `latest_posts` (bool): Render the latest published posts section on the homepage.
+- **`[latest_posts]`** — `count` (int): Maximum number of published posts shown in the homepage latest-posts section.
+- **`[aratafetch]`** — `maintained_for` (string): Optional display value for the `maintained` row.
+- **`[fonts]`** — CSS `font-family` declarations for `text`, `header`, and `code`.
+- **`[assets]`** — Runtime asset URLs for `mathjax_url`, `mermaid_url`, and `syntax_highlight_url`. A URL is required when its corresponding feature is enabled.
+- **`[syntax_highlight_grammars]`**: Optional language-to-URL mapping for Highlight.js grammars not included in the runtime bundle. Keys are language names; values are URLs or site-relative paths. `Gleam` is pre-configured and loaded on demand.
+- **`[analytics]`** — Analytics provider configuration. Supported providers: `disabled`, `goatcounter`, `umami`, `liwan`. Provider-specific values belong in this table. (Google Analytics is intentionally not supported).
+- **`[comments]`** — Comments provider configuration. Supported providers: `disabled`, `giscus`, `utterances`. Provider-specific values belong in this table.
+- **Accent/Primary color** — edit `--primary-color` in `src/css/theme.css` to recolor accent surfaces. Arata defines separate light and dark accent values in `:root` and `:root.dark` for better contrast across themes.
 
 See [configuration.md](content/posts/configuration.md) for the full configuration guide.
 
@@ -340,7 +340,7 @@ syntax.css
 lightbox.css
 aratafetch.css
 accessibility.css
-````
+```
 
 During the build, these modules are copied to `dist/css/` for inspection and debugging.
 

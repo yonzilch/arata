@@ -60,14 +60,14 @@ anywhere? `bun run preview` does a clean rebuild and then serves `dist/`
 at `http://localhost:3333` — this is the closest local approximation of
 what your static host will actually serve.
 
-| Script            | What it does                                   |
-| ----------------- | ----------------------------------------------- |
-| `bun run dev`      | Hot-reload dev server                          |
-| `bun run build`    | Build once (no cleanup)                        |
-| `bun run rebuild`  | Clean build (`rm -rf dist` + build) — use this for deploys |
-| `bun run preview`  | Clean build + serve, to check the prod output locally |
-| `bun run check`    | `gleam check` + `gleam test`                   |
-| `bun run clean`    | Remove `dist/` and `build/`                    |
+| Script            | What it does                                               |
+| ----------------- | ---------------------------------------------------------- |
+| `bun run dev`     | Hot-reload dev server                                      |
+| `bun run build`   | Build once (no cleanup)                                    |
+| `bun run rebuild` | Clean build (`rm -rf dist` + build) — use this for deploys |
+| `bun run preview` | Clean build + serve, to check the prod output locally      |
+| `bun run check`   | `gleam check` + `gleam test`                               |
+| `bun run clean`   | Remove `dist/` and `build/`                                |
 
 ## Deploying
 
@@ -161,7 +161,7 @@ It's used in feeds, the sitemap, OpenGraph meta tags, and so on.
 3. Copies static assets (`fonts/`, `icons/`, `images/`) from `static/`
    into `dist/`.
 4. Bundles the Gleam-compiled JS into `dist/app.mjs` via `bun run build
-   --minify`.
+--minify`.
 5. Writes `content_index.json`, `search_index.json`, `atom.xml`,
    `rss.xml`, `sitemap.xml`, `robots.txt`, and `llms.txt`.
 

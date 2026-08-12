@@ -16,7 +16,7 @@ content/
 ├── pages/
 ├── projects/
 └── links/
-````
+```
 
 At build time, `content/loader.gleam` reads each file, parses the TOML
 frontmatter, renders Markdown bodies via `mork`, and serializes the typed
@@ -64,26 +64,26 @@ Your markdown body here.
 
 Fields:
 
-* `title` — post title.
-* `date` — publish date.
-* `updated` — optional last-updated date.
-* `description` — summary used in the post list, search, and metadata.
-* `tags` — optional list of taxonomy tags.
-* `draft` — optional boolean. Draft posts show a `DRAFT` badge.
-* `pinned` — optional boolean. Pinned posts appear before regular posts in post listings, keeping their date-based order among themselves.
-* `tldr` — optional summary box rendered above the post body.
+- `title` — post title.
+- `date` — publish date.
+- `updated` — optional last-updated date.
+- `description` — summary used in the post list, search, and metadata.
+- `tags` — optional list of taxonomy tags.
+- `draft` — optional boolean. Draft posts show a `DRAFT` badge.
+- `pinned` — optional boolean. Pinned posts appear before regular posts in post listings, keeping their date-based order among themselves.
+- `tldr` — optional summary box rendered above the post body.
 
 Behavior:
 
-* `slug` is derived from the filename.
-* The URL is `/posts/{slug}`.
-* The Markdown body is rendered to HTML at build time.
-* Heading IDs are generated after Markdown rendering.
-* The table of contents is extracted from rendered headings.
-* `word_count` and `reading_time` are computed automatically.
-* `word_count` is also used by aratafetch's total word-count summary.
-* Draft posts are excluded from aratafetch statistics.
-* Pinned posts are placed before regular posts in the post list, on the homepage's latest-posts section, and in pagination. Within each pinned/non-pinned group, posts keep their newest-first date order.
+- `slug` is derived from the filename.
+- The URL is `/posts/{slug}`.
+- The Markdown body is rendered to HTML at build time.
+- Heading IDs are generated after Markdown rendering.
+- The table of contents is extracted from rendered headings.
+- `word_count` and `reading_time` are computed automatically.
+- `word_count` is also used by aratafetch's total word-count summary.
+- Draft posts are excluded from aratafetch statistics.
+- Pinned posts are placed before regular posts in the post list, on the homepage's latest-posts section, and in pagination. Within each pinned/non-pinned group, posts keep their newest-first date order.
 
 ## Projects
 
@@ -116,11 +116,11 @@ Projects have no Markdown body — only frontmatter is used.
 
 Supported hosting fields:
 
-* `github`
-* `gitlab`
-* `codeberg`
-* `forgejo`
-* `demo`
+- `github`
+- `gitlab`
+- `codeberg`
+- `forgejo`
+- `demo`
 
 Projects are counted by aratafetch when the homepage summary is enabled.
 
@@ -195,21 +195,21 @@ link_to = "https://www.fovir.fyi/"
 
 Supported fields:
 
-* `title`
-* `description`
-* `url`
-* `image`
-* `weight`
-* `[extra].link_to`
-* `[extra].remote_image`
+- `title`
+- `description`
+- `url`
+- `image`
+- `weight`
+- `[extra].link_to`
+- `[extra].remote_image`
 
 Resolution rules:
 
-* `url` is used first.
-* If `url` is missing, `[extra].link_to` is used.
-* `image` is used first.
-* If `image` is missing, `[extra].remote_image` is used.
-* Missing `weight` defaults to `999`.
+- `url` is used first.
+- If `url` is missing, `[extra].link_to` is used.
+- `image` is used first.
+- If `image` is missing, `[extra].remote_image` is used.
+- Missing `weight` defaults to `999`.
 
 ### Link Ordering
 
@@ -313,13 +313,13 @@ When `None`, the `maintained` row displays `n/a`.
 
 aratafetch currently summarizes:
 
-* site title
-* published post count
-* total word count
-* unique tag count
-* friend link count
-* project count
-* optional maintenance string
+- site title
+- published post count
+- total word count
+- unique tag count
+- friend link count
+- project count
+- optional maintenance string
 
 Draft posts are excluded from aratafetch post count, word count, and tag
 count.
@@ -338,11 +338,11 @@ gleam run -m build/pipeline
 
 the generated `dist/content_index.json` contains the loaded content tree:
 
-* posts
-* pages
-* homepage
-* links
-* projects
+- posts
+- pages
+- homepage
+- links
+- projects
 
 The SPA fetches this JSON once on startup and renders all routes from it.
 
