@@ -21,6 +21,7 @@ pub type Event {
   EscapePressed
   PreviousPressed
   NextPressed
+  ZoomChanged(zoomed: Bool)
 }
 
 /// Subscribe to Markdown body image clicks and lightbox keyboard events.
@@ -41,6 +42,7 @@ pub fn observe() -> Effect(Event) {
     fn() { dispatch(EscapePressed) },
     fn() { dispatch(PreviousPressed) },
     fn() { dispatch(NextPressed) },
+    fn(zoomed) { dispatch(ZoomChanged(zoomed)) },
   )
 
   Nil
@@ -50,6 +52,16 @@ pub fn observe() -> Effect(Event) {
 pub fn set_scroll_lock(locked: Bool) -> Effect(Nil) {
   use _ <- effect.from
   set_lightbox_scroll_lock(locked)
+  Nil
+}
+
+/// Reset the FFI-side zoom transform and pan offsets.
+///
+/// Called when the lightbox image changes so a stale transform never carries
+/// over to the newly selected image.
+pub fn reset_zoom() -> Effect(Nil) {
+  use _ <- effect.from
+  reset_lightbox_zoom()
   Nil
 }
 
@@ -67,7 +79,11 @@ fn subscribe_to_lightbox_events(
   on_close: fn() -> Nil,
   on_previous: fn() -> Nil,
   on_next: fn() -> Nil,
+  on_zoom_changed: fn(Bool) -> Nil,
 ) -> Nil
 
 @external(javascript, "../ffi/lightbox.ffi.mjs", "set_lightbox_scroll_lock")
 fn set_lightbox_scroll_lock(locked: Bool) -> Nil
+
+@external(javascript, "../ffi/lightbox.ffi.mjs", "reset_lightbox_zoom")
+fn reset_lightbox_zoom() -> Nil

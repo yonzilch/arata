@@ -32,34 +32,171 @@
     background: transparent;
 }
 
-/* Dialog sits above the invisible backdrop-close button. */
+/* Dialog sits above the invisible backdrop-close button. The top padding
+   reserves a band for the close button so it never overlaps the image. */
 .lightbox-dialog {
     position: relative;
     z-index: 1;
 
     max-width: min(96vw, 1200px);
-    max-height: 92vh;
+    max-height: calc(100vh - 3rem);
 
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
+
+    padding-top: 3.25rem;
 }
 
-/* Preview image. */
-.lightbox-image {
-    display: block;
+/* Close button, aligned with the dialog's top-right corner inside the
+   reserved band. */
+.lightbox-close {
+    all: unset;
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+
+    width: 2.75rem;
+    height: 2.75rem;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    user-select: none;
+
+    border-radius: 999px;
+    color: #f8fafc;
+    background: rgba(15, 17, 21, 0.92);
+    border: 1px solid rgba(248, 250, 252, 0.25);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+    font-size: 1.85rem;
+    line-height: 1;
+
+    transition:
+        background 140ms ease,
+        transform 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.lightbox-close:hover {
+    background: rgba(31, 41, 55, 0.96);
+
+    transform: scale(1.06);
+
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.36),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.lightbox-close:active {
+    transform: scale(0.94);
+}
+
+.lightbox-close:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Preview frame: clips zoomed content and carries the image's chrome. */
+.lightbox-image-frame {
+    position: relative;
     max-width: 100%;
-    max-height: 82vh;
-    object-fit: contain;
-    cursor: zoom-out;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
     border-radius: 0.75rem;
     background: var(--bg-0);
     box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+
+    cursor: zoom-in;
+
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+
+    transition:
+        min-width 150ms ease,
+        min-height 150ms ease;
+}
+
+.lightbox-image-frame--zoomed {
+    cursor: zoom-out;
+}
+
+.lightbox-image-frame--dragging,
+.lightbox-image-frame--dragging .lightbox-image {
+    cursor: grabbing;
+}
+
+/* Loading placeholder: keeps a stable preview area and shows a spinner while
+   an image has not decoded yet. Toggled by the lightbox FFI. */
+.lightbox-image-frame--loading {
+    min-width: min(70vw, 32rem);
+    min-height: 40vh;
+}
+
+.lightbox-image-frame--loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+
+    width: 2.5rem;
+    height: 2.5rem;
+
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.16);
+    border-top-color: var(--primary-color);
+
+    animation: lightbox-spin 700ms linear infinite;
+    opacity: 0.9;
+}
+
+@keyframes lightbox-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Preview image. Zoom transform is applied by the FFI as an inline style.
+   The opacity transition fades freshly loaded images back in after the FFI
+   hides the previous frame during navigation. */
+.lightbox-image {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 14rem);
+    object-fit: contain;
+
+    -webkit-user-drag: none;
+
     animation: lightbox-image-fade 140ms ease;
+    transition: opacity 140ms ease;
     will-change: opacity, transform;
     backface-visibility: hidden;
     contain: paint;
+}
+
+.lightbox-image-frame--animating .lightbox-image {
+    transition: transform 130ms ease;
+}
+
+.lightbox-image-frame--dragging .lightbox-image {
+    transition: none;
 }
 
 @keyframes lightbox-image-fade {
@@ -83,38 +220,6 @@
     text-align: center;
     font-size: 0.95rem;
     line-height: 1.5;
-}
-
-/* Close button. */
-.lightbox-close {
-    all: unset;
-    position: absolute;
-    top: -0.75rem;
-    right: -0.75rem;
-    z-index: 2;
-
-    width: 2.75rem;
-    height: 2.75rem;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    cursor: pointer;
-    border-radius: 999px;
-    color: #f8fafc;
-    background: rgba(15, 17, 21, 0.92);
-    border: 1px solid rgba(248, 250, 252, 0.25);
-
-    font-size: 1.75rem;
-    line-height: 1;
-}
-
-.lightbox-close:hover,
-.lightbox-close:focus-visible {
-    background: rgba(31, 41, 55, 0.96);
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
 }
 
 .lightbox-footer {
@@ -225,6 +330,26 @@
 
 /* Mobile */
 @media (max-width: 768px) {
+    .lightbox-dialog {
+        padding-top: 3rem;
+    }
+
+    .lightbox-close {
+        width: 2.5rem;
+        height: 2.5rem;
+
+        font-size: 1.7rem;
+    }
+
+    .lightbox-image-frame--loading {
+        min-width: 80vw;
+        min-height: 35vh;
+    }
+
+    .lightbox-image {
+        max-height: calc(100vh - 13rem);
+    }
+
     .lightbox-footer {
         gap: 0.75rem;
     }
