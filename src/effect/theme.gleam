@@ -11,11 +11,11 @@
 //// no-op Gleam fallback bodies so the project still builds when targeting
 //// Erlang (theme management only runs in the browser).
 ////
-//// FOUC prevention: in a server-rendered `index.html` (Phase 17), the initial
-//// `<html>` would carry both `dark` and `light` classes and an inline script
-//// would call `apply_theme` before first paint. For now (client-only SPA), the
-//// theme is applied as soon as the `init_theme` effect runs — there may be a
-//// brief flash on hard reload, which is acceptable until SSR lands.
+//// FOUC prevention: the generated HTML shell (`build/pipeline.gleam`) embeds
+//// a synchronous theme bootstrap (`build/theme_bootstrap.gleam`) in `<head>`
+//// that resolves the persisted preference before first paint. `init_theme`
+//// re-applies the same resolved mode at startup, so Lustre never overwrites
+//// the bootstrapped theme with an intermediate default.
 
 import lustre/effect.{type Effect}
 
