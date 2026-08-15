@@ -2,7 +2,7 @@
 //
 // Sets up an IntersectionObserver over every element inside
 // `main article section.body` (paragraphs, lists, etc.). For each intersecting
-// entry it walks backwards to the nearest preceding heading (h2/h3) and
+// entry it walks backwards to the nearest preceding heading (h1–h6) and
 // reports that heading's `id` to Gleam via the `dispatch` callback.
 //
 // Only the topmost intersecting heading is reported on each callback, matching
@@ -44,7 +44,9 @@ function setup_observer(dispatch) {
   const root = document.querySelector("main section.body");
   if (!root) return null;
 
-  const headings = root.querySelectorAll("h2[id], h3[id]");
+  const headings = root.querySelectorAll(
+    "h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]",
+  );
   if (headings.length === 0) return null;
 
   const children = Array.from(root.children);
@@ -52,7 +54,7 @@ function setup_observer(dispatch) {
   let lastHeadingId = null;
   const childToHeading = new Map();
   for (const child of children) {
-    if (child.tagName === "H2" || child.tagName === "H3") {
+    if (/^H[1-6]$/.test(child.tagName)) {
       lastHeadingId = child.id;
     }
     if (lastHeadingId) {
