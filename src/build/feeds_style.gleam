@@ -15,39 +15,9 @@
 ////
 //// All feed styles are inlined to avoid additional stylesheet requests.
 
+import build/theme_bootstrap
+
 const xsl_declaration = "<?xml version='1.0' encoding='UTF-8'?>"
-
-fn theme_bootstrap() -> String {
-  "<script><![CDATA[
-(function () {
-  var theme = null;
-
-  try {
-    theme = window.localStorage.getItem('theme-storage');
-  } catch (_) {
-    theme = null;
-  }
-
-  if (theme !== 'light' && theme !== 'dark' && theme !== 'auto') {
-    theme = 'auto';
-  }
-
-  var dark = theme === 'dark';
-
-  if (theme === 'auto') {
-    try {
-      dark = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      ).matches;
-    } catch (_) {
-      dark = false;
-    }
-  }
-
-  document.documentElement.classList.toggle('dark', dark);
-})();
-]]></script>"
-}
 
 fn theme_styles() -> String {
   ":root {
@@ -215,7 +185,7 @@ fn inline_styles() -> String {
 }
 
 fn shared_head() -> String {
-  theme_bootstrap() <> "
+  theme_bootstrap.xsl_script() <> "
         " <> inline_styles()
 }
 
