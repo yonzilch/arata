@@ -9,10 +9,11 @@
 //// entry chain (`arata.gleam`). The SPA uses `content/runtime.gleam` instead,
 //// which fetches the pre-built JSON.
 
+import content/headings
 import data/link.{type Link, Link}
 import data/markdown
 import data/page.{type Page, Page}
-import data/post.{type Post, type TocEntry, Post, TocEntry}
+import data/post.{type Post, Post}
 import data/project.{type Project, Project}
 import gleam/int
 import gleam/list
@@ -250,8 +251,7 @@ fn load_post(path: String, filename: String) -> Result(Post, Nil) {
     Ok(t) -> Some(t)
     Error(_) -> None
   }
-  let html_body = markdown.to_html(body) |> add_heading_ids
-  let toc = extract_toc_from_html(html_body)
+  let #(html_body, toc) = body |> markdown.to_html |> headings.process
   let word_count = count_words(body)
   let reading_time = case word_count {
     0 -> 0
@@ -289,7 +289,7 @@ fn load_page(path: String, filename: String) -> Result(Page, Nil) {
     Ok(s) -> Some(s)
     Error(_) -> None
   }
-  let html_body = markdown.to_html(body)
+  let html_body = body |> markdown.to_html |> headings.process_ids_only
 
   Ok(Page(slug: slug, title: title, body: html_body, subtitle: subtitle))
 }
@@ -303,231 +303,6 @@ fn split_frontmatter(content: String) -> #(String, String) {
         Error(_) -> #("", content)
         Ok(#(frontmatter, body)) -> #(frontmatter, body)
       }
-  }
-}
-
-/// Extract a table of contents from rendered HTML. Parses every `<hN id="...">`
-/// heading tag (N = 2, 3, 4) mork emitted and `add_heading_ids` stamped with an
-/// `id`, then builds a nested `TocEntry` tree: h2 entries sit at the top level,
-/// h3 entries nest under the preceding h2, and h4 entries nest under the
-/// preceding h3.
-fn extract_toc_from_html(html: String) -> List(TocEntry) {
-  let all_headings = parse_headings(html)
-  let toc_headings =
-    list.filter(all_headings, fn(entry) {
-      let #(level, _, _) = entry
-      level == 2 || level == 3 || level == 4
-    })
-  build_toc_tree(toc_headings)
-}
-
-/// Parse `<hN id="...">Title</hN>` tags out of rendered HTML.
-fn parse_headings(html: String) -> List(#(Int, String, String)) {
-  html
-  |> string.split("<h")
-  |> list.filter_map(fn(piece) {
-    use #(level_ch, rest) <- result.try(string.pop_grapheme(piece))
-    use level <- result.try(int.parse(level_ch))
-    use #(_, after_id_open) <- result.try(string.split_once(rest, "id=\""))
-    use #(id, after_id_close) <- result.try(string.split_once(
-      after_id_open,
-      "\"",
-    ))
-    use #(_, title_with_rest) <- result.try(string.split_once(
-      after_id_close,
-      ">",
-    ))
-    use #(title, _) <- result.try(string.split_once(title_with_rest, "</h"))
-    let clean_title = title |> strip_html_tags
-    Ok(#(level, id, clean_title))
-  })
-}
-
-/// Build a nested `TocEntry` tree from a flat list of `(level, id, title)`
-/// triples.
-fn build_toc_tree(headings: List(#(Int, String, String))) -> List(TocEntry) {
-  case headings {
-    [] -> []
-    [first, ..] -> {
-      let #(first_level, _, _) = first
-      build_at_level(headings, first_level)
-    }
-  }
-}
-
-/// Process `headings` at `level`, returning a list of `TocEntry`.
-fn build_at_level(
-  headings: List(#(Int, String, String)),
-  level: Int,
-) -> List(TocEntry) {
-  case headings {
-    [] -> []
-    [#(lvl, id, title), ..rest] if lvl == level -> {
-      let #(children_headings, siblings) = take_until_at_or_below(rest, level)
-      let children = case children_headings {
-        [] -> []
-        [#(child_level, _, _), ..] ->
-          build_at_level(children_headings, child_level)
-      }
-      let entry = TocEntry(id: id, title: title, children: children)
-      [entry, ..build_at_level(siblings, level)]
-    }
-    [#(lvl, _, _), ..] if lvl < level -> []
-    [_, ..rest] -> build_at_level(rest, level)
-  }
-}
-
-/// Split `headings` at the first entry whose level is `<= level`.
-fn take_until_at_or_below(
-  headings: List(#(Int, String, String)),
-  level: Int,
-) -> #(List(#(Int, String, String)), List(#(Int, String, String))) {
-  case headings {
-    [] -> #([], [])
-    [#(lvl, _, _), ..] if lvl <= level -> #([], headings)
-    [h, ..rest] -> {
-      let #(children, siblings) = take_until_at_or_below(rest, level)
-      #([h, ..children], siblings)
-    }
-  }
-}
-
-/// First pass of heading-id generation.
-fn slugify(text: String) -> String {
-  text
-  |> string.lowercase()
-  |> string.to_graphemes()
-  |> list.fold("", fn(acc, ch) {
-    case ch {
-      " " | "-" | "_" -> acc <> "-"
-      "." | "," | ":" | "?" | "!" | "(" | ")" | "'" | "\"" -> acc
-      _ -> acc <> ch
-    }
-  })
-}
-
-/// Strip HTML tags from a fragment of HTML.
-fn strip_html_tags(html: String) -> String {
-  html
-  |> string.split("<")
-  |> list.map(fn(piece) {
-    case string.split_once(piece, ">") {
-      Ok(#(_tag, rest)) -> rest
-      Error(_) -> piece
-    }
-  })
-  |> string.join("")
-}
-
-/// Post-process mork's HTML output to inject `id` attributes on `<h1>`–`<h6>`.
-fn add_heading_ids(html: String) -> String {
-  let pieces = string.split(html, "<h")
-  case pieces {
-    [] -> html
-    [first, ..rest] -> {
-      let #(processed, _next_counter) =
-        list.fold(rest, #([], 1), fn(acc, piece) {
-          let #(acc_list, counter) = acc
-          let #(new_piece, next_counter) =
-            add_id_to_heading_piece(piece, counter)
-          #([new_piece, ..acc_list], next_counter)
-        })
-      string.join([first, ..list.reverse(processed)], "<h")
-    }
-  }
-}
-
-/// Process one piece produced by splitting HTML on `<h`.
-fn add_id_to_heading_piece(piece: String, counter: Int) -> #(String, Int) {
-  let levels = ["1>", "2>", "3>", "4>", "5>", "6>"]
-  let is_heading = list.any(levels, fn(lv) { string.starts_with(piece, lv) })
-  case is_heading {
-    False -> #(piece, counter)
-    True ->
-      case string.split_once(piece, ">") {
-        Ok(#(opening, rest)) ->
-          case string.split_once(rest, "</h") {
-            Ok(#(title, after_close)) -> {
-              let slug = title |> strip_html_tags |> slugify
-              let #(final_id, next_counter) = case needs_fallback_id(slug) {
-                True -> #("heading-" <> int.to_string(counter), counter + 1)
-                False -> #(slug, counter)
-              }
-              #(
-                opening
-                  <> " id=\""
-                  <> final_id
-                  <> "\"><a href=\"#"
-                  <> final_id
-                  <> "\">"
-                  <> title
-                  <> "</a></h"
-                  <> after_close,
-                next_counter,
-              )
-            }
-            Error(_) -> #(piece, counter)
-          }
-        Error(_) -> #(piece, counter)
-      }
-  }
-}
-
-/// Whether a slugified heading needs the sequential `heading-N` fallback.
-fn needs_fallback_id(slug: String) -> Bool {
-  case slug {
-    "" -> True
-    _ -> {
-      let graphemes = string.to_graphemes(slug)
-      let has_non_ascii =
-        list.any(graphemes, fn(ch) { !is_ascii_slug_char(ch) })
-      let all_hyphens = list.all(graphemes, fn(ch) { ch == "-" })
-      has_non_ascii || all_hyphens
-    }
-  }
-}
-
-/// Whether a grapheme is an ASCII lowercase letter, digit, or hyphen.
-fn is_ascii_slug_char(ch: String) -> Bool {
-  case ch {
-    "a"
-    | "b"
-    | "c"
-    | "d"
-    | "e"
-    | "f"
-    | "g"
-    | "h"
-    | "i"
-    | "j"
-    | "k"
-    | "l"
-    | "m"
-    | "n"
-    | "o"
-    | "p"
-    | "q"
-    | "r"
-    | "s"
-    | "t"
-    | "u"
-    | "v"
-    | "w"
-    | "x"
-    | "y"
-    | "z"
-    | "0"
-    | "1"
-    | "2"
-    | "3"
-    | "4"
-    | "5"
-    | "6"
-    | "7"
-    | "8"
-    | "9"
-    | "-" -> True
-    _ -> False
   }
 }
 

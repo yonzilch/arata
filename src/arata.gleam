@@ -27,6 +27,7 @@ import data/search.{type SearchResult}
 import data/site.{type SiteMeta, SiteMeta}
 import effect/analytics as analytics_effect
 import effect/codeblock as codeblock_effect
+import effect/fragment as fragment_effect
 import effect/lightbox as lightbox_effect
 import effect/note as note_effect
 import effect/script as script_effect
@@ -162,11 +163,15 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
 
   // Configuration-dependent effects must not start from bootstrap defaults.
   // They are armed after ContentLoaded(Ok(_)).
+  let fragment_effect =
+    effect.map(fragment_effect.subscribe_to_hash_changes(), FragmentHashChanged)
+
   let effects =
     effect.batch([
       navigation_effect,
       theme_effect,
       content_effect,
+      fragment_effect,
     ])
 
   #(model, effects)
@@ -177,6 +182,8 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
 pub type Msg {
   UserNavigatedTo(route: Route)
   TocActiveHeadingChanged(id: String)
+  FragmentSelected(id: String)
+  FragmentHashChanged(id: Option(String))
   UserToggledTheme
   ThemeLoaded(theme: theme_effect.Theme)
   SystemPrefersDarkChanged(prefers_dark: Bool)
@@ -217,7 +224,11 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         )
 
       let route_effects = case new_model.content_state {
-        ContentReady -> configured_post_effects(new_model)
+        ContentReady ->
+          effect.batch([
+            configured_post_effects(new_model),
+            fragment_restore_effect(),
+          ])
 
         ContentLoading | ContentFailed -> effect.none()
       }
@@ -235,6 +246,31 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       Model(..model, active_heading: option.Some(id)),
       effect.none(),
     )
+
+    FragmentSelected(id) -> {
+      // Successful selection closes the floating ToC overlay. The fragment is
+      // pushed into the URL (no full-page navigation) and the heading is
+      // scrolled to the vertical center of the viewport.
+      let new_model = Model(..model, toc_overlay_open: False)
+
+      #(
+        new_model,
+        effect.batch([
+          effect.map(fragment_effect.set_hash(id), fn(_) { NoOp }),
+          effect.map(fragment_effect.scroll_to(id), TocActiveHeadingChanged),
+        ]),
+      )
+    }
+
+    FragmentHashChanged(id) ->
+      case id {
+        option.Some(target) -> #(
+          model,
+          effect.map(fragment_effect.scroll_to(target), TocActiveHeadingChanged),
+        )
+
+        option.None -> #(model, effect.none())
+      }
 
     UserToggledTheme -> {
       let next_theme =
@@ -327,6 +363,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
               configured_analytics_effect(application_config),
               configured_lightbox_effect(application_config),
               configured_post_effects(new_model),
+              fragment_restore_effect(),
             ]),
           )
         }
@@ -981,6 +1018,7 @@ fn view_route_content(model: Model) -> #(Element(Msg), Element(Msg)) {
                 found.toc,
                 model.active_heading,
                 model.sidebar_toc_expanded,
+                FragmentSelected,
               )
 
             False -> none()
@@ -1074,6 +1112,7 @@ fn toc_fab_elements(model: Model) -> List(Element(Msg)) {
                               toc_view.view_static(
                                 found.toc,
                                 model.active_heading,
+                                FragmentSelected,
                               ),
                             ]
                           },
@@ -1122,6 +1161,7 @@ fn view_tags_and_toc(
   toc: List(post.TocEntry),
   active_heading: Option(String),
   toc_expanded: Bool,
+  on_toc_select: fn(String) -> Msg,
 ) -> Element(Msg) {
   case post_tags, toc {
     [], [] -> none()
@@ -1129,9 +1169,19 @@ fn view_tags_and_toc(
     _, _ ->
       html.div([], [
         view_tags_sidebar(post_tags),
-        toc_view.view(toc, active_heading, toc_expanded, UserToggledSidebarToc),
+        toc_view.view(
+          toc,
+          active_heading,
+          toc_expanded,
+          UserToggledSidebarToc,
+          on_toc_select,
+        ),
       ])
   }
+}
+
+fn fragment_restore_effect() -> effect.Effect(Msg) {
+  effect.map(fragment_effect.restore_initial(), TocActiveHeadingChanged)
 }
 
 fn view_tags_sidebar(post_tags: List(String)) -> Element(Msg) {
