@@ -4,7 +4,7 @@
 //// every ToC target consume the same final ID.
 
 import content/headings
-import data/post.{type TocEntry}
+import data/post.{type TocEntry, TocEntry}
 import gleam/list
 import gleam/string
 import gleeunit
@@ -215,11 +215,11 @@ pub fn inline_markdown_is_stripped_before_slugging_test() {
   |> should.equal(True)
 }
 
-pub fn toc_excludes_h1_h5_h6_but_still_assigns_ids_test() {
+pub fn toc_includes_every_heading_level_test() {
   let html = "<h1>Doc</h1><h2>A</h2><h5>Minor</h5><h6>Minor 2</h6>"
   let #(out_html, toc) = headings.process(html)
 
-  // h1, h5, h6 receive IDs but are not part of the ToC; only the h2 is.
+  // Every heading level (h1–h6) is part of the ToC at its own level.
   out_html
   |> string.contains("id=\"doc\"")
   |> should.equal(True)
@@ -233,7 +233,13 @@ pub fn toc_excludes_h1_h5_h6_but_still_assigns_ids_test() {
   |> should.equal(True)
 
   toc_ids(toc)
-  |> should.equal(["a"])
+  |> should.equal(["doc", "a", "minor", "minor-2"])
+
+  // h1 is the only top-level entry; h2 nests under it, h5 under the h2, and
+  // h6 under the h5.
+  toc
+  |> list.map(entry_level)
+  |> should.equal([1])
 }
 
 pub fn toc_links_use_the_same_ids_as_rendered_headings_test() {
@@ -268,7 +274,7 @@ pub fn toc_targets_resolve_to_exactly_one_rendered_heading_test() {
   })
 }
 
-pub fn toc_filtering_does_not_change_assigned_ids_test() {
+pub fn toc_building_does_not_change_assigned_ids_test() {
   // Enabling/disabling the ToC must not change generated IDs: every heading
   // (h1–h6) keeps the ID assigned from the full heading list.
   let html = "<h1>Doc</h1><h2>A</h2><h3>B</h3><h4>C</h4><h5>D</h5><h6>E</h6>"
@@ -290,6 +296,83 @@ pub fn cjk_toc_targets_use_readable_unicode_slugs_test() {
   |> should.equal(["技术栈", "依赖项"])
 }
 
+pub fn leading_h3_is_top_level_and_h2_sections_kept_test() {
+  // A document starting with an h3 (before any h2) must not break the ToC:
+  // the leading h3 has no shallower heading before it, so it becomes a
+  // top-level entry, and every following h2 section is still present,
+  // instead of the build stopping at the first h2.
+  let html =
+    "<h3>Hello, Arata</h3><h2>Why Arata</h2><h2>Why Gleam</h2><h2>Tech stack</h2>"
+  let #(_out_html, toc) = headings.process(html)
+
+  toc_ids(toc)
+  |> should.equal(["hello-arata", "why-arata", "why-gleam", "tech-stack"])
+}
+
+pub fn leading_h3_is_a_top_level_entry_test() {
+  // A leading h3 has no preceding h2 to nest under, so it sits at the top
+  // level of the ToC, and the first h2 is also a top-level entry, not a
+  // child.
+  let html = "<h3>Intro</h3><h2>Body</h2><h3>Detail</h3>"
+  let #(_out_html, toc) = headings.process(html)
+
+  toc
+  |> list.map(entry_level)
+  |> should.equal([3, 2])
+
+  toc
+  |> list.map(fn(entry) { entry.id })
+  |> should.equal(["intro", "body"])
+
+  // "Detail" nests under its preceding h2 "Body".
+  toc
+  |> list.map(fn(entry) { entry.children })
+  |> should.equal([
+    [],
+    [TocEntry(level: 3, id: "detail", title: "Detail", children: [])],
+  ])
+}
+
+pub fn h3_after_h4_is_not_dropped_test() {
+  // Within one h2 section, an h3 that follows an h4 (shallower than the level
+  // being built) re-anchors the build instead of being dropped.
+  let html = "<h2>Setup</h2><h4>Advanced</h4><h3>Default</h3><h2>Next</h2>"
+  let #(_out_html, toc) = headings.process(html)
+
+  toc_ids(toc)
+  |> should.equal(["setup", "advanced", "default", "next"])
+}
+
+pub fn leading_h4_is_top_level_before_the_first_h2_test() {
+  // The same re-anchoring applies when the document opens with an h4: it is
+  // kept as a top-level entry and the following h2 sections still build.
+  let html = "<h4>Note</h4><h2>Body</h2><h2>End</h2>"
+  let #(_out_html, toc) = headings.process(html)
+
+  toc_ids(toc)
+  |> should.equal(["note", "body", "end"])
+}
+
+pub fn inverted_heading_levels_keep_document_order_test() {
+  // With inverted heading levels (h4 before h3 before h2) no heading has a
+  // shallower heading before it, so every heading becomes a top-level entry
+  // in document order. The view derives indentation from each entry's own
+  // level, so the h4 still renders deepest.
+  let html = "<h4>Note</h4><h3>Body</h3><h2>End</h2>"
+  let #(_out_html, toc) = headings.process(html)
+
+  toc_ids(toc)
+  |> should.equal(["note", "body", "end"])
+
+  toc
+  |> list.map(entry_level)
+  |> should.equal([4, 3, 2])
+
+  toc
+  |> list.map(fn(entry) { entry.children })
+  |> should.equal([[], [], []])
+}
+
 // HELPERS --------------------------------------------------------------------
 
 /// The `id` field of every assigned heading, in document order.
@@ -305,6 +388,11 @@ fn toc_ids(entries: List(TocEntry)) -> List(String) {
   list.flatten(
     list.map(entries, fn(entry) { [entry.id, ..toc_ids(entry.children)] }),
   )
+}
+
+/// The `level` of a top-level ToC entry.
+fn entry_level(entry: TocEntry) -> Int {
+  entry.level
 }
 
 /// Count non-overlapping occurrences of `needle` in `haystack`.

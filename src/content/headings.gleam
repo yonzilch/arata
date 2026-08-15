@@ -35,8 +35,8 @@
 ////   - the same Markdown input always produces the same IDs.
 ////
 //// Because IDs are assigned from the full heading list before the ToC is
-//// filtered to h2–h4, enabling or disabling the ToC never changes the
-//// generated IDs.
+//// built (the ToC consumes every heading, h1–h6), enabling or disabling the
+//// ToC never changes the generated IDs.
 
 import data/post.{type TocEntry, TocEntry}
 import gleam.{type UtfCodepoint}
@@ -48,7 +48,7 @@ import gleam/string
 
 /// Process rendered HTML end to end: assign an ID to every heading, inject
 /// the ID plus a permalink anchor into the HTML, and build the nested table
-/// of contents (h2 top level, h3/h4 nested) from the same final IDs.
+/// of contents (every heading level, h1–h6) from the same final IDs.
 ///
 /// The rendered headings and the ToC links therefore consume exactly the same
 /// ID, so every ToC target resolves to one rendered heading.
@@ -432,17 +432,19 @@ fn strip_html_tags(html: String) -> String {
 
 // TABLE OF CONTENTS ----------------------------------------------------------
 
-/// Build a nested `TocEntry` tree from the assigned headings: h2 entries sit
-/// at the top level, h3 entries nest under the preceding h2, and h4 entries
-/// nest under the preceding h3. h1, h5, and h6 are assigned IDs but are not
-/// part of the ToC.
+/// Build a nested `TocEntry` tree from the assigned headings. Every level
+/// (h1–h6) is part of the ToC: each heading nests under the nearest preceding
+/// heading with a shallower level, and a heading with no shallower heading
+/// before it (for example a leading h3 before any h2) becomes a top-level
+/// entry. The tree preserves document order, so the view can render the
+/// entries flat and derive each one's indentation from its own level.
+///
+/// The tree tolerates malformed heading order: a heading shallower than the
+/// level currently being built (for example an h3 before the first h2, or an
+/// h3 after an h4) re-anchors the build at that shallower level instead of
+/// dropping the remaining headings, so no ToC section is ever lost.
 fn build_toc(headings: List(#(Int, String, String))) -> List(TocEntry) {
-  let toc_headings =
-    list.filter(headings, fn(entry) {
-      let #(level, _, _) = entry
-      level == 2 || level == 3 || level == 4
-    })
-  build_toc_tree(toc_headings)
+  build_toc_tree(headings)
 }
 
 /// Build a nested `TocEntry` tree from a flat list of `(level, id, title)`
@@ -474,7 +476,11 @@ fn build_at_level(
       let entry = TocEntry(level: lvl, id: id, title: title, children: children)
       [entry, ..build_at_level(siblings, level)]
     }
-    [#(lvl, _, _), ..] if lvl < level -> []
+    // A heading shallower than the level being built re-anchors the tree at
+    // its own level instead of stopping: a leading h3/h4 (before any h2) is
+    // promoted to a top-level entry, and after the first h2 every subsequent
+    // section builds normally.
+    [#(lvl, _, _), ..] if lvl < level -> build_at_level(headings, lvl)
     [_, ..rest] -> build_at_level(rest, level)
   }
 }
