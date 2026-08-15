@@ -26,6 +26,7 @@ import build/feeds
 import build/feeds_style
 import build/llms
 import build/robots
+import build/theme_bootstrap
 import config
 import config/decoder as config_decoder
 import config/encoder as config_encoder
@@ -732,7 +733,14 @@ fn trim_css_spaces_around_tokens(css: String) -> String {
 ///
 /// Feed metadata is emitted for both `Full` and `Summary` modes. Asset paths
 /// are resolved from the configuration-derived deployment base path.
-fn index_html(site_meta: site.SiteMeta, site_config: config.Config) -> String {
+///
+/// The shell carries a synchronous theme bootstrap in `<head>` (before the
+/// main CSS) so an explicit persisted `light`/`dark` preference is applied
+/// before the first visible paint, instead of flashing the system theme.
+pub fn index_html(
+  site_meta: site.SiteMeta,
+  site_config: config.Config,
+) -> String {
   let base_path = site_config.base_path
   let atom_href = config.with_base_path(base_path, "/atom.xml")
   let rss_href = config.with_base_path(base_path, "/rss.xml")
@@ -759,7 +767,9 @@ fn index_html(site_meta: site.SiteMeta, site_config: config.Config) -> String {
 
   let css = inline_css()
 
-  "<!DOCTYPE html><html lang='en' class='dark light'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>"
+  "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+  <> theme_bootstrap.html_script()
+  <> "<title>"
   <> site_meta.title
   <> "</title><meta name='description' content='"
   <> site_meta.description
