@@ -553,6 +553,7 @@ fn option_to_json(value: option.Option(String)) -> json.Json {
 /// Serialize a table-of-contents entry.
 fn toc_entry_json(entry: TocEntry) -> json.Json {
   json.object([
+    #("level", json.int(entry.level)),
     #("id", json.string(entry.id)),
     #("title", json.string(entry.title)),
     #("children", json.array(entry.children, toc_entry_json)),

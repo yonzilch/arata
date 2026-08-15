@@ -7,15 +7,45 @@
 //
 // Only the topmost intersecting heading is reported on each callback, matching
 // apollo's `toc.js` behaviour (the first visible paragraph's preceding heading
-// is the "active" one). The observer disconnects before re-setup so navigating
-// between posts does not leak listeners.
+// is the "active" one). Fragment navigation (ToC clicks, fragment restores,
+// back/forward) highlights its own target: `fragment.ffi.mjs` scrolls the
+// heading to the vertical center of the viewport and dispatches the target id
+// once the scroll has settled, so the highlight is not left tracking an
+// intermediate position while the page scrolls.
+//
+// Setup is deferred by two animation frames because Lustre runs synchronous
+// effects before its (deferred) render: when this effect runs, the post body
+// for the new route does not exist yet, so `querySelector` would find nothing
+// and the highlight would never activate. Deferring matches the approach in
+// `fragment.ffi.mjs` and guarantees the observer attaches to the freshly
+// rendered content on direct loads and on in-SPA route changes alike.
+//
+// The live observer is tracked at module level: the previous observer is
+// disconnected before a new one is installed, so navigating between posts
+// never leaks listeners or stacks duplicate observers.
+
+let current_observer = null;
 
 export function observe_toc(dispatch) {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      if (current_observer) {
+        current_observer.disconnect();
+        current_observer = null;
+      }
+      current_observer = setup_observer(dispatch);
+    });
+  });
+}
+
+function setup_observer(dispatch) {
   const root = document.querySelector("main section.body");
-  if (!root) return;
+  if (!root) return null;
 
   const headings = root.querySelectorAll("h2[id], h3[id]");
-  if (headings.length === 0) return;
+  if (headings.length === 0) return null;
 
   const children = Array.from(root.children);
   // Map each child element to the id of the nearest preceding heading.
@@ -32,6 +62,18 @@ export function observe_toc(dispatch) {
 
   const observer = new IntersectionObserver(
     (entries) => {
+      // At the bottom of the document the final heading can never reach the
+      // top of the viewport, so the topmost rule below would highlight the
+      // second-to-last section. Prefer the final heading once scrolling is
+      // exhausted.
+      const at_bottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 2;
+      if (at_bottom) {
+        dispatch(headings[headings.length - 1].id);
+        return;
+      }
+
       // Find the first (in document order) currently-intersecting child whose
       // preceding heading we know, and dispatch its id.
       const visible = entries
@@ -55,5 +97,5 @@ export function observe_toc(dispatch) {
 
   children.forEach((child) => observer.observe(child));
 
-  return () => observer.disconnect();
+  return observer;
 }

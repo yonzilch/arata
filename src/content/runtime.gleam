@@ -423,6 +423,7 @@ fn decode_page() -> decode.Decoder(Page) {
 }
 
 fn decode_toc_entry() -> decode.Decoder(TocEntry) {
+  use level <- decode.field("level", decode.int)
   use id <- decode.field("id", decode.string)
   use title <- decode.field("title", decode.string)
   use children <- decode.optional_field(
@@ -431,7 +432,12 @@ fn decode_toc_entry() -> decode.Decoder(TocEntry) {
     decode.list(decode_toc_entry()),
   )
 
-  decode.success(TocEntry(id: id, title: title, children: children))
+  decode.success(TocEntry(
+    level: level,
+    id: id,
+    title: title,
+    children: children,
+  ))
 }
 
 fn decode_link() -> decode.Decoder(Link) {

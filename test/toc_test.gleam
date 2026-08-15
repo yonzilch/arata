@@ -2,6 +2,7 @@
 //// non-collapsible table of contents used by the floating overlay.
 
 import data/post.{type TocEntry, TocEntry}
+import gleam/list
 import gleam/option
 import gleam/string
 import gleeunit
@@ -20,7 +21,7 @@ type Msg {
 
 pub fn expanded_toc_renders_downward_disclosure_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, True, ToggleToc)
+    toc.view(sample_entries(), option.None, True, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -34,7 +35,7 @@ pub fn expanded_toc_renders_downward_disclosure_test() {
 
 pub fn collapsed_toc_renders_right_disclosure_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, False, ToggleToc)
+    toc.view(sample_entries(), option.None, False, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -48,7 +49,7 @@ pub fn collapsed_toc_renders_right_disclosure_test() {
 
 pub fn expanded_toc_exposes_expanded_aria_state_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, True, ToggleToc)
+    toc.view(sample_entries(), option.None, True, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -62,7 +63,7 @@ pub fn expanded_toc_exposes_expanded_aria_state_test() {
 
 pub fn collapsed_toc_exposes_collapsed_aria_state_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, False, ToggleToc)
+    toc.view(sample_entries(), option.None, False, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -76,11 +77,11 @@ pub fn collapsed_toc_exposes_collapsed_aria_state_test() {
 
 pub fn disclosure_indicator_is_hidden_from_accessibility_tree_test() {
   let expanded =
-    toc.view(sample_entries(), option.None, True, ToggleToc)
+    toc.view(sample_entries(), option.None, True, ToggleToc, no_op_select)
     |> element.to_string
 
   let collapsed =
-    toc.view(sample_entries(), option.None, False, ToggleToc)
+    toc.view(sample_entries(), option.None, False, ToggleToc, no_op_select)
     |> element.to_string
 
   expanded
@@ -94,7 +95,7 @@ pub fn disclosure_indicator_is_hidden_from_accessibility_tree_test() {
 
 pub fn expanded_toc_keeps_entries_container_visible_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, True, ToggleToc)
+    toc.view(sample_entries(), option.None, True, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -112,7 +113,7 @@ pub fn expanded_toc_keeps_entries_container_visible_test() {
 
 pub fn collapsed_toc_hides_entries_container_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, False, ToggleToc)
+    toc.view(sample_entries(), option.None, False, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -130,7 +131,7 @@ pub fn collapsed_toc_hides_entries_container_test() {
 
 pub fn toc_control_uses_native_button_semantics_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, True, ToggleToc)
+    toc.view(sample_entries(), option.None, True, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -156,7 +157,7 @@ pub fn toc_control_uses_native_button_semantics_test() {
 
 pub fn empty_toc_renders_nothing_test() {
   let rendered =
-    toc.view([], option.None, True, ToggleToc)
+    toc.view([], option.None, True, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -165,7 +166,7 @@ pub fn empty_toc_renders_nothing_test() {
 
 pub fn empty_static_toc_renders_nothing_test() {
   let rendered =
-    toc.view_static([], option.None)
+    toc.view_static([], option.None, no_op_select)
     |> element.to_string
 
   rendered
@@ -174,7 +175,7 @@ pub fn empty_static_toc_renders_nothing_test() {
 
 pub fn static_toc_does_not_render_disclosure_control_test() {
   let rendered =
-    toc.view_static(sample_entries(), option.None)
+    toc.view_static(sample_entries(), option.None, no_op_select)
     |> element.to_string
 
   rendered
@@ -208,7 +209,7 @@ pub fn static_toc_does_not_render_disclosure_control_test() {
 
 pub fn toc_renders_nested_heading_links_test() {
   let rendered =
-    toc.view(sample_entries(), option.None, True, ToggleToc)
+    toc.view(sample_entries(), option.None, True, ToggleToc, no_op_select)
     |> element.to_string
 
   rendered
@@ -230,7 +231,13 @@ pub fn toc_renders_nested_heading_links_test() {
 
 pub fn active_top_level_heading_is_selected_and_parent_test() {
   let rendered =
-    toc.view(sample_entries(), option.Some("installation"), True, ToggleToc)
+    toc.view(
+      sample_entries(),
+      option.Some("installation"),
+      True,
+      ToggleToc,
+      no_op_select,
+    )
     |> element.to_string
 
   rendered
@@ -240,7 +247,13 @@ pub fn active_top_level_heading_is_selected_and_parent_test() {
 
 pub fn active_nested_heading_marks_top_level_parent_test() {
   let rendered =
-    toc.view(sample_entries(), option.Some("configuration"), True, ToggleToc)
+    toc.view(
+      sample_entries(),
+      option.Some("configuration"),
+      True,
+      ToggleToc,
+      no_op_select,
+    )
     |> element.to_string
 
   rendered
@@ -252,23 +265,40 @@ pub fn active_nested_heading_marks_top_level_parent_test() {
   |> should.equal(True)
 }
 
-pub fn active_deeply_nested_heading_marks_top_level_parent_test() {
+pub fn active_h4_heading_highlights_parent_h3_not_the_h4_test() {
   let rendered =
-    toc.view(sample_entries(), option.Some("advanced-options"), True, ToggleToc)
+    toc.view(
+      sample_entries(),
+      option.Some("advanced-options"),
+      True,
+      ToggleToc,
+      no_op_select,
+    )
     |> element.to_string
 
+  // The top-level h2 is marked as `.parent`...
   rendered
   |> string.contains("class=\"parent \"")
   |> should.equal(True)
 
+  // ...and exactly one entry (the parent h3 "configuration") carries the
+  // `.selected` class. The h4 entry itself is never highlighted: it must not
+  // add a second `class="selected "` occurrence.
   rendered
-  |> string.contains("class=\"selected \"")
-  |> should.equal(True)
+  |> string.split("class=\"selected \"")
+  |> list.length
+  |> should.equal(2)
 }
 
 pub fn unknown_active_heading_selects_no_entry_test() {
   let rendered =
-    toc.view(sample_entries(), option.Some("missing-heading"), True, ToggleToc)
+    toc.view(
+      sample_entries(),
+      option.Some("missing-heading"),
+      True,
+      ToggleToc,
+      no_op_select,
+    )
     |> element.to_string
 
   rendered
@@ -280,17 +310,22 @@ pub fn unknown_active_heading_selects_no_entry_test() {
   |> should.equal(False)
 }
 
+fn no_op_select(_id: String) -> Msg {
+  ToggleToc
+}
+
 fn sample_entries() -> List(TocEntry) {
   [
-    TocEntry(id: "installation", title: "Installation", children: [
-      TocEntry(id: "configuration", title: "Configuration", children: [
+    TocEntry(level: 2, id: "installation", title: "Installation", children: [
+      TocEntry(level: 3, id: "configuration", title: "Configuration", children: [
         TocEntry(
+          level: 4,
           id: "advanced-options",
           title: "Advanced options",
           children: [],
         ),
       ]),
     ]),
-    TocEntry(id: "deployment", title: "Deployment", children: []),
+    TocEntry(level: 2, id: "deployment", title: "Deployment", children: []),
   ]
 }

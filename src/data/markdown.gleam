@@ -17,8 +17,8 @@
 //// `tables: True` so table blocks become real `<table>` HTML.
 ////
 //// We intentionally keep `heading_ids: False` because arata adds heading IDs
-//// later in `content/loader.gleam` via `add_heading_ids`. Enabling mork's
-//// heading IDs here would risk duplicate/conflicting IDs.
+//// later in `content/headings.gleam` (called from `content/loader.gleam`).
+//// Enabling mork's heading IDs here would risk duplicate/conflicting IDs.
 ////
 //// We also keep `strip_frontmatter: False` because arata already splits TOML
 //// frontmatter (`+++ ... +++`) before calling this module.

@@ -21,10 +21,11 @@
 //// and the accessibility tree.
 
 import data/post.{type TocEntry}
+import gleam/dynamic/decode
 import gleam/list
 import gleam/option.{type Option}
 import gleam/string
-import lustre/attribute
+import lustre/attribute.{type Attribute}
 import lustre/element.{type Element, none}
 import lustre/element/html
 import lustre/event
@@ -40,7 +41,8 @@ const toc_entries_id = "sidebar-table-of-contents"
 /// none has been scrolled to yet.
 ///
 /// `expanded` controls whether the TOC entries are visible. `on_toggle` is
-/// dispatched when the user activates the Table of Contents heading.
+/// dispatched when the user activates the Table of Contents heading, and
+/// `on_select` when the user activates a heading link.
 ///
 /// When `entries` is empty, this function returns `element.none()` so the
 /// sidebar does not render an empty interactive control.
@@ -49,6 +51,7 @@ pub fn view(
   active_heading: Option(String),
   expanded: Bool,
   on_toggle: msg,
+  on_select: fn(String) -> msg,
 ) -> Element(msg) {
   case entries {
     [] -> none()
@@ -97,7 +100,9 @@ pub fn view(
         ),
         html.ul(
           entries_attributes,
-          list.map(entries, fn(entry) { view_entry(entry, active_heading) }),
+          list.map(entries, fn(entry) {
+            view_entry(entry, active_heading, on_select)
+          }),
         ),
       ])
     }
@@ -108,12 +113,23 @@ pub fn view(
 ///
 /// A top-level entry is a `.parent` candidate. It receives the `.parent` class
 /// when the active heading is this entry or any of its descendants.
-fn view_entry(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
+fn view_entry(
+  entry: TocEntry,
+  active_heading: Option(String),
+  on_select: fn(String) -> msg,
+) -> Element(msg) {
   let is_selected = is_active(entry.id, active_heading)
   let is_parent =
     is_selected || any_child_active(entry.children, active_heading)
 
-  let link = html.a([attribute.href("#" <> entry.id)], [html.text(entry.title)])
+  let link =
+    html.a(
+      [
+        attribute.href("#" <> entry.id),
+        select_link_click(on_select(entry.id)),
+      ],
+      [html.text(entry.title)],
+    )
 
   let children = case entry.children {
     [] -> []
@@ -121,7 +137,9 @@ fn view_entry(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
     _ -> [
       html.ul(
         [],
-        list.map(entry.children, fn(child) { view_child(child, active_heading) }),
+        list.map(entry.children, fn(child) {
+          view_child(child, active_heading, on_select)
+        }),
       ),
     ]
   }
@@ -142,10 +160,30 @@ fn view_entry(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
 /// Second-level entries only receive `.selected`, never `.parent`, because
 /// apollo's CSS targets `.toc .parent > a` for the top-level highlight. The
 /// recursion allows h4 headings to render as children of their preceding h3.
-fn view_child(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
-  let is_selected = is_active(entry.id, active_heading)
+///
+/// h4 entries are never highlighted themselves: when an h4 heading is the
+/// active one, its parent h3 receives `.selected` (and the top-level h2
+/// `.parent`), so the highlight always lands on the h3/h2 pair.
+fn view_child(
+  entry: TocEntry,
+  active_heading: Option(String),
+  on_select: fn(String) -> msg,
+) -> Element(msg) {
+  let is_selected = case entry.level {
+    3 ->
+      is_active(entry.id, active_heading)
+      || any_child_active(entry.children, active_heading)
+    _ -> False
+  }
 
-  let link = html.a([attribute.href("#" <> entry.id)], [html.text(entry.title)])
+  let link =
+    html.a(
+      [
+        attribute.href("#" <> entry.id),
+        select_link_click(on_select(entry.id)),
+      ],
+      [html.text(entry.title)],
+    )
 
   let children = case entry.children {
     [] -> []
@@ -153,12 +191,22 @@ fn view_child(entry: TocEntry, active_heading: Option(String)) -> Element(msg) {
     _ -> [
       html.ul(
         [],
-        list.map(entry.children, fn(child) { view_child(child, active_heading) }),
+        list.map(entry.children, fn(child) {
+          view_child(child, active_heading, on_select)
+        }),
       ),
     ]
   }
 
   html.li([attribute.classes([#("selected", is_selected)])], [link, ..children])
+}
+
+/// Build the click handler for a heading link: prevent the browser's default
+/// fragment jump and stop propagation so `modem` does not intercept the click
+/// and re-dispatch the current route. The app runs the fragment-navigation
+/// effects (URL update + centered scroll) instead.
+fn select_link_click(message: msg) -> Attribute(msg) {
+  event.advanced("click", decode.success(event.handler(message, True, True)))
 }
 
 fn is_active(id: String, active_heading: Option(String)) -> Bool {
@@ -185,6 +233,7 @@ fn any_child_active(
 pub fn view_static(
   entries: List(TocEntry),
   active_heading: Option(String),
+  on_select: fn(String) -> msg,
 ) -> Element(msg) {
   case entries {
     [] -> none()
@@ -194,7 +243,9 @@ pub fn view_static(
         html.div([attribute.class("heading")], [html.text("Table of Contents")]),
         html.ul(
           [attribute.class("toc-list")],
-          list.map(entries, fn(entry) { view_entry(entry, active_heading) }),
+          list.map(entries, fn(entry) {
+            view_entry(entry, active_heading, on_select)
+          }),
         ),
       ])
   }

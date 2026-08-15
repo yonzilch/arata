@@ -14,10 +14,12 @@ import gleam/string
 
 /// A single entry in a post's table of contents. apollo generates up to three
 /// levels (h1, h2, h3) from the markdown headings; arata mirrors that with a
-/// recursive `children` list. The `id` is the heading's HTML `id` attribute,
-/// which the TOC links to via `#id` anchors.
+/// recursive `children` list. The `level` is the heading level (2, 3, or 4) so
+/// the view can distinguish h4 entries from their parent h3 entries, and the
+/// `id` is the heading's HTML `id` attribute, which the TOC links to via
+/// `#id` anchors.
 pub type TocEntry {
-  TocEntry(id: String, title: String, children: List(TocEntry))
+  TocEntry(level: Int, id: String, title: String, children: List(TocEntry))
 }
 
 /// A blog post.

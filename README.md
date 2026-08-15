@@ -234,7 +234,7 @@ Arata enables mork's extended options for:
 - autolinks
 - footnotes
 
-Heading IDs are handled by arata's own content loader instead of mork's built-in heading ID option, so CJK headings can fall back to stable ASCII IDs such as `heading-1`, `heading-2`, and so on.
+Heading IDs are handled by arata's own content loader instead of mork's built-in heading ID option. IDs are readable Unicode-aware slugs: whitespace becomes `-`, punctuation and symbols are removed, and letters and ideographs of any script (including CJK) are preserved. Duplicate or normalized-colliding headings receive numeric suffixes (`foo`, `foo-2`, ...) in document order, and headings with no usable slug (for example punctuation- or emoji-only titles) receive sequential `heading-N` fallbacks.
 
 ### Friend link ordering
 
