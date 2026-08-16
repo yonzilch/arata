@@ -2,7 +2,7 @@
 title = "README_zh-CN"
 description = "Arata 中文版本 README（同时用于测试部分 HTML 与 CJK 渲染）； 此 README 可能无法反映项目最新变动情况"
 date = "2026-07-05"
-updated = "2026-07-24"
+updated = "2026-08-16"
 +++
 
 <div align="center">
@@ -241,7 +241,7 @@ Arata 启用了 mork 的以下扩展选项：
 - 自动链接
 - 脚注
 
-标题 ID 由 arata 自身的内容加载器处理，而非 mork 内置的标题 ID 选项，因此 CJK 标题可以回退到稳定的 ASCII ID，例如 `heading-1`、`heading-2` 等。
+标题 ID 由 arata 自身的内容加载器处理，而非 mork 内置的标题 ID 选项。ID 是可读的 Unicode 感知 slug：空白转为 `-`，标点与符号被移除，任意脚本的字母与表意文字（包括 CJK）都会被保留。重复或规范化后冲突的标题会按文档顺序获得数字后缀（如 `foo`、`foo-2`、...），而没有可用 slug 的标题（例如只有标点或 emoji）则会获得连续的 `heading-N` 兜底 ID。
 
 ### 友链排序
 

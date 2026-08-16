@@ -34,13 +34,38 @@
 
 .toc ul {
     list-style-type: none;
-    padding-left: 1em;
+    padding-left: 0;
     margin-top: 0;
     margin-bottom: 0;
 }
 
-.toc > ul {
+/* Entries are rendered flat in document order; indentation comes from each
+   heading's own level via the `toc-depth-N` class (N = level − min_level + 1)
+   instead of from nested `<ul>`s. This keeps every heading — h1 through h6 —
+   at the depth its level implies even in malformed documents with inverted
+   heading order. */
+.toc .toc-depth-1 {
     padding-left: 0;
+}
+
+.toc .toc-depth-2 {
+    padding-left: 1em;
+}
+
+.toc .toc-depth-3 {
+    padding-left: 2em;
+}
+
+.toc .toc-depth-4 {
+    padding-left: 3em;
+}
+
+.toc .toc-depth-5 {
+    padding-left: 4em;
+}
+
+.toc .toc-depth-6 {
+    padding-left: 5em;
 }
 
 .toc li.selected,
