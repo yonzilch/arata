@@ -20,6 +20,43 @@ For example, project-specific sections such as
 
 ---
 
+## [v1.7.6] — 2026-08-17
+
+### Added
+
+- Added zoom and pan to the lightbox image preview.
+  - Clicking the image toggles between fit and 2x zoom.
+  - Mouse wheel zooms around the cursor position, up to 5x.
+  - Dragging pans the image while zoomed.
+  - Two-finger pinch zoom is supported on touch devices.
+  - Zoom resets on open, close, and gallery navigation.
+- Added a loading state to the lightbox: a stable placeholder with a spinner is shown while an image has not decoded, both when the lightbox opens and during gallery navigation.
+- Added centered fragment navigation for ToC entries.
+  - Clicking a ToC entry updates the URL fragment via `pushState` and scrolls the target heading to the vertical center of the viewport.
+  - Scrolling respects `prefers-reduced-motion` and document boundaries.
+  - The fragment target is restored on direct loads, refreshes, and browser back/forward navigation; missing or stale targets fail safely.
+
+### Changed
+
+- Unified heading ID generation so every rendered heading receives one deterministic, document-unique ID shared by the rendered heading, the ToC entry, the active-heading observer, and fragment navigation.
+  - Replaced the ASCII-only slug fallback with readable Unicode-aware slugs that preserve CJK and other scripts, removing punctuation, symbols, and emoji under one centralized policy.
+  - Duplicate and normalized-slug collisions resolve with deterministic numeric suffixes in document order (`foo`, `foo-2`, …).
+  - Sequential `heading-N` fallback IDs are used only when a heading produces no usable slug.
+  - Page headings now receive IDs as well as post headings, and enabling or disabling the ToC no longer changes the generated IDs.
+- Reworked ToC rendering: entries are rendered flat in document order with indentation derived from each heading's own level via `toc-depth-N` classes, replacing nested `<ul>` lists.
+- Refined the lightbox close button layout: repositioned it into a reserved dialog band so it no longer overlaps image content, with glassy hover/active/focus styling.
+- Expanded tests covering Latin, CJK, mixed-language, punctuation-only, emoji-only, duplicate, and collision-suffixed headings, all-level ToC rendering, inverted heading order, level-based depth classes, and the self-plus-ancestors highlight rule.
+
+### Fixed
+
+- Fixed a wrong-theme flash during initial page load: the persisted theme preference is now applied synchronously in the generated HTML shell, so an explicit light/dark choice wins over `prefers-color-scheme` on reloads and direct navigation instead of flashing the system theme. The bootstrap lives in a shared module used by both the SPA shell and the feed XSL stylesheets.
+- Fixed the lightbox showing a stale decoded frame while navigating to an image that is still loading: the old frame is hidden on every `src` change and the new image fades back in after load, without replacing the Lustre-rendered `<img>` node.
+- Fixed the ToC flattening every entry to the top level for documents with inverted heading order (e.g. an h4 before an h3 before an h2); h1, h5, and h6 headings now appear in the ToC at their own depth.
+- Active ToC highlighting now always marks the current heading plus its ancestors on the path to the top of its section; a heading with no shallower heading before it highlights only itself. The scroll-spy observer tracks h1–h6 instead of only h2/h3.
+- Corrected the updated timestamp in the Simplified Chinese README.
+
+---
+
 ## [v1.7.5] — 2026-08-12
 
 ### Added
