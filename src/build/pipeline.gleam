@@ -145,16 +145,10 @@ pub fn run() -> Result(Nil, String) {
         ),
       )
 
-      // 2. Search index JSON.
-      write(
-        dist_dir <> "/search_index.json",
-        search_index_json(site_config, posts),
-      )
-
-      // 3. Feeds and their browser-facing stylesheets.
+      // 2. Feeds and their browser-facing stylesheets.
       build_feeds(site_meta, site_config, posts)
 
-      // 4. Sitemap.
+      // 3. Sitemap.
       let page_slugs = list.map(pages, fn(page) { page.slug })
 
       write(
@@ -162,28 +156,28 @@ pub fn run() -> Result(Nil, String) {
         feeds.sitemap(site_meta, posts, page_slugs),
       )
 
-      // 5. robots.txt.
+      // 4. robots.txt.
       write(dist_dir <> "/robots.txt", robots.render(site_meta))
 
-      // 6. llms.txt.
+      // 5. llms.txt.
       write(
         dist_dir <> "/llms.txt",
         llms.render(site_meta, posts, projects, links, pages),
       )
 
-      // 7. Custom index.html with FOUC prevention.
+      // 6. Custom index.html with FOUC prevention.
       write(dist_dir <> "/index.html", index_html(site_meta, site_config))
 
-      // 8. SPA shell for deep links.
+      // 7. SPA shell for deep links.
       write(dist_dir <> "/404.html", not_found_html(site_meta, site_config))
 
-      // 9. Debug/inspection CSS modules.
+      // 8. Debug/inspection CSS modules.
       build_css()
 
-      // 10. Static assets.
+      // 9. Static assets.
       copy_directory_contents(static_dir, dist_dir)
 
-      // 11. Browser bundle.
+      // 10. Browser bundle.
       bundle_spa()
 
       print_build_summary(site_config.feed_mode)
@@ -309,24 +303,23 @@ fn empty_raw_config() -> RawConfig {
 /// Print the build output summary.
 fn print_build_summary(feed_mode: config.FeedMode) -> Nil {
   io.println("Build complete. dist/ contains:")
-  io.println("  index.html, 404.html, app.mjs,")
-  io.println("  content_index.json, search_index.json,")
+  io.println("  app.mjs, index.html, 404.html, content_index.json, llms.txt, robots.txt, sitemap.xml,")
 
   case feed_mode {
     config.Full ->
       io.println(
-        "  atom.xml, rss.xml, atom.xsl, rss.xsl (full content), sitemap.xml, robots.txt,",
+        "  atom.xml, rss.xml, atom.xsl, rss.xsl (full content)",
       )
 
     config.Summary ->
       io.println(
-        "  atom.xml, rss.xml, atom.xsl, rss.xsl (summaries), sitemap.xml, robots.txt,",
+        "  atom.xml, rss.xml, atom.xsl, rss.xsl (summaries)",
       )
 
-    config.Disabled -> io.println("  sitemap.xml, robots.txt, (feeds disabled)")
+    config.Disabled -> io.println("")
   }
 
-  io.println("  llms.txt, fonts/, icons/, images/, css/")
+  io.println("  css/*, fonts/*, icons/*, images/*")
 }
 
 /// Write content to a path.
@@ -558,29 +551,6 @@ fn toc_entry_json(entry: TocEntry) -> json.Json {
     #("title", json.string(entry.title)),
     #("children", json.array(entry.children, toc_entry_json)),
   ])
-}
-
-/// Serialize the search index.
-///
-/// The already-resolved site configuration is passed explicitly so this
-/// function cannot independently load defaults or configuration.
-fn search_index_json(site_config: config.Config, posts: List(Post)) -> String {
-  posts
-  |> json.array(fn(post) {
-    json.object([
-      #("title", json.string(post.title)),
-      #("description", json.string(post.description)),
-      #("tags", json.string(string.join(post.tags, " "))),
-      #(
-        "url",
-        json.string(config.with_base_path(
-          site_config.base_path,
-          "/posts/" <> post.slug,
-        )),
-      ),
-    ])
-  })
-  |> json.to_string
 }
 
 /// Read, minify, and concatenate CSS modules for the HTML shell.
