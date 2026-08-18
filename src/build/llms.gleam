@@ -37,24 +37,46 @@ pub fn render(
     item(base_url, "Posts", "/posts", "Blog post index."),
     item(base_url, "Projects", "/projects", "Project showcase index."),
     item(base_url, "Links", "/links", "Friend links and external resources."),
-    item(base_url, "Tags", "/tags", "Tag index."),
+    item(base_url, "Tags", "/tags", "Taxonomies index."),
     item(
       base_url,
       "Sitemap",
       "/sitemap.xml",
       "XML sitemap for crawlable pages.",
     ),
+    item(
+      base_url,
+      "RSS",
+      "/rss.xml",
+      "RSS feed (RSS 2.0)",
+    ),
+    item(
+      base_url,
+      "RSS",
+      "/atom.xml",
+      "Atom feed (Atom 1.0)",
+    ),
   ])
   <> section(
-    "Posts",
-    list.map(published_posts, fn(post) {
-      item(base_url, post.title, "/posts/" <> post.slug, post.description)
+    "Links",
+    list.map(links, fn(link) {
+      external_item(link.title, link.url, link.description)
     }),
   )
   <> section(
     "Pages",
     list.map(pages, fn(page) {
-      item(base_url, page.title, "/" <> page.slug, "Standalone page.")
+      let label = case page.title {
+        "" -> page.slug
+        _ -> page.title
+      }
+      item(base_url, label, "/" <> page.slug, "Standalone page.")
+    }),
+  )
+  <> section(
+    "Posts",
+    list.map(published_posts, fn(post) {
+      item(base_url, post.title, "/posts/" <> post.slug, post.description)
     }),
   )
   <> section(
@@ -66,12 +88,6 @@ pub fn render(
         "/projects/" <> project.slug,
         project.description,
       )
-    }),
-  )
-  <> section(
-    "External Links",
-    list.map(links, fn(link) {
-      external_item(link.title, link.url, "External link.")
     }),
   )
 }
@@ -93,7 +109,7 @@ fn item(
   <> markdown_label(label)
   <> "]("
   <> absolute_url(base_url, inline_text(path))
-  <> ") "
+  <> "): "
   <> inline_text(description)
 }
 
@@ -102,7 +118,7 @@ fn external_item(label: String, url: String, description: String) -> String {
   <> markdown_label(label)
   <> "]("
   <> inline_text(url)
-  <> ") "
+  <> "): "
   <> inline_text(description)
 }
 
