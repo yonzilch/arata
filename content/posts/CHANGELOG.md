@@ -2,6 +2,7 @@
 title = "CHANGELOG"
 description = "Comprehensive CHANGELOG of arata project"
 tags = ["docs"]
+pinned = true
 +++
 
 # Arata — CHANGELOG
@@ -17,6 +18,22 @@ changes in arata.
 
 For example, project-specific sections such as
 `CI`, `Contributors`, `Documentation`, or `Internal` may be used when they make a release easier to understand.
+
+---
+
+## [v1.7.7] — 2026-08-19
+
+### Changed
+- Standardized the "Scope" field description wording across all GitHub issue templates (`chore-build-ci`, `docs`, `perf`, `test`), aligning report-style forms on "...affected by this issue" and task-style forms on "...affected by this task"; `feat` and `refactor` already conformed.
+- Reworked `llms.txt` generation to match the standard specification: merged "External Links" into a unified "Links" section driven by each link's own description, added colon separators after URLs, added RSS (`/rss.xml`) and Atom (`/atom.xml`) feed links under "Core", and updated the "Tags" route description to "Taxonomies index".
+- Revamped the build summary output to reflect the current set of generated artifacts, consolidating file lists and handling feed modes correctly.
+
+### Fixed
+- Fixed `llms.txt` generation emitting invalid empty markdown links (e.g. `[](url)`) for pages with no title, by falling back to `page.slug`.
+
+### Removed
+- Removed the unused `lustre_dev_tools` dev dependency, superseded by the project's own `build/pipeline` module and Bun scripts.
+- Removed redundant `search_index.json` generation from the build pipeline.
 
 ---
 
