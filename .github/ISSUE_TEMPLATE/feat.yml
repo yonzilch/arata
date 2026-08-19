@@ -43,11 +43,13 @@ body:
       required: true
 
   - type: textarea
-    id: scope_details
+    id: boundaries
     attributes:
-      label: Scope
-      description: What is included and what is explicitly out of scope?
-      placeholder: List the intended work and exclusions.
+      label: Boundaries
+      description: What is included in this change, and what is explicitly out of scope?
+      placeholder: |
+        Included: ...
+        Excluded: ...
     validations:
       required: true
 

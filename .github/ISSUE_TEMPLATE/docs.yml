@@ -16,7 +16,7 @@ body:
     id: scope
     attributes:
       label: Scope
-      description: The functional area or document affected
+      description: The functional area or document affected by this issue
       placeholder: contributing
     validations:
       required: true
