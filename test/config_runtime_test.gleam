@@ -21,6 +21,8 @@ import config/encoder
 import config/loader
 import config/resolve
 import config/runtime
+import content/runtime as content_runtime
+import gleam/json
 import gleam/option
 import gleam/string
 import gleeunit/should
@@ -43,6 +45,9 @@ pub fn runtime_projection_preserves_application_configuration_test() {
 
   application.latest_posts_count
   |> should.equal(8)
+
+  application.posts_per_page
+  |> should.equal(25)
 
   application.mathjax_cdn_url
   |> should.equal("https://cdn.example.com/mathjax.js")
@@ -261,6 +266,42 @@ pub fn runtime_encoder_emits_null_optional_values_test() {
   encoded
   |> string.contains("\"fediverse_creator\":null")
   |> should.equal(True)
+}
+
+/// The encoder must emit the `posts_per_page` field, or the browser-side
+/// strict decoder will reject the whole content index for a missing field.
+pub fn runtime_encoder_emits_posts_per_page_test() {
+  let encoded =
+    resolve_fixture(fixture_dir <> "/full.toml")
+    |> runtime.from_resolved
+    |> encoder.to_string
+
+  encoded
+  |> string.contains("\"posts_per_page\":25")
+  |> should.equal(True)
+}
+
+/// Round-trip test for the content-index contract: the `config` section
+/// encoded by the build side must be fully reconstructable by the SPA-side
+/// decoder, with `posts_per_page` consistent on both ends.
+pub fn runtime_config_round_trips_through_content_index_test() {
+  let runtime_config =
+    resolve_fixture(fixture_dir <> "/full.toml")
+    |> runtime.from_resolved
+
+  let encoded =
+    runtime_config
+    |> encoder.to_json
+    |> json.to_string
+
+  let assert Ok(decoded) =
+    json.parse(encoded, content_runtime.decode_runtime_config())
+
+  decoded.application.posts_per_page
+  |> should.equal(25)
+
+  decoded.application.title
+  |> should.equal("Full Arata")
 }
 
 fn resolve_fixture(path: String) -> resolve.ResolvedConfig {

@@ -291,6 +291,7 @@ fn empty_raw_config() -> RawConfig {
     socials: None,
     features: None,
     latest_posts: None,
+    posts: None,
     aratafetch: None,
     fonts: None,
     assets: None,
@@ -303,18 +304,16 @@ fn empty_raw_config() -> RawConfig {
 /// Print the build output summary.
 fn print_build_summary(feed_mode: config.FeedMode) -> Nil {
   io.println("Build complete. dist/ contains:")
-  io.println("  app.mjs, index.html, 404.html, content_index.json, llms.txt, robots.txt, sitemap.xml,")
+  io.println(
+    "  app.mjs, index.html, 404.html, content_index.json, llms.txt, robots.txt, sitemap.xml,",
+  )
 
   case feed_mode {
     config.Full ->
-      io.println(
-        "  atom.xml, rss.xml, atom.xsl, rss.xsl (full content)",
-      )
+      io.println("  atom.xml, rss.xml, atom.xsl, rss.xsl (full content)")
 
     config.Summary ->
-      io.println(
-        "  atom.xml, rss.xml, atom.xsl, rss.xsl (summaries)",
-      )
+      io.println("  atom.xml, rss.xml, atom.xsl, rss.xsl (summaries)")
 
     config.Disabled -> io.println("")
   }

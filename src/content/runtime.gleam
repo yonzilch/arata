@@ -124,7 +124,10 @@ fn decode_content_index() -> decode.Decoder(Content) {
 ///
 ///   config.application
 ///   config.site
-fn decode_runtime_config() -> decode.Decoder(RuntimeConfig) {
+///
+/// Exposed as a public API so tests and external tools can round-trip the
+/// `config` section of `content_index.json` through decoding.
+pub fn decode_runtime_config() -> decode.Decoder(RuntimeConfig) {
   use application <- decode.field("application", decode_application_config())
 
   use site <- decode.field("site", decode_runtime_site())
@@ -198,6 +201,10 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
   use lightbox_enabled <- decode.field("lightbox_enabled", decode.bool)
   use latest_posts_enabled <- decode.field("latest_posts_enabled", decode.bool)
   use latest_posts_count <- decode.field("latest_posts_count", decode.int)
+  // posts_per_page is strictly paired with the build-side encoder: a missing
+  // or non-integer value fails decoding the whole content index instead of
+  // letting the SPA silently run with an inconsistent page density.
+  use posts_per_page <- decode.field("posts_per_page", decode.int)
 
   decode.success(config.Config(
     title: title,
@@ -227,6 +234,7 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     lightbox_enabled: lightbox_enabled,
     latest_posts_enabled: latest_posts_enabled,
     latest_posts_count: latest_posts_count,
+    posts_per_page: posts_per_page,
   ))
 }
 

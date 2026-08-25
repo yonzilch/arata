@@ -107,6 +107,73 @@ count = -3
   |> should.equal(True)
 }
 
+/// `posts.per_page = 0` would produce empty pages in the pagination slice, so
+/// it must be rejected with a "positive integer" diagnostic.
+pub fn zero_posts_per_page_is_rejected_test() {
+  let path = "test/zero-posts-per-page.toml"
+
+  let source =
+    "
+[posts]
+per_page = 0
+"
+
+  let resolved = resolve_text(path, source)
+
+  let assert Error(errors) = validate.validate_from(path, resolved)
+
+  let rendered = error.render_all(errors)
+
+  rendered
+  |> string.contains("posts.per_page")
+  |> should.equal(True)
+
+  rendered
+  |> string.contains("positive integer")
+  |> should.equal(True)
+}
+
+/// Negative values share the illegal lower bound with 0 and go through the
+/// same validation branch, but are covered separately to guard against the
+/// branch being later changed to only check for 0.
+pub fn negative_posts_per_page_is_rejected_test() {
+  let path = "test/negative-posts-per-page.toml"
+
+  let source =
+    "
+[posts]
+per_page = -5
+"
+
+  let resolved = resolve_text(path, source)
+
+  let assert Error(errors) = validate.validate_from(path, resolved)
+
+  error.render_all(errors)
+  |> string.contains("positive integer")
+  |> should.equal(True)
+}
+
+/// Extreme values above the cap (1000) usually indicate a config typo and must
+/// be rejected rather than silently accepted.
+pub fn excessive_posts_per_page_is_rejected_test() {
+  let path = "test/excessive-posts-per-page.toml"
+
+  let source =
+    "
+[posts]
+per_page = 1001
+"
+
+  let resolved = resolve_text(path, source)
+
+  let assert Error(errors) = validate.validate_from(path, resolved)
+
+  error.render_all(errors)
+  |> string.contains("exceed")
+  |> should.equal(True)
+}
+
 pub fn empty_site_title_is_rejected_test() {
   let path = "test/empty-title.toml"
 

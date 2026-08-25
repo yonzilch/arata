@@ -44,6 +44,9 @@ latest_posts = true
 [latest_posts]
 count = 8
 
+[posts]
+per_page = 25
+
 [aratafetch]
 maintained_for = "since 2024-01-01"
 

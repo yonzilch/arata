@@ -40,6 +40,11 @@ pub fn empty_configuration_uses_built_in_defaults_test() {
   application.latest_posts_count
   |> should.equal(5)
 
+  // With an empty config, posts per page must fall back to the built-in
+  // default of 10.
+  application.posts_per_page
+  |> should.equal(10)
+
   list.length(application.menu)
   |> should.equal(5)
 
@@ -110,6 +115,11 @@ pub fn full_configuration_resolves_all_supported_domains_test() {
 
   application.latest_posts_count
   |> should.equal(8)
+
+  // The full fixture explicitly sets `[posts].per_page = 25`, proving that
+  // overriding the default works.
+  application.posts_per_page
+  |> should.equal(25)
 
   application.aratafetch_maintained_for
   |> should.equal(Some("since 2024-01-01"))
@@ -231,6 +241,43 @@ provider = \"unsupported\"
     decoder.decode_text("test/unsupported-analytics.toml", source)
 
   resolve.resolve_from("test/unsupported-analytics.toml", raw)
+  |> should.be_error
+}
+
+/// Non-integer values (strings, floats) must be rejected at decode time and
+/// must not reach resolution or validation. This is the decode-side guarantee
+/// behind the ISSUE acceptance criterion "non-integers produce a clear error".
+pub fn non_integer_posts_per_page_is_rejected_by_decoder_test() {
+  let string_source =
+    "
+[posts]
+per_page = \"ten\"
+"
+
+  decoder.decode_text("test/posts-per-page-string.toml", string_source)
+  |> should.be_error
+
+  let float_source =
+    "
+[posts]
+per_page = 2.5
+"
+
+  decoder.decode_text("test/posts-per-page-float.toml", float_source)
+  |> should.be_error
+}
+
+/// Unknown keys inside the `[posts]` section must be reported as unknown
+/// config keys, so a user typo (e.g. `perpage` instead of `per_page`) is not
+/// silently ignored.
+pub fn unknown_post_key_is_rejected_by_decoder_test() {
+  let source =
+    "
+[posts]
+perpage = 20
+"
+
+  decoder.decode_text("test/posts-unknown-key.toml", source)
   |> should.be_error
 }
 

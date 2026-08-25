@@ -166,6 +166,11 @@ pub type Config {
     latest_posts_enabled: Bool,
     /// Maximum number of posts rendered in the latest-posts section.
     latest_posts_count: Int,
+    /// Number of posts rendered per page on the paginated posts index.
+    ///
+    /// Valid values are 1 through 1000 inclusive, enforced at semantic
+    /// validation time; when omitted, the built-in default of 10 applies.
+    posts_per_page: Int,
   )
 }
 
@@ -251,6 +256,7 @@ pub fn default() -> Config {
     lightbox_enabled: defaults.lightbox_enabled(),
     latest_posts_enabled: defaults.latest_posts_enabled(),
     latest_posts_count: defaults.latest_posts_count(),
+    posts_per_page: defaults.posts_per_page(),
   )
 }
 

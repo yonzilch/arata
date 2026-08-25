@@ -66,8 +66,6 @@ import view/toc as toc_view
 
 // MAIN ------------------------------------------------------------------------
 
-const posts_per_page = 10
-
 pub fn main() {
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
@@ -1001,7 +999,10 @@ fn view_route_content(model: Model) -> #(Element(Msg), Element(Msg)) {
       post_list.view(
         model.posts,
         page_number,
-        posts_per_page,
+        // The per-page count comes from the resolved user config
+        // (`[posts].per_page`), falling back to the built-in default of 10
+        // when it is not configured.
+        model.config.posts_per_page,
         UserEnteredPageJump,
       ),
       none(),

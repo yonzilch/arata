@@ -40,6 +40,13 @@ import gleam/string
 /// Default source path used in validation diagnostics.
 pub const default_source_path = "content/arata.toml"
 
+/// Maximum allowed value for `[posts].per_page`.
+///
+/// The cap only exists to catch obvious config typos (e.g. accidentally
+/// entering the total post count, which would render everything on one page);
+/// a normal site should never reach it.
+const posts_per_page_max = 1000
+
 /// Validate resolved configuration using Arata's canonical configuration path.
 ///
 /// Successful validation returns the original resolved value unchanged so this
@@ -83,6 +90,7 @@ pub fn validate_from(
     |> append_errors(validate_fonts(source_path, application.fonts))
     |> append_errors(validate_feature_assets(source_path, application))
     |> append_errors(validate_latest_posts(source_path, application))
+    |> append_errors(validate_posts_per_page(source_path, application))
     |> append_errors(validate_analytics(source_path, application.analytics))
     |> append_errors(validate_comments(source_path, metadata.comments))
     |> append_errors(validate_shared_values(
@@ -597,6 +605,48 @@ fn validate_latest_posts(
     ]
 
     False -> []
+  }
+}
+
+/// Validates the range of the posts-per-page count.
+///
+/// Legal values are 1 through `posts_per_page_max` inclusive:
+///
+///   - Values below 1 make pagination meaningless: 0 or negatives produce empty
+///     pages or backwards slice offsets;
+///   - Extreme values above the cap usually signal a config typo that would
+///     render every post on a single page.
+///
+/// Both error classes produce locatable diagnostics and stay consistent with
+/// the "reject, don't fix" behaviour applied across all config domains.
+fn validate_posts_per_page(
+  source_path: String,
+  application: config.Config,
+) -> List(ConfigError) {
+  case application.posts_per_page {
+    count if count < 1 -> [
+      error.validation(
+        source_path,
+        Some("posts"),
+        Some("per_page"),
+        Some("a positive integer"),
+        Some(int.to_string(count)),
+        "posts per page must be a positive integer",
+      ),
+    ]
+
+    count if count > posts_per_page_max -> [
+      error.validation(
+        source_path,
+        Some("posts"),
+        Some("per_page"),
+        Some("an integer no greater than " <> int.to_string(posts_per_page_max)),
+        Some(int.to_string(count)),
+        "posts per page must not exceed " <> int.to_string(posts_per_page_max),
+      ),
+    ]
+
+    _ -> []
   }
 }
 
