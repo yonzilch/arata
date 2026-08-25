@@ -1,7 +1,7 @@
 +++
 title = "Configuration"
 date = "2026-06-23"
-updated = "2026-07-24"
+updated = "2026-08-25"
 description = "Comprehensive configuration guide for arata."
 tags = ["guide", "config"]
 pinned = true
@@ -586,6 +586,17 @@ count = 5
 The maximum number of published posts shown in the homepage latest-posts
 section. Only takes effect when `features.latest_posts = true`. This value
 must be zero or greater.
+
+### `[posts]`
+
+```toml
+[posts]
+per_page = 10
+```
+
+The number of posts rendered per page on the paginated posts index (`/posts`, `/posts/2`, ...). When omitted, Arata uses its built-in default of `10`.
+
+This value must be a positive integer no greater than `1000`. Values below `1` would produce empty pages or reversed pagination slices; larger values are usually a misconfiguration that would render every post on a single page. Out-of-range values are rejected at build time with a validation error instead of being silently corrected.
 
 ### `[aratafetch]`
 

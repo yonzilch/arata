@@ -308,6 +308,7 @@ Here is a brief overview of the configuration sections in `content/arata.toml`:
   - `lightbox` (bool): Open Markdown body images in the built-in lightbox.
   - `latest_posts` (bool): Render the latest published posts section on the homepage.
 - **`[latest_posts]`** — `count` (int): Maximum number of published posts shown in the homepage latest-posts section.
+- **`[posts]`** — `per_page` (int): Number of posts rendered per page on the paginated posts index (1–1000, default 10).
 - **`[aratafetch]`** — `maintained_for` (string): Optional display value for the `maintained` row.
 - **`[fonts]`** — CSS `font-family` declarations for `text`, `header`, and `code`.
 - **`[assets]`** — Runtime asset URLs for `mathjax_url`, `mermaid_url`, and `syntax_highlight_url`. A URL is required when its corresponding feature is enabled.
