@@ -44,18 +44,8 @@ pub fn render(
       "/sitemap.xml",
       "XML sitemap for crawlable pages.",
     ),
-    item(
-      base_url,
-      "RSS",
-      "/rss.xml",
-      "RSS feed (RSS 2.0)",
-    ),
-    item(
-      base_url,
-      "RSS",
-      "/atom.xml",
-      "Atom feed (Atom 1.0)",
-    ),
+    item(base_url, "RSS", "/rss.xml", "RSS feed (RSS 2.0)"),
+    item(base_url, "RSS", "/atom.xml", "Atom feed (Atom 1.0)"),
   ])
   <> section(
     "Links",
