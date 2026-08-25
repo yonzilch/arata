@@ -216,3 +216,13 @@ pub fn latest_posts_enabled() -> Bool {
 pub fn latest_posts_count() -> Int {
   5
 }
+
+/// Default number of posts rendered per page on the paginated posts index.
+///
+/// Users can override this via `[posts].per_page` in `content/arata.toml`.
+/// Valid values are 1 through 1000 inclusive; out-of-range values are rejected
+/// at semantic validation time rather than silently corrected, keeping with
+/// the "reject bad input" philosophy of config handling.
+pub fn posts_per_page() -> Int {
+  10
+}

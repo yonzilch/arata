@@ -43,9 +43,9 @@ import config/error.{type ConfigError}
 import config/raw.{
   type RawAnalytics, type RawAratafetch, type RawAssets, type RawComments,
   type RawConfig, type RawFeatures, type RawFeedSetting, type RawFonts,
-  type RawLatestPosts, type RawMenuItem, type RawSite, type RawSocial,
-  FeedModeName, LegacyFeedEnabled, RawAratafetch, RawAssets, RawFeatures,
-  RawFonts, RawLatestPosts, RawSite,
+  type RawLatestPosts, type RawMenuItem, type RawPosts, type RawSite,
+  type RawSocial, FeedModeName, LegacyFeedEnabled, RawAratafetch, RawAssets,
+  RawFeatures, RawFonts, RawLatestPosts, RawPosts, RawSite,
 }
 import data/site.{
   type Analytics, type CommentsConfig, type SiteMeta, AnalyticsDisabled,
@@ -106,6 +106,7 @@ pub fn resolve_from(
   let site = resolve_site(raw.site)
   let features_result = resolve_features(source_path, raw.features)
   let latest_posts = resolve_latest_posts(raw.latest_posts)
+  let posts = resolve_posts(raw.posts)
   let aratafetch = resolve_aratafetch(raw.aratafetch)
   let fonts = resolve_fonts(raw.fonts)
   let assets = resolve_assets(raw.assets)
@@ -195,6 +196,7 @@ pub fn resolve_from(
           lightbox_enabled: features.lightbox,
           latest_posts_enabled: features.latest_posts,
           latest_posts_count: latest_posts.count,
+          posts_per_page: posts.per_page,
         )
 
       let site_meta =
@@ -255,6 +257,14 @@ type ResolvedFeatures {
 
 type ResolvedLatestPosts {
   ResolvedLatestPosts(count: Int)
+}
+
+/// The resolved `[posts]` configuration.
+///
+/// `per_page` has had the built-in default applied; range validation is the
+/// responsibility of the semantic validation stage.
+type ResolvedPosts {
+  ResolvedPosts(per_page: Int)
 }
 
 type ResolvedAratafetch {
@@ -407,6 +417,23 @@ fn resolve_latest_posts(raw: Option(RawLatestPosts)) -> ResolvedLatestPosts {
   }
 
   ResolvedLatestPosts(count: unwrap(raw.count, defaults.latest_posts_count()))
+}
+
+/// Resolves the `[posts]` table.
+///
+/// Missing fields inherit the built-in default (10 per page). This stage only
+/// applies defaults; it does not perform range checks — values below 1 or
+/// above the upper bound are rejected uniformly by the semantic validation
+/// stage, so all config domains share consistent diagnostics for invalid
+/// values.
+fn resolve_posts(raw: Option(RawPosts)) -> ResolvedPosts {
+  let raw = case raw {
+    Some(value) -> value
+
+    None -> RawPosts(per_page: None)
+  }
+
+  ResolvedPosts(per_page: unwrap(raw.per_page, defaults.posts_per_page()))
 }
 
 fn resolve_aratafetch(raw: Option(RawAratafetch)) -> ResolvedAratafetch {

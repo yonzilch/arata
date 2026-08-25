@@ -43,6 +43,7 @@ pub type RawConfig {
     socials: Option(List(RawSocial)),
     features: Option(RawFeatures),
     latest_posts: Option(RawLatestPosts),
+    posts: Option(RawPosts),
     aratafetch: Option(RawAratafetch),
     fonts: Option(RawFonts),
     assets: Option(RawAssets),
@@ -129,6 +130,17 @@ pub type RawFeatures {
 /// Raw values from the `[latest_posts]` table.
 pub type RawLatestPosts {
   RawLatestPosts(count: Option(Int))
+}
+
+/// Raw values from the `[posts]` table.
+///
+/// `per_page` controls how many posts are shown per page on the paginated
+/// posts index. The field stays optional so the resolution stage can
+/// distinguish "unset" (inherits the built-in default of 10) from "explicitly
+/// set"; the validity of the value itself (positive integer, within the upper
+/// bound) is enforced by the semantic validation stage.
+pub type RawPosts {
+  RawPosts(per_page: Option(Int))
 }
 
 /// Raw values from the `[aratafetch]` table.

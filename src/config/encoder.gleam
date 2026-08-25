@@ -115,6 +115,7 @@ pub fn application_to_json(application: config.Config) -> json.Json {
     #("lightbox_enabled", json.bool(application.lightbox_enabled)),
     #("latest_posts_enabled", json.bool(application.latest_posts_enabled)),
     #("latest_posts_count", json.int(application.latest_posts_count)),
+    #("posts_per_page", json.int(application.posts_per_page)),
   ])
 }
 

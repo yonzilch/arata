@@ -44,10 +44,10 @@ import config/loader.{type ConfigSource}
 import config/raw.{
   type RawAnalytics, type RawAratafetch, type RawAssets, type RawComments,
   type RawConfig, type RawFeatures, type RawFeedSetting, type RawFonts,
-  type RawLatestPosts, type RawMenuItem, type RawSite, type RawSocial,
-  FeedModeName, LegacyFeedEnabled, RawAnalytics, RawAratafetch, RawAssets,
-  RawComments, RawConfig, RawFeatures, RawFonts, RawLatestPosts, RawMenuItem,
-  RawSite, RawSocial,
+  type RawLatestPosts, type RawMenuItem, type RawPosts, type RawSite,
+  type RawSocial, FeedModeName, LegacyFeedEnabled, RawAnalytics, RawAratafetch,
+  RawAssets, RawComments, RawConfig, RawFeatures, RawFonts, RawLatestPosts,
+  RawMenuItem, RawPosts, RawSite, RawSocial,
 }
 import gleam/dict.{type Dict}
 import gleam/int
@@ -108,6 +108,7 @@ fn decode_root(
       "socials",
       "features",
       "latest_posts",
+      "posts",
       "aratafetch",
       "fonts",
       "assets",
@@ -129,6 +130,8 @@ fn decode_root(
 
   let latest_posts =
     optional_section(source_path, root, "latest_posts", decode_latest_posts)
+
+  let posts = optional_section(source_path, root, "posts", decode_posts)
 
   let aratafetch =
     optional_section(source_path, root, "aratafetch", decode_aratafetch)
@@ -158,6 +161,7 @@ fn decode_root(
     |> append_field_errors(socials)
     |> append_field_errors(features)
     |> append_field_errors(latest_posts)
+    |> append_field_errors(posts)
     |> append_field_errors(aratafetch)
     |> append_field_errors(fonts)
     |> append_field_errors(assets)
@@ -173,6 +177,7 @@ fn decode_root(
         socials: socials.value,
         features: features.value,
         latest_posts: latest_posts.value,
+        posts: posts.value,
         aratafetch: aratafetch.value,
         fonts: fonts.value,
         assets: assets.value,
@@ -367,6 +372,28 @@ fn decode_latest_posts(
     |> append_field_errors(count)
 
   Field(value: Some(RawLatestPosts(count: count.value)), errors: errors)
+}
+
+/// Decodes the `[posts]` table.
+///
+/// Only the optional integer field `per_page` is read; every other key is
+/// reported as an unknown key. Type errors on the value (e.g. a string or a
+/// float) are returned as structured errors by `optional_int`. Numeric range
+/// checks (positive integer, upper bound) are not performed here; they belong
+/// to the later semantic validation stage.
+fn decode_posts(
+  source_path: String,
+  table: Dict(String, Toml),
+) -> Field(RawPosts) {
+  let section = "posts"
+
+  let per_page = optional_int(source_path, section, table, "per_page")
+
+  let errors =
+    unknown_key_errors(source_path, Some(section), table, ["per_page"])
+    |> append_field_errors(per_page)
+
+  Field(value: Some(RawPosts(per_page: per_page.value)), errors: errors)
 }
 
 fn decode_aratafetch(
