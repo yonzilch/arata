@@ -6,7 +6,8 @@
 //// follows it with a `<ul class="pagination">` containing Prev/Next links only
 //// (no page numbers). Each list item is a `.list-item` whose `.post-header`
 //// links to the post and whose `.post-content` carries the description. Draft
-//// posts get a `.draft-label` badge after the title.
+//// posts get a `.draft-label` badge after the title, and pinned posts a
+//// `.pinned-label` badge.
 ////
 //// `posts` is assumed to be newest-first (sorted by `content/loader`); we
 //// slice `posts` by `current_page` and `per_page` and render the visible
@@ -115,15 +116,35 @@ fn view_list_item(post: Post) -> Element(msg) {
   ])
 }
 
-/// The title text, optionally followed by a DRAFT badge.
+/// The title text, optionally followed by a DRAFT badge and/or a PINNED badge.
+/// Pinned posts already sort to the top of the listing; the badge makes the
+/// pinned state visible instead of relying on position alone. A post may be
+/// both draft and pinned, in which case both badges render.
 fn view_title(post: Post) -> List(Element(msg)) {
-  case post.draft {
-    True -> [
-      html.text(post.title),
-      html.span([attribute.class("draft-label")], [html.text("DRAFT")]),
-    ]
-    False -> [html.text(post.title)]
+  let draft = case post.draft {
+    True -> [badge("draft-label", "DRAFT")]
+    False -> []
   }
+  let pinned = case post.pinned {
+    True -> [badge("pinned-label", "PINNED")]
+    False -> []
+  }
+  [html.text(post.title), ..list.append(draft, pinned)]
+}
+
+/// Render one of the small marker badges shown after the post title
+/// (`.draft-label`, `.pinned-label`). The `label` doubles as the visible text
+/// and the accessible name (`aria-label` / `title`), so screen readers announce
+/// the same marker sighted users see.
+fn badge(class: String, label: String) -> Element(msg) {
+  html.span(
+    [
+      attribute.class(class),
+      attribute.attribute("aria-label", label),
+      attribute.attribute("title", label),
+    ],
+    [html.text(label)],
+  )
 }
 
 // PAGINATION -------------------------------------------------------------------
