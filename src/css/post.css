@@ -1,17 +1,28 @@
 /* =========================================================================
-   post.css — .draft-label, blockquote, .tldr, img/figure, table, .mermaid,
+   post.css — title badges (.draft-label, .pinned-label), blockquote,
+   .tldr, img/figure, table, .mermaid,
    .note-*, .character-*, .code-label, .label-*, pre, code, .giallo-*,
    .clipboard-button.
    (section 6 draft-label + blockquote; sections 8–14 from src/arata.css)
    ========================================================================= */
 
-.draft-label {
-    color: var(--hover-color);
+/* Title badges (.draft-label, .pinned-label): quiet outline pills so the
+   markers don't compete with the title. Small-caps-style letterspacing,
+   muted text, hairline border; the theme variables keep light and dark
+   modes consistent. */
+.draft-label,
+.pinned-label {
+    color: var(--text-2);
+    font-size: 0.65em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-decoration: none;
-    padding: 2px 4px;
-    border-radius: 4px;
+    line-height: 1.5;
+    padding: 0 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
     margin-left: 6px;
-    background-color: var(--primary-color);
+    vertical-align: middle;
 }
 
 /* Fix 6: pin the post body (`.body` section) to font-weight 400 so the
