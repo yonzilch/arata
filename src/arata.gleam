@@ -93,7 +93,6 @@ pub type Model {
     content_state: ContentState,
     active_heading: Option(String),
     theme: theme_effect.Theme,
-    system_prefers_dark: Bool,
     search: SearchState,
     mobile_menu_open: Bool,
     toc_overlay_open: Bool,
@@ -139,8 +138,9 @@ fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       pages: [],
       content_state: ContentLoading,
       active_heading: option.None,
+      // Placeholder only: `init_theme` resolves the persisted/system theme
+      // and dispatches `ThemeLoaded` during startup.
       theme: theme_effect.Light,
-      system_prefers_dark: False,
       search: closed_search(),
       mobile_menu_open: False,
       toc_overlay_open: False,
@@ -184,7 +184,6 @@ pub type Msg {
   FragmentHashChanged(id: Option(String))
   UserToggledTheme
   ThemeLoaded(theme: theme_effect.Theme)
-  SystemPrefersDarkChanged(prefers_dark: Bool)
   NoOp
   ContentLoaded(result: Result(content_runtime.Content, Nil))
   UserOpenedSearch
@@ -271,8 +270,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       }
 
     UserToggledTheme -> {
-      let next_theme =
-        next_theme_after_click(model.theme, model.system_prefers_dark)
+      let next_theme = toggle_theme(model.theme)
 
       let new_model = Model(..model, theme: next_theme)
 
@@ -292,28 +290,6 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       let new_model = Model(..model, theme: theme)
 
       #(new_model, mermaid_rerender_for(new_model))
-    }
-
-    SystemPrefersDarkChanged(prefers_dark) -> {
-      let new_model = Model(..model, system_prefers_dark: prefers_dark)
-
-      let apply_theme_effect = case new_model.theme {
-        theme_effect.Auto ->
-          effect.map(
-            theme_effect.apply_theme_choice(new_model.theme),
-            theme_msg_to_msg,
-          )
-
-        _ -> effect.none()
-      }
-
-      #(
-        new_model,
-        effect.batch([
-          apply_theme_effect,
-          mermaid_rerender_for(new_model),
-        ]),
-      )
     }
 
     NoOp -> #(model, effect.none())
@@ -614,7 +590,7 @@ fn configured_post_effects(model: Model) -> effect.Effect(Msg) {
 
   post_effects_for(
     model.route,
-    is_effective_dark(model.theme, model.system_prefers_dark),
+    is_effective_dark(model.theme),
     model.config.mathjax_enabled,
     model.config.mathjax_cdn_url,
     model.config.mermaid_enabled,
@@ -714,46 +690,20 @@ fn post_effects_for(
   }
 }
 
-fn is_effective_dark(
-  theme: theme_effect.Theme,
-  system_prefers_dark: Bool,
-) -> Bool {
+fn is_effective_dark(theme: theme_effect.Theme) -> Bool {
   case theme {
     theme_effect.Dark -> True
     theme_effect.Light -> False
-    theme_effect.Auto -> system_prefers_dark
   }
 }
 
-/// Pick the next theme after a user click.
-///
-/// The cycle is system-aware so the first click from `Auto` always causes a
-/// visible change:
-///
-///   system light: Auto(light) -> Dark -> Light -> Auto(light)
-///   system dark:  Auto(dark)  -> Light -> Dark -> Auto(dark)
-fn next_theme_after_click(
-  theme: theme_effect.Theme,
-  system_prefers_dark: Bool,
-) -> theme_effect.Theme {
+/// Pick the next theme after a user click. The theme is always an explicit
+/// choice (`init_theme` resolves the system preference at startup), so a
+/// click is a simple flip and always causes a visible change.
+fn toggle_theme(theme: theme_effect.Theme) -> theme_effect.Theme {
   case theme {
-    theme_effect.Auto ->
-      case system_prefers_dark {
-        True -> theme_effect.Light
-        False -> theme_effect.Dark
-      }
-
-    theme_effect.Light ->
-      case system_prefers_dark {
-        True -> theme_effect.Dark
-        False -> theme_effect.Auto
-      }
-
-    theme_effect.Dark ->
-      case system_prefers_dark {
-        True -> theme_effect.Auto
-        False -> theme_effect.Light
-      }
+    theme_effect.Light -> theme_effect.Dark
+    theme_effect.Dark -> theme_effect.Light
   }
 }
 
@@ -762,7 +712,7 @@ fn mermaid_rerender_for(model: Model) -> effect.Effect(Msg) {
     ContentReady, Post(_), True ->
       effect.map(
         script_effect.render_mermaid(
-          is_effective_dark(model.theme, model.system_prefers_dark),
+          is_effective_dark(model.theme),
           model.config.mermaid_cdn_url,
         ),
         fn(_) { NoOp },
@@ -775,9 +725,6 @@ fn mermaid_rerender_for(model: Model) -> effect.Effect(Msg) {
 fn theme_msg_to_msg(theme_message: theme_effect.ThemeMsg) -> Msg {
   case theme_message {
     theme_effect.ThemeLoaded(theme) -> ThemeLoaded(theme: theme)
-
-    theme_effect.SystemPrefersDarkChanged(prefers_dark) ->
-      SystemPrefersDarkChanged(prefers_dark: prefers_dark)
   }
 }
 
@@ -940,7 +887,7 @@ fn view(model: Model) -> Element(Msg) {
               model.config,
               model.route,
               model.theme,
-              is_effective_dark(model.theme, model.system_prefers_dark),
+              is_effective_dark(model.theme),
               event.on_click(UserToggledTheme),
               event.on_click(UserOpenedSearch),
               event.on_click(UserToggledMobileMenu),

@@ -54,7 +54,7 @@ flowchart TD
 - **Markdown rendering** — Markdown bodies are parsed at build time and stored as pre-rendered HTML in `content_index.json`
 - **GFM Markdown extensions** — tables, task lists, emoji shortcodes, autolinks, and footnotes are enabled through mork options
 - **9 routes**: `/`, `/posts`, `/posts/{slug}`, `/projects`, `/links`, `/tags`, `/tags/{name}`, `/{slug}` (standalone pages), and a 404 page
-- **3-state theme toggle** (Light / Dark / Auto) with `localStorage` persistence and `prefers-color-scheme` reactivity
+- **Theme toggle** (Light / Dark) with `localStorage` persistence; the system `prefers-color-scheme` choice is resolved once at first load, then clicks flip between light and dark
 - **Cmd/Ctrl+K search** modal with keyboard navigation (toggle with `search`)
 - **Table of contents** with scroll-driven `IntersectionObserver` highlighting
 - **Floating ToC + Tags button** visible on **all screen sizes** — opens an overlay with the ToC tree and a Tags list for quick navigation

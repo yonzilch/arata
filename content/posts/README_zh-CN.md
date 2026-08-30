@@ -61,7 +61,7 @@ flowchart TD
 - **Markdown 渲染** —— Markdown 正文在构建时解析，并以预渲染的 HTML 形式存储在 `content_index.json` 中
 - **GFM Markdown 扩展** —— 通过 mork 的选项启用了表格、任务列表、emoji 短代码、自动链接和脚注
 - **9 条路由**：`/`、`/posts`、`/posts/{slug}`、`/projects`、`/links`、`/tags`、`/tags/{name}`、`/{slug}`（独立页面）以及 404 页面
-- **三态主题切换**（浅色 / 深色 / 自动），通过 `localStorage` 持久化，并响应 `prefers-color-scheme`
+- **主题切换**（浅色 / 深色），通过 `localStorage` 持久化；首次加载时解析 `prefers-color-scheme` 系统偏好，之后每次点击在浅色与深色之间切换
 - **Cmd/Ctrl+K 搜索**弹窗，支持键盘导航（可通过 `search` 开关控制）
 - **目录** —— 基于滚动位置的 `IntersectionObserver` 高亮
 - **悬浮式目录 + 标签按钮**，在**所有屏幕尺寸**下均可见 —— 打开一个包含目录树和标签列表的浮层，方便快速导航

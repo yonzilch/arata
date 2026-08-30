@@ -1,21 +1,28 @@
-//// Theme management (light / dark / auto) via FFI: localStorage persistence
-//// and a `prefers-color-scheme` media-query subscription.
+//// Theme management (light / dark) via FFI: localStorage persistence.
+////
+//// There is no `Auto` state: the system preference is resolved once at
+//// startup into an explicit `Light` or `Dark`, and the toggle then flips
+//// between the two. This keeps every click on the toggle a visible change.
 ////
 //// Mirrors apollo's `static/js/themetoggle.js` behaviour:
-////   - `init_theme()` reads the saved theme from localStorage (falling back to
-////     the system preference) and subscribes to system theme changes.
-////   - `apply_theme(theme)` writes the new theme to localStorage and applies
-////     the `dark`/`light` class on `<html>` so the CSS variables switch.
+////   - `init_theme()` reads the saved theme from localStorage (falling back
+////     to the system preference) and applies it before Lustre takes over.
+////   - `apply_theme_choice(theme)` writes the new theme to localStorage and
+////     applies the `dark`/`light` class on `<html>` so the CSS variables
+////     switch.
 ////
-//// The FFI lives in `src/ffi/theme.ffi.mjs`. The `@external` declarations have
-//// no-op Gleam fallback bodies so the project still builds when targeting
-//// Erlang (theme management only runs in the browser).
+//// The FFI lives in `src/ffi/theme.ffi.mjs`. The `@external` declarations
+//// have no-op Gleam fallback bodies so the project still builds when
+//// targeting Erlang (theme management only runs in the browser).
 ////
-//// FOUC prevention: the generated HTML shell (`build/pipeline.gleam`) embeds
-//// a synchronous theme bootstrap (`build/theme_bootstrap.gleam`) in `<head>`
-//// that resolves the persisted preference before first paint. `init_theme`
-//// re-applies the same resolved mode at startup, so Lustre never overwrites
-//// the bootstrapped theme with an intermediate default.
+//// FOUC prevention: the generated HTML shell (`build/theme_bootstrap.gleam`)
+//// embeds a synchronous theme bootstrap in `<head>` that resolves the
+//// persisted preference before first paint. `init_theme` re-applies the same
+//// resolved mode at startup, so Lustre never overwrites the bootstrapped
+//// theme with an intermediate default.
+////
+//// Compatibility: `theme-storage` may still hold the legacy value `auto`
+//// from earlier versions; it resolves against the current system preference.
 
 import lustre/effect.{type Effect}
 
@@ -23,33 +30,23 @@ import lustre/effect.{type Effect}
 pub type Theme {
   Light
   Dark
-  Auto
 }
 
 /// Messages emitted by theme effects.
 pub type ThemeMsg {
-  /// The saved/system theme was loaded at startup.
+  /// The saved/system theme was resolved at startup.
   ThemeLoaded(theme: Theme)
-  /// The OS theme preference changed (only relevant when the user's choice is
-  /// `Auto`).
-  SystemPrefersDarkChanged(prefers_dark: Bool)
 }
 
-/// At startup, read the saved theme from localStorage and subscribe to system
-/// theme changes. Returns an effect that dispatches `ThemeLoaded` (with the
-/// resolved theme) and then `SystemPrefersDarkChanged` whenever the OS
-/// preference flips.
+/// At startup, read the saved theme from localStorage and apply it to the
+/// DOM. Returns an effect that dispatches `ThemeLoaded` with the resolved
+/// theme. A legacy stored `auto` (or a missing/unreadable value) resolves
+/// against the current system preference.
 pub fn init_theme() -> Effect(ThemeMsg) {
   use dispatch <- effect.from
   let mode = get_theme()
   let theme = parse_theme(mode)
   apply_theme(mode)
-  let _ =
-    subscribe_to_system_changes(fn(prefers_dark) {
-      dispatch(SystemPrefersDarkChanged(prefers_dark:))
-    })
-  // Seed the current value; the change listener above only fires on flips.
-  dispatch(SystemPrefersDarkChanged(prefers_dark: get_system_prefers_dark()))
   dispatch(ThemeLoaded(theme:))
 }
 
@@ -61,12 +58,17 @@ pub fn apply_theme_choice(theme: Theme) -> Effect(ThemeMsg) {
   Nil
 }
 
-/// Convert the FFI string ("light"/"dark"/"auto") to a `Theme`.
+/// Convert the FFI string ("light"/"dark"/legacy "auto") to a `Theme`.
 fn parse_theme(mode: String) -> Theme {
   case mode {
     "dark" -> Dark
-    "auto" -> Auto
-    _ -> Light
+    "light" -> Light
+    // Legacy "auto": resolve against the system preference once.
+    _ ->
+      case get_system_prefers_dark() {
+        True -> Dark
+        False -> Light
+      }
   }
 }
 
@@ -75,7 +77,6 @@ fn theme_to_string(theme: Theme) -> String {
   case theme {
     Light -> "light"
     Dark -> "dark"
-    Auto -> "auto"
   }
 }
 
@@ -87,9 +88,6 @@ fn set_theme(mode: String) -> Nil
 
 @external(javascript, "../ffi/theme.ffi.mjs", "apply_theme")
 fn apply_theme(mode: String) -> Nil
-
-@external(javascript, "../ffi/theme.ffi.mjs", "subscribe_to_system_changes")
-fn subscribe_to_system_changes(dispatch: fn(Bool) -> Nil) -> fn() -> Nil
 
 @external(javascript, "../ffi/theme.ffi.mjs", "get_system_prefers_dark")
 fn get_system_prefers_dark() -> Bool
