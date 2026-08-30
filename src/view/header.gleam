@@ -310,8 +310,6 @@ fn view_theme_toggle(
     theme_effect.Light -> #("/icons/sun.svg", "sun-icon", "Light")
 
     theme_effect.Dark -> #("/icons/moon.svg", "moon-icon", "Dark")
-
-    theme_effect.Auto -> #("/icons/auto.svg", "auto-icon", "Auto")
   }
 
   html.button(

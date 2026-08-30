@@ -1139,18 +1139,22 @@ The file is intended as a concise map of important site resources.
 
 ## Theme
 
-### Light / Dark / Auto
+### Light / Dark
 
-The theme toggle cycles:
+On first load, arata resolves the theme to an explicit choice: a persisted
+`localStorage` value wins, otherwise the `prefers-color-scheme` system
+preference is used. A legacy persisted `auto` value is resolved against the
+system preference as well.
+
+The toggle then flips between the two states on every click:
 
 ```txt
-Light → Dark → Auto → Light
+Light ⇄ Dark
 ```
 
-The selected value is persisted in `localStorage`.
-
-When `Auto` is selected, arata follows `prefers-color-scheme` and updates
-when the operating system theme changes.
+The selected value is persisted in `localStorage`. The system preference is
+not followed after the initial load; an explicit click is required to change
+the theme.
 
 ### Accent color
 
