@@ -125,6 +125,17 @@ table {
     border-collapse: collapse;
 }
 
+/* Wide tables scroll horizontally inside their wrapper (like `pre` does for
+   oversized code) instead of stretching the content column and the page.
+   Keeping the scroll container on the wrapper div — not `display: block` on
+   the table itself — preserves `border-collapse: collapse` on the inner
+   table box, so cell borders stay single-pixel. Without it, page-level
+   horizontal overflow on narrow viewports drags `position: fixed` elements
+   (e.g. the floating ToC button) out of place in mobile browsers. */
+.table-wrap {
+    overflow-x: auto;
+}
+
 table th {
     padding: 6px 13px;
     border: 1px solid #dfe2e5;
