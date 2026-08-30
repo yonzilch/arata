@@ -138,3 +138,17 @@ del {
     overflow-x: auto;
     overflow-y: hidden;
 }
+
+/* MathJax v3/v4 output uses <mjx-container> instead of the legacy classes
+   above, so a wide display formula stretches the page instead of scrolling.
+   Keep the container inside the content column and let it scroll horizontally
+   like .table-wrap does for wide tables; the root overflow-x: clip guard in
+   globals.css would otherwise clip the formula with no way to reach it. */
+mjx-container {
+    max-width: 100%;
+}
+
+mjx-container[display="true"] {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
