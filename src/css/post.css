@@ -154,6 +154,9 @@ table td {
     text-align: center;
     margin-top: 1em;
     margin-bottom: 1em;
+    /* Mermaid renders client-side, after the build-time table/code wrapping,
+       so a wide diagram must carry its own horizontal scroll container. */
+    overflow-x: auto;
 }
 
 .mermaid strong {

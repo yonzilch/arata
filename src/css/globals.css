@@ -35,3 +35,21 @@ html {
 html {
     scrollbar-gutter: stable;
 }
+
+/* =========================================================================
+   Page-level horizontal overflow guard.
+   -------------------------------------------------------------------------
+   The page itself must never scroll horizontally: every wide element
+   (`pre`, `.table-wrap`, `.mermaid`, `.aratafetch`) scrolls inside its own
+   container. Clipping at the root keeps the layout viewport equal to the
+   visual viewport on mobile browsers, so `position: fixed` elements (the
+   floating `.toc-fab`) can never be dragged out of the viewport by
+   horizontal overflow — including overflow produced at runtime by
+   client-rendered content such as mermaid diagrams. `clip` is preferred
+   over `hidden` because it does not create a scroll container; `hidden`
+   is kept only as the fallback for older browsers.
+   ========================================================================= */
+html {
+    overflow-x: hidden;
+    overflow-x: clip;
+}
