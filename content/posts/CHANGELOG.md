@@ -21,17 +21,36 @@ For example, project-specific sections such as
 
 ---
 
+## [v1.7.8] — 2026-08-31
+
+### Added
+
+- Made the number of posts per page configurable via the optional `[posts].per_page` field in `content/arata.toml` (valid range 1–1000, default 10), threaded through the full config pipeline and documented in the README and configuration guide.
+- Added a `PINNED` badge to post listings, alongside the existing `DRAFT` badge, so pinned posts are no longer indistinguishable from the newest post.
+
+### Fixed
+
+- Fixed the theme toggle requiring two clicks to visibly switch theme when the system prefers dark: the `Auto` theme state is removed and the persisted value (or system preference) is resolved into an explicit Light/Dark choice on first load.
+- Fixed page-level horizontal overflow on narrow viewports. Runtime-rendered content such as wide GFM tables, Mermaid SVGs, and MathJax output could stretch the page and drag the floating ToC button out of the viewport; the page now never scrolls horizontally (`html` gets `overflow-x: clip`), and each wide element (`pre`, `.table-wrap`, `.mermaid`) scrolls inside its own container.
+- Fixed code-block enhancement (syntax highlighting, copy buttons, language labels, notes, MathJax, Mermaid) not running on the homepage and standalone pages.
+- Fixed the pinned/draft badge being affected by its parent `<a>` element's hover highlight by moving the badge out of the `<a>` element.
+
+---
+
 ## [v1.7.7] — 2026-08-19
 
 ### Changed
+
 - Standardized the "Scope" field description wording across all GitHub issue templates (`chore-build-ci`, `docs`, `perf`, `test`), aligning report-style forms on "...affected by this issue" and task-style forms on "...affected by this task"; `feat` and `refactor` already conformed.
 - Reworked `llms.txt` generation to match the standard specification: merged "External Links" into a unified "Links" section driven by each link's own description, added colon separators after URLs, added RSS (`/rss.xml`) and Atom (`/atom.xml`) feed links under "Core", and updated the "Tags" route description to "Taxonomies index".
 - Revamped the build summary output to reflect the current set of generated artifacts, consolidating file lists and handling feed modes correctly.
 
 ### Fixed
+
 - Fixed `llms.txt` generation emitting invalid empty markdown links (e.g. `[](url)`) for pages with no title, by falling back to `page.slug`.
 
 ### Removed
+
 - Removed the unused `lustre_dev_tools` dev dependency, superseded by the project's own `build/pipeline` module and Bun scripts.
 - Removed redundant `search_index.json` generation from the build pipeline.
 
