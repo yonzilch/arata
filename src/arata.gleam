@@ -647,8 +647,11 @@ fn post_effects_for(
   syntax_highlight_cdn_url: String,
   grammar_list: List(#(String, String)),
 ) -> effect.Effect(Msg) {
+  // Every route that renders a Markdown body (posts, the homepage, and
+  // standalone pages) needs the code-block enhancements: copy buttons and
+  // language labels, syntax highlighting, notes, MathJax, and Mermaid.
   case route {
-    Post(_) -> {
+    Post(_) | Home | Page(_) -> {
       let mathjax_effect = case mathjax_enabled {
         True ->
           effect.map(script_effect.typeset_math(mathjax_cdn_url), fn(_) { NoOp })
@@ -709,7 +712,10 @@ fn toggle_theme(theme: theme_effect.Theme) -> theme_effect.Theme {
 
 fn mermaid_rerender_for(model: Model) -> effect.Effect(Msg) {
   case model.content_state, model.route, model.config.mermaid_enabled {
-    ContentReady, Post(_), True ->
+    ContentReady, Post(_), True
+    | ContentReady, Home, True
+    | ContentReady, Page(_), True
+    ->
       effect.map(
         script_effect.render_mermaid(
           is_effective_dark(model.theme),
