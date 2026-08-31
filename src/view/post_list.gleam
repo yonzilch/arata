@@ -110,17 +110,22 @@ fn view_list_item(post: Post) -> Element(msg) {
       html.a([route.href(route.Post(post.slug))], [
         html.span([attribute.class("title")], view_title(post)),
       ]),
+      ..view_badges(post)
     ]),
     tags_el,
     html.div([attribute.class("post-content")], [html.text(post.description)]),
   ])
 }
 
-/// The title text, optionally followed by a DRAFT badge and/or a PINNED badge.
-/// Pinned posts already sort to the top of the listing; the badge makes the
-/// pinned state visible instead of relying on position alone. A post may be
-/// both draft and pinned, in which case both badges render.
+/// Return post title
 fn view_title(post: Post) -> List(Element(msg)) {
+  [html.text(post.title)]
+}
+
+/// The DRAFT and/or PINNED badges that follow the post title. Rendered outside
+/// the `.title` span so the marker classes are not coupled to the heading
+/// style; they live in the link element instead, after the title text.
+fn view_badges(post: Post) -> List(Element(msg)) {
   let draft = case post.draft {
     True -> [badge("draft-label", "DRAFT")]
     False -> []
@@ -129,7 +134,7 @@ fn view_title(post: Post) -> List(Element(msg)) {
     True -> [badge("pinned-label", "PINNED")]
     False -> []
   }
-  [html.text(post.title), ..list.append(draft, pinned)]
+  list.append(draft, pinned)
 }
 
 /// Render one of the small marker badges shown after the post title
