@@ -9,8 +9,14 @@
 //// authoritative source for choosing full, summary, or disabled feed output.
 //// `rss_enabled` is retained as a compatibility availability flag derived from
 //// the resolved feed mode.
+////
+//// This module declares types only. Built-in values live in `config/defaults`
+//// and are assembled by `config.site_meta()` and
+//// `config/resolve.resolve`. Do not add literal site metadata here; it would
+//// become a second source of truth that silently diverges from the framework
+//// defaults.
 
-import gleam/option.{type Option, None}
+import gleam/option.{type Option}
 
 /// Analytics provider configuration.
 pub type Analytics {
@@ -50,21 +56,5 @@ pub type SiteMeta {
     comments: CommentsConfig,
     fediverse_creator: Option(String),
     rss_enabled: Bool,
-  )
-}
-
-/// Return built-in site metadata.
-///
-/// Production build code should use the metadata created by configuration
-/// resolution so runtime and build values originate from the same input.
-pub fn default() -> SiteMeta {
-  SiteMeta(
-    base_url: "https://arata.example.com",
-    title: "arata",
-    description: "A modern and minimalistic blog theme powered by Gleam and Lustre.",
-    analytics: AnalyticsDisabled,
-    comments: CommentsDisabled,
-    fediverse_creator: None,
-    rss_enabled: True,
   )
 }
