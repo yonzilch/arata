@@ -78,7 +78,7 @@ flowchart TD
 - **SEO** 元数据、OpenGraph、Atom/RSS 订阅、站点地图、`robots.txt` 以及 `llms.txt`
 - **统计分析**：GoatCounter、Umami、Liwan（有意不支持 Google Analytics）
 - **评论系统**：Giscus、Utterances
-- **内联 CSS 外壳** —— CSS 模块被内联进 `index.html` 和 `404.html`，以消除阻塞渲染的样式表请求；`dist/css/` 仍会生成，方便检查和调试
+- **内联 CSS 外壳** —— CSS 模块先由 Bun 打包压缩为单文件 `dist/css/arata.css`，再内联进 `index.html` 和 `404.html`，以消除阻塞渲染的样式表请求
 - **配置开关** —— `sidebar`、`floating_buttons`、`search`、`rss`、`mathjax` 以及 `aratafetch` 等功能均可在 `content/arata.toml` 中开启或关闭，无需修改视图代码
 - **可配置的 Logo 与 Favicon** —— 二者均在 `content/arata.toml` 中配置
 - **构建流水线**：`gleam run -m build/pipeline` → 在 `dist/` 中生成完整的静态站点（无需 Erlang/OTP）
@@ -349,11 +349,12 @@ aratafetch.css
 accessibility.css
 ```
 
-在构建过程中，这些模块会被复制到 `dist/css/`，以便检查和调试。
+在构建过程中，这些模块会由 Bun 的 CSS 打包器（Lightning CSS）合并为单文件 `dist/css/arata.css`：剥离注释、规范化字面量、合并冗余声明。供 Bun 消费的 `@import` 入口文件由同一份 `css_modules` 列表生成，因此下面的顺序仍是层叠优先级 的唯一声明处。
 
-不过，为了提升运行时性能，SPA 外壳不再通过阻塞渲染的 `<link rel="stylesheet">` 标签引用它们。
+为了提升运行时性能，SPA 外壳不通过阻塞渲染的 `<link rel="stylesheet">` 标签引用样式表。取而代之的是，构建流水线会将打包结果内联到 `index.html` 和 `404.html` 的 `<style>` 块中。
 
-取而代之的是，构建流水线会将 CSS 模块内联到 `index.html` 和 `404.html` 的 `<style>` 块中。
+CSS 打包失败会直接中断构建，而不会只打印一条警告——否则站点会在无人察觉的情况下
+以无样式状态发布。
 
 CSS 顺序是固定且重要的：
 

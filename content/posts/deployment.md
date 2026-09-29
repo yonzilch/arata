@@ -155,9 +155,7 @@ It's used in feeds, the sitemap, OpenGraph meta tags, and so on.
 1. Generates `index.html` and `404.html` — byte-identical SPA shells;
    the only difference is which filename the host serves for unknown
    paths.
-2. Builds the 10 CSS modules from `src/css/` into `dist/css/`. Each page
-   links only the modules it needs (a post loads `post.css` + `toc.css`;
-   the projects page doesn't).
+2. Bundles the CSS modules from `src/css/` into a single minified `dist/css/arata.css` via `bun build --minify`, and inlines that bundle into both HTML shells.
 3. Copies static assets (`fonts/`, `icons/`, `images/`) from `static/`
    into `dist/`.
 4. Bundles the Gleam-compiled JS into `dist/app.mjs` via `bun run build

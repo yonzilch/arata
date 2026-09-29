@@ -1207,18 +1207,15 @@ aratafetch.css
 accessibility.css
 ```
 
-The build pipeline still copies these files to:
+The build pipeline bundles all of them into a single file:
 
 ```txt
-dist/css/
+dist/css/arata.css
 ```
 
-for inspection and debugging.
+using Bun's CSS bundler (`bun build --minify`). The `@import` entry file Bun consumes is generated from the `css_modules` list at build time, so the order below remains the only place cascade precedence is declared.
 
-However, for performance, the SPA shell no longer references each file with
-render-blocking `<link rel="stylesheet">` tags. Instead, the build pipeline
-inlines the CSS modules into `index.html` and `404.html` inside a `<style>`
-block.
+For performance, the SPA shell does not reference the stylesheet with a render-blocking `<link rel="stylesheet">` tag. Instead, the build pipeline inlines the bundle into `index.html` and `404.html` inside a `<style>` block.
 
 This removes the previous render-blocking request chain for:
 
@@ -1241,6 +1238,8 @@ This removes the previous render-blocking request chain for:
 /css/aratafetch.css
 /css/accessibility.css
 ```
+
+A CSS bundle failure aborts the build, so a broken stylesheet can never ship as an unstyled site.
 
 ### CSS order
 
@@ -1304,9 +1303,9 @@ The pipeline:
 8. writes `dist/sitemap.xml`
 9. writes `dist/robots.txt`
 10. writes `dist/llms.txt`
-11. writes `dist/index.html`
-12. writes `dist/404.html`
-13. copies CSS modules to `dist/css/`
+11. bundles the CSS modules to `dist/css/arata.css` with Bun
+12. writes `dist/index.html`
+13. writes `dist/404.html`
 14. copies static assets to `dist/`
 15. bundles the SPA to `dist/app.mjs` with Bun
 
@@ -1327,6 +1326,7 @@ dist/
 ├── robots.txt
 ├── llms.txt
 ├── css/
+│   └── arata.css
 ├── fonts/
 ├── icons/
 └── images/

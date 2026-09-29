@@ -8,10 +8,12 @@
 //// `dist/`:
 ////
 ////   1. Emits the JSON content index, search index, configured feeds, sitemap,
-////      robots.txt, llms.txt, index.html, and 404.html.
-////   2. Copies each CSS module under `src/css/` to `dist/css/`.
-////   3. Copies all static assets from `static/` to `dist/`.
-////   4. Compiles and bundles the Lustre SPA into `dist/app.mjs`.
+////      robots.txt, and llms.txt.
+////   2. Bundles every CSS module under `src/css/` into `dist/css/arata.css`
+////      with Bun's CSS bundler.
+////   3. Emits index.html and 404.html with the bundled CSS inlined.
+////   4. Copies all static assets from `static/` to `dist/`.
+////   5. Compiles and bundles the Lustre SPA into `dist/app.mjs`.
 ////
 //// Feed generation follows the resolved `FeedMode`:
 ////
@@ -48,17 +50,19 @@ import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
-import gleam/result
 import gleam/string
 import simplifile
 
 /// The output directory for the built site.
 const dist_dir = "dist"
 
-/// CSS modules copied to `dist/css/` and inlined into generated HTML shells.
+/// CSS modules bundled into `dist/css/arata.css` and inlined into the
+/// generated HTML shells.
 ///
 /// The order determines cascade precedence. Theme variables and global styles
 /// must precede component styles, while accessibility overrides remain last.
+/// This list is the single source of truth for stylesheet order: the Bun entry
+/// file is generated from it at build time.
 const css_modules = [
   "src/css/fonts.css",
   "src/css/theme.css",
@@ -92,6 +96,34 @@ const feed_artifacts = [
 
 /// The static assets directory.
 const static_dir = "static"
+
+/// The bundled stylesheet.
+///
+/// This is the single CSS artifact emitted to `dist/`. It is also inlined into
+/// `index.html` and `404.html`, so the browser never requests it separately.
+const css_bundle_path = "dist/css/arata.css"
+
+/// Directory the generated Bun CSS entry file is written to.
+///
+/// The entry is a build artifact, so it lives under the gitignored `build/`
+/// tree rather than in `src/`, mirroring the shim `bundle_spa/0` writes for the
+/// JavaScript bundle.
+const css_entry_dir = "build/dev/arata"
+
+/// The generated Bun CSS entry file.
+///
+/// Bun merges multiple entry points into separate outputs rather than one
+/// bundle, so a single entry that `@import`s every module in `css_modules`
+/// order is required.
+const css_entry_path = css_entry_dir <> "/entry.css"
+
+/// Root-absolute `url()` references that Bun must not try to resolve.
+///
+/// `fonts.css` points at deployment-absolute font paths such as
+/// `/fonts/SpaceGrotesk/SpaceGrotesk-Regular.ttf`. These are served from
+/// `dist/fonts/` rather than imported from the module graph, so Bun is told to
+/// leave them untouched instead of failing to resolve them as modules.
+const css_external_urls = "/*"
 
 /// Run the full build pipeline.
 ///
@@ -166,24 +198,29 @@ pub fn run() -> Result(Nil, String) {
         llms.render(site_meta, posts, projects, links, pages),
       )
 
-      // 6. Custom index.html with FOUC prevention.
-      write(dist_dir <> "/index.html", index_html(site_meta, site_config))
+      // 6. Bundled stylesheet. This must precede the HTML shells, which
+      //    inline the bundle's contents.
+      case bundle_css() {
+        Error(message) -> Error(message)
 
-      // 7. SPA shell for deep links.
-      write(dist_dir <> "/404.html", not_found_html(site_meta, site_config))
+        Ok(_) -> {
+          // 7. Custom index.html with FOUC prevention.
+          write(dist_dir <> "/index.html", index_html(site_meta, site_config))
 
-      // 8. Debug/inspection CSS modules.
-      build_css()
+          // 8. SPA shell for deep links.
+          write(dist_dir <> "/404.html", not_found_html(site_meta, site_config))
 
-      // 9. Static assets.
-      copy_directory_contents(static_dir, dist_dir)
+          // 9. Static assets.
+          copy_directory_contents(static_dir, dist_dir)
 
-      // 10. Browser bundle.
-      bundle_spa()
+          // 10. Browser bundle.
+          bundle_spa()
 
-      print_build_summary(site_config.feed_mode)
+          print_build_summary(site_config.feed_mode)
 
-      Ok(Nil)
+          Ok(Nil)
+        }
+      }
     }
   }
 }
@@ -319,7 +356,7 @@ fn print_build_summary(feed_mode: config.FeedMode) -> Nil {
     config.Disabled -> io.println("")
   }
 
-  io.println("  css/*, fonts/*, icons/*, images/*")
+  io.println("  css/arata.css, fonts/*, icons/*, images/*")
 }
 
 /// Write content to a path.
@@ -328,34 +365,79 @@ fn write(path: String, content: String) -> Nil {
   Nil
 }
 
-/// Copy and minify each CSS module into `dist/css/`.
+/// Bundle every CSS module in `css_modules` into `dist/css/arata.css`.
 ///
-/// The inline shell CSS uses the same minification path so generated HTML and
-/// inspection CSS remain consistent.
-fn build_css() -> Nil {
-  let _ = simplifile.create_directory_all(dist_dir <> "/css")
+/// Bun's CSS bundler (Lightning CSS) replaces the previous hand-written
+/// comment/whitespace stripper. That stripper applied its string replacements
+/// inside quoted values too, so `content: " : "` collapsed to `":"` and
+/// `grid-template-areas: "x  y"` lost its column alignment. Bun parses the
+/// stylesheet properly and only rewrites tokens it understands.
+///
+/// Unlike the JavaScript bundle, a CSS bundle failure aborts the build. A
+/// missing stylesheet ships an unstyled site silently, which is worse than a
+/// non-zero exit status for CI and deployment chains to catch.
+fn bundle_css() -> Result(Nil, String) {
+  let assert Ok(_) = simplifile.create_directory_all(dist_dir <> "/css")
 
-  list.each(css_modules, fn(path) {
-    let filename =
-      path
-      |> string.split("/")
-      |> list.last
-      |> result.unwrap("unknown.css")
+  let assert Ok(_) = simplifile.create_directory_all(css_entry_dir)
 
-    case simplifile.read(path) {
-      Ok(css) -> write(dist_dir <> "/css/" <> filename, minify_css(css))
+  let assert Ok(_) = simplifile.write(css_entry_path, css_entry_contents())
 
-      Error(file_error) ->
-        io.println(
-          "Warning: could not read CSS module "
-          <> path
-          <> ": "
-          <> simplify_error(file_error),
-        )
-    }
-  })
+  let command =
+    "bun build "
+    <> css_entry_path
+    <> " --outfile "
+    <> css_bundle_path
+    <> " --target=browser --minify --sourcemap=none"
+    <> " --external '"
+    <> css_external_urls
+    <> "'"
 
-  Nil
+  case run_command(command) {
+    0 -> Ok(Nil)
+
+    exit_code ->
+      Error(
+        "CSS bundle failed (exit "
+        <> int.to_string(exit_code)
+        <> "). Run `"
+        <> command
+        <> "` manually to debug.",
+      )
+  }
+}
+
+/// Build the Bun entry file from `css_modules`.
+///
+/// Bun emits one bundle per entry point, so the ordered `@import` list is what
+/// collapses the modules into a single stylesheet. Generating it from
+/// `css_modules` keeps the Gleam constant the only place cascade order is
+/// declared.
+///
+/// Public so the generated file's shape can be asserted in tests: an `@import`
+/// that no longer resolves, or one that is emitted twice, breaks the Bun
+/// bundle step.
+pub fn css_entry_contents() -> String {
+  let prefix = css_entry_relative_prefix()
+
+  css_modules
+  |> list.map(fn(path) { "@import \"" <> prefix <> path <> "\";\n" })
+  |> string.concat
+}
+
+/// Relative path from the generated entry file back to the project root.
+///
+/// `@import` URLs resolve against the importing stylesheet, so the
+/// project-root-relative paths in `css_modules` need this prefix to stay valid
+/// from `build/dev/arata/`. Deriving it from the entry directory keeps the two
+/// constants consistent instead of hard-coding a `../` count.
+fn css_entry_relative_prefix() -> String {
+  let depth =
+    css_entry_dir
+    |> string.split("/")
+    |> list.length
+
+  string.repeat("../", depth)
 }
 
 /// Copy a single file, logging failures without stopping the build.
@@ -553,151 +635,35 @@ fn toc_entry_json(entry: TocEntry) -> json.Json {
   ])
 }
 
-/// Read, minify, and concatenate CSS modules for the HTML shell.
+/// Read the bundled stylesheet for inlining into the HTML shell.
+///
+/// `bundle_css/0` has already written `css_bundle_path` by the time the shells
+/// are generated, so the inline copy and `dist/css/arata.css` are guaranteed to
+/// be the same bytes.
 fn inline_css() -> String {
-  css_modules
-  |> list.map(fn(path) {
-    case simplifile.read(path) {
-      Ok(css) ->
-        css
-        |> minify_css
-        |> sanitize_style_text
+  case simplifile.read(css_bundle_path) {
+    Ok(css) -> sanitize_style_text(css)
 
-      Error(_) -> ""
+    Error(file_error) -> {
+      // Unreachable in practice: `bundle_css/0` aborts the build when the
+      // bundle cannot be written. Rendering unstyled beats aborting here,
+      // where the failure would be much harder to trace back to its cause.
+      io.println(
+        "Warning: could not read "
+        <> css_bundle_path
+        <> ": "
+        <> simplify_error(file_error),
+      )
+
+      ""
     }
-  })
-  |> string.join("")
+  }
 }
 
 /// Prevent CSS content from terminating the generated inline style element.
 fn sanitize_style_text(css: String) -> String {
   css
   |> string.replace("</style", "<\\/style")
-}
-
-type CssScanState {
-  CssOutside
-  CssComment
-  CssString(quote: String, escaped: Bool)
-}
-
-/// Minify CSS while preserving quoted strings.
-fn minify_css(css: String) -> String {
-  css
-  |> strip_css_comments
-  |> collapse_css_whitespace
-  |> trim_css_spaces_around_tokens
-  |> string.trim
-}
-
-fn strip_css_comments(css: String) -> String {
-  css
-  |> string.to_graphemes
-  |> strip_css_comments_loop(CssOutside, [])
-  |> list.reverse
-  |> string.join("")
-}
-
-fn strip_css_comments_loop(
-  chars: List(String),
-  state: CssScanState,
-  acc: List(String),
-) -> List(String) {
-  case chars {
-    [] -> acc
-
-    [char, ..rest] ->
-      case state {
-        CssOutside ->
-          case char {
-            "/" ->
-              case rest {
-                ["*", ..tail] -> strip_css_comments_loop(tail, CssComment, acc)
-
-                _ -> strip_css_comments_loop(rest, CssOutside, [char, ..acc])
-              }
-
-            "\"" ->
-              strip_css_comments_loop(rest, CssString("\"", False), [
-                char,
-                ..acc
-              ])
-
-            "'" ->
-              strip_css_comments_loop(rest, CssString("'", False), [char, ..acc])
-
-            _ -> strip_css_comments_loop(rest, CssOutside, [char, ..acc])
-          }
-
-        CssComment ->
-          case char {
-            "*" ->
-              case rest {
-                ["/", ..tail] -> strip_css_comments_loop(tail, CssOutside, acc)
-
-                _ -> strip_css_comments_loop(rest, CssComment, acc)
-              }
-
-            _ -> strip_css_comments_loop(rest, CssComment, acc)
-          }
-
-        CssString(quote, escaped) -> {
-          let next_state = case escaped {
-            True -> CssString(quote, False)
-
-            False ->
-              case char {
-                "\\" -> CssString(quote, True)
-
-                _ ->
-                  case char == quote {
-                    True -> CssOutside
-                    False -> CssString(quote, False)
-                  }
-              }
-          }
-
-          strip_css_comments_loop(rest, next_state, [char, ..acc])
-        }
-      }
-  }
-}
-
-fn collapse_css_whitespace(css: String) -> String {
-  css
-  |> string.replace("\r\n", "\n")
-  |> string.replace("\r", "\n")
-  |> string.replace("\n", " ")
-  |> string.replace("\t", " ")
-  |> collapse_repeated_spaces
-}
-
-fn collapse_repeated_spaces(css: String) -> String {
-  let compacted = string.replace(css, "  ", " ")
-
-  case compacted == css {
-    True -> compacted
-
-    False -> collapse_repeated_spaces(compacted)
-  }
-}
-
-fn trim_css_spaces_around_tokens(css: String) -> String {
-  css
-  |> string.replace(" {", "{")
-  |> string.replace("{ ", "{")
-  |> string.replace(" }", "}")
-  |> string.replace("} ", "}")
-  |> string.replace(" :", ":")
-  |> string.replace(": ", ":")
-  |> string.replace(" ;", ";")
-  |> string.replace("; ", ";")
-  |> string.replace(" ,", ",")
-  |> string.replace(", ", ",")
-  |> string.replace(" >", ">")
-  |> string.replace("> ", ">")
-  |> string.replace("( ", "(")
-  |> string.replace(" )", ")")
 }
 
 /// Generate the SPA HTML shell.
