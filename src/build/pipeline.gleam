@@ -24,6 +24,7 @@
 
 import build/feeds
 import build/feeds_style
+import build/head as build_head
 import build/llms
 import build/robots
 import build/theme_bootstrap
@@ -737,13 +738,14 @@ pub fn index_html(
 
   let css = inline_css()
 
+  // The shell is a single page, so it only carries site-level SEO metadata.
+  // `og:url` needs the deployment prefix, so the base path is used as the path.
+  let head =
+    build_head.head_metadata(site_meta, None, None, base_path <> "/", [])
+
   "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>"
   <> theme_bootstrap.html_script()
-  <> "<title>"
-  <> site_meta.title
-  <> "</title><meta name='description' content='"
-  <> site_meta.description
-  <> "'>"
+  <> head
   <> bootstrap_meta
   <> "'><link rel='icon' href='"
   <> favicon
