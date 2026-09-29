@@ -71,7 +71,7 @@ flowchart TD
 - **SEO** meta, OpenGraph, Atom/RSS feeds, sitemap, `robots.txt`, and `llms.txt`
 - **Analytics**: GoatCounter, Umami, Liwan (Google Analytics intentionally not supported)
 - **Comments**: Giscus, Utterances
-- **Inline CSS shell** — CSS modules are inlined into `index.html` and `404.html` to remove render-blocking stylesheet requests; `dist/css/` is still emitted for inspection/debugging
+- **Inline CSS shell** — CSS modules are bundled by Bun into a single minified `dist/css/arata.css`, then inlined into `index.html` and `404.html` to remove render-blocking stylesheet requests
 - **Config toggles** — features like `sidebar`, `floating_buttons`, `search`, `rss`, `mathjax`, and `aratafetch` can be toggled on or off in `content/arata.toml` without touching view code
 - **Configurable logo and favicon** — both are configured from `content/arata.toml`
 - **Build pipeline**: `gleam run -m build/pipeline` → complete static site in `dist/` (no Erlang/OTP required)
@@ -159,7 +159,7 @@ arata/
 │   ├── content/
 │   │   ├── loader.gleam       # build-time .md reader (simplifile + tom + mork)
 │   │   └── runtime.gleam      # browser-side content_index.json fetch (rsvp)
-│   │── css/                   # 13 CSS modules (inlined into HTML shell at build time)
+│   │── css/                   # CSS modules (bundled by Bun, inlined into the HTML shell)
 │   │   ├── base.css           # theme vars, html/body, headings, links
 │   │   ├── layout.css         # .arata-shell, .content, nav, .logo
 │   │   ├── components.css     # .page-header, .post-list, tags, icon buttons, sidebar post tags
@@ -343,11 +343,11 @@ aratafetch.css
 accessibility.css
 ```
 
-During the build, these modules are copied to `dist/css/` for inspection and debugging.
+During the build, these modules are bundled into a single `dist/css/arata.css` by Bun's CSS bundler (Lightning CSS), which strips comments, normalises values, and merges redundant declarations. The `@import` entry file Bun consumes is generated from the same `css_modules` list, so the order below stays the only place cascade precedence is declared.
 
-For runtime performance, however, the SPA shell no longer references them through render-blocking `<link rel="stylesheet">` tags.
+For runtime performance, the SPA shell does not reference the stylesheet through a render-blocking `<link rel="stylesheet">` tag. Instead, the build pipeline inlines the bundle into `index.html` and `404.html` inside a `<style>` block.
 
-Instead, the build pipeline inlines the CSS modules into `index.html` and `404.html` inside a `<style>` block.
+A CSS bundle failure aborts the build rather than warning, because a missing stylesheet would otherwise ship an unstyled site.
 
 The CSS order is fixed and important:
 
@@ -399,7 +399,7 @@ dist/
 ├── sitemap.xml             # sitemap
 ├── robots.txt              # crawler policy with Sitemap directive
 ├── llms.txt                # Markdown site map for LLM/agent consumers
-├── css/                    # copied CSS modules for inspection/debugging
+├── css/arata.css           # Bun-bundled, minified stylesheet (also inlined into the HTML shells)
 ├── fonts/
 ├── icons/
 └── images/
