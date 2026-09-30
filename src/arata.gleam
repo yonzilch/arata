@@ -873,6 +873,27 @@ fn view(model: Model) -> Element(Msg) {
         <> "; }",
     )
 
+  // The resolved configuration arrives with `content_index.json`. Until then
+  // the header would render the built-in bootstrap defaults (default site
+  // title and menu entries), which flash and then visibly change once the
+  // user configuration loads. Render the header only after the configuration
+  // is known so a refresh never shows the default navigation.
+  let header_element = case model.content_state {
+    ContentLoading -> none()
+
+    ContentReady | ContentFailed ->
+      header.view(
+        model.config,
+        model.route,
+        model.theme,
+        is_effective_dark(model.theme),
+        event.on_click(UserToggledTheme),
+        event.on_click(UserOpenedSearch),
+        event.on_click(UserToggledMobileMenu),
+        model.mobile_menu_open,
+      )
+  }
+
   let toc_fab_elements = case
     model.content_state,
     model.config.floating_buttons_enabled
@@ -886,23 +907,7 @@ fn view(model: Model) -> Element(Msg) {
     [],
     list.flatten([
       [
-        layout.view(
-          [
-            fonts_style,
-            header.view(
-              model.config,
-              model.route,
-              model.theme,
-              is_effective_dark(model.theme),
-              event.on_click(UserToggledTheme),
-              event.on_click(UserOpenedSearch),
-              event.on_click(UserToggledMobileMenu),
-              model.mobile_menu_open,
-            ),
-            main_content,
-          ],
-          right_content,
-        ),
+        layout.view([fonts_style, header_element, main_content], right_content),
       ],
       [search_modal_element],
       toc_fab_elements,
@@ -1088,8 +1093,27 @@ fn toc_fab_elements(model: Model) -> List(Element(Msg)) {
   }
 }
 
+/// Render the pre-content loading state.
+///
+/// Mirrors the loading indicator embedded in the generated HTML shell so the
+/// transition from the shell to the mounted SPA is seamless while
+/// `content_index.json` is still in flight. The header is intentionally not
+/// rendered here: it depends on the resolved configuration that this state is
+/// waiting for.
 fn view_loading() -> Element(Msg) {
-  html.main([attribute.class("page-header")], [])
+  html.main(
+    [
+      attribute.style("position", "fixed"),
+      attribute.style("inset", "0"),
+      attribute.style("display", "flex"),
+      attribute.style("align-items", "center"),
+      attribute.style("justify-content", "center"),
+      attribute.style("background", "var(--bg-0)"),
+      attribute.style("color", "var(--text-1)"),
+      attribute.style("font-family", "sans-serif"),
+    ],
+    [html.text("Loading…")],
+  )
 }
 
 fn view_content_failed() -> Element(Msg) {
