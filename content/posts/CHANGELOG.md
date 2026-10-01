@@ -21,6 +21,22 @@ For example, project-specific sections such as
 
 ---
 
+## [v1.7.9] — 2026-10-01
+
+### Changed
+
+- Replaced the hand-written CSS minifier with Bun's CSS bundler, preserving string contents and failing the build when CSS bundling fails.
+- Consolidated built-in site metadata under `config/defaults` by removing the unused duplicate defaults from `data/site`.
+- Updated the Nix flake.
+
+### Fixed
+
+- Emitted Open Graph and Fediverse creator metadata into the generated HTML shell.
+- Escaped user-authored metadata and used the correct `property` attribute for Open Graph entries and `name` for other meta tags.
+- Prevented the default site title and navigation from flashing before the runtime configuration finishes loading.
+
+---
+
 ## [v1.7.8] — 2026-08-31
 
 ### Added
