@@ -80,6 +80,7 @@ const css_modules = [
   "src/css/toc.css",
   "src/css/syntax.css",
   "src/css/lightbox.css",
+  "src/css/video.css",
   "src/css/accessibility.css",
 ]
 

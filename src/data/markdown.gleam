@@ -24,10 +24,12 @@
 //// frontmatter (`+++ ... +++`) before calling this module.
 
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import mork
 import mork/document.{type Options, Options}
+import shortcodes/video
 
 /// Convert a Markdown string to its final HTML: every rendered `<table>` is
 /// wrapped in a horizontally scrollable `<div class="table-wrap">` so wide
@@ -39,6 +41,228 @@ pub fn to_html(markdown: String) -> String {
 
   mork.to_html(ast)
   |> wrap_tables
+}
+/// Expand `video` shortcodes in Markdown before it reaches mork.
+///
+/// Only the generic `video` shortcode is recognized here; other `{{ ... }}`
+/// constructs are passed through unchanged so existing content is preserved.
+/// Fenced code blocks and inline code spans are never expanded, which keeps
+/// documentation examples literal.
+///
+/// Returns `Error` with a stable diagnostic on the first invalid `video`
+/// shortcode (missing `src`, unknown parameter, invalid boolean, unsafe
+/// protocol). Callers in the build pipeline turn that error into a build
+/// failure naming the source file.
+pub fn expand_shortcodes(markdown: String) -> Result(String, String) {
+  expand_fenced_segments(split_fenced(markdown), "", True)
+}
+
+fn expand_fenced_segments(
+  segments: List(#(Bool, String)),
+  acc: String,
+  first: Bool,
+) -> Result(String, String) {
+  case segments {
+    [] -> Ok(acc)
+    [#(True, text), ..rest] -> {
+      let next = case first {
+        True -> acc <> text
+        False -> acc <> "\n" <> text
+      }
+      expand_fenced_segments(rest, next, False)
+    }
+    [#(False, text), ..rest] ->
+      case expand_outside_inline_code(text) {
+        Ok(expanded) -> {
+          let next = case first {
+            True -> acc <> expanded
+            False -> acc <> "\n" <> expanded
+          }
+          expand_fenced_segments(rest, next, False)
+        }
+        Error(message) -> Error(message)
+      }
+  }
+}
+
+/// Split Markdown into fenced-code and text segments.
+///
+/// Fence markers (``` or ~~~) are recognized at the start of a trimmed line.
+/// Segments hold lines joined by `\n`; the caller joins segments with `\n`
+/// so the reassembled text is byte-identical to the input.
+fn split_fenced(markdown: String) -> List(#(Bool, String)) {
+  let lines = string.split(markdown, "\n")
+  split_lines(lines, None, [], [])
+}
+
+fn split_lines(
+  lines: List(String),
+  fence: Option(String),
+  segments_rev: List(#(Bool, String)),
+  current_rev: List(String),
+) -> List(#(Bool, String)) {
+  case lines {
+    [] -> finish_segment(fence, segments_rev, current_rev)
+    [line, ..rest] -> {
+      let trimmed = string.trim(line)
+      case fence {
+        Some(marker) ->
+          case string.starts_with(trimmed, marker) {
+            True -> {
+              let code_text =
+                [line, ..current_rev]
+                |> list.reverse()
+                |> string.join("\n")
+              split_lines(rest, None, [#(True, code_text), ..segments_rev], [])
+            }
+            False -> split_lines(rest, fence, segments_rev, [line, ..current_rev])
+          }
+        None ->
+          case fence_marker(trimmed) {
+            Some(marker) -> {
+              let flushed = flush_text_lines(segments_rev, current_rev)
+              split_lines(rest, Some(marker), flushed, [line])
+            }
+            None -> split_lines(rest, None, segments_rev, [line, ..current_rev])
+          }
+      }
+    }
+  }
+}
+
+fn finish_segment(
+  fence: Option(String),
+  segments_rev: List(#(Bool, String)),
+  current_rev: List(String),
+) -> List(#(Bool, String)) {
+  case current_rev {
+    [] -> list.reverse(segments_rev)
+    _ -> {
+      let text =
+        current_rev
+        |> list.reverse()
+        |> string.join("\n")
+      let is_code = case fence {
+        Some(_) -> True
+        None -> False
+      }
+      list.append(list.reverse(segments_rev), [#(is_code, text)])
+    }
+  }
+}
+
+fn flush_text_lines(
+  segments_rev: List(#(Bool, String)),
+  current_rev: List(String),
+) -> List(#(Bool, String)) {
+  case current_rev {
+    [] -> segments_rev
+    _ -> {
+      let text =
+        current_rev
+        |> list.reverse()
+        |> string.join("\n")
+      [#(False, text), ..segments_rev]
+    }
+  }
+}
+
+fn fence_marker(trimmed: String) -> Option(String) {
+  case string.starts_with(trimmed, "```") {
+    True -> Some("```")
+    False ->
+      case string.starts_with(trimmed, "~~~") {
+        True -> Some("~~~")
+        False -> None
+      }
+  }
+}
+
+/// Expand `video` shortcodes outside inline code spans.
+fn expand_outside_inline_code(text: String) -> Result(String, String) {
+  expand_scanning(text, "", False)
+}
+fn expand_scanning(
+  text: String,
+  acc: String,
+  in_code: Bool,
+) -> Result(String, String) {
+  case string.split_once(text, "`") {
+    Error(_) -> expand_braces(text, acc)
+    Ok(#(before, rest)) -> {
+      let #(run, after_run) = take_backtick_run(rest)
+      case in_code {
+        True -> expand_scanning(after_run, acc <> before <> run, False)
+        False ->
+          case expand_braces(before, acc) {
+            Ok(expanded) -> expand_scanning(after_run, expanded <> run, True)
+            Error(message) -> Error(message)
+          }
+      }
+    }
+  }
+}
+
+fn take_backtick_run(text: String) -> #(String, String) {
+  take_backtick_run_go(text, "`")
+}
+
+fn take_backtick_run_go(text: String, run: String) -> #(String, String) {
+  case string.split_once(text, "`") {
+    Ok(#("", after)) -> take_backtick_run_go(after, run <> "`")
+    _ -> #(run, text)
+  }
+}
+
+
+
+/// Expand `{{ video(...) }}` occurrences in one code-free fragment.
+fn expand_braces(
+  text: String,
+  acc: String,
+) -> Result(String, String) {
+  case string.split_once(text, "{{") {
+    Error(_) -> Ok(acc <> text)
+    Ok(#(before, rest)) ->
+      case string.split_once(rest, "}}") {
+        Error(_) -> Ok(acc <> before <> "{{" <> rest)
+        Ok(#(inner, after)) ->
+          case video_args(inner) {
+            Some(arg_string) ->
+              case video.render(arg_string) {
+                Ok(html) -> expand_braces(after, acc <> before <> html)
+                Error(error) -> Error(video.render_error(error))
+              }
+            None -> expand_braces(after, acc <> before <> "{{" <> inner <> "}}")
+          }
+      }
+  }
+}
+
+/// Extract the argument string when `inner` is a `video(...)` shortcode.
+///
+/// Returns `None` for non-video constructs, which are left verbatim. Whitespace
+/// is tolerated around the name and parentheses.
+fn video_args(inner: String) -> Option(String) {
+  let trimmed = string.trim(inner)
+  case string.starts_with(trimmed, "video") {
+    False -> None
+    True -> parse_video_call(trimmed)
+  }
+}
+
+fn parse_video_call(trimmed: String) -> Option(String) {
+  let after_name = string.slice(trimmed, 5, string.length(trimmed) - 5)
+  let rest = string.trim(after_name)
+  case rest {
+    "" -> None
+    _ ->
+      case string.starts_with(rest, "(") && string.ends_with(rest, ")") {
+        False -> None
+        True ->
+          Some(string.slice(rest, 1, string.length(rest) - 2))
+      }
+  }
 }
 
 /// Markdown extension options used by arata.

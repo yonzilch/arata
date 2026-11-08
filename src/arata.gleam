@@ -35,6 +35,7 @@ import effect/search as search_effect
 import effect/syntax_highlight as syntax_highlight_effect
 import effect/theme as theme_effect
 import effect/toc as toc_effect
+import effect/video as video_effect
 import gleam/dict
 import gleam/int
 import gleam/list
@@ -233,6 +234,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
       #(
         new_model,
         effect.batch([
+          effect.map(video_effect.cleanup(), fn(_) { NoOp }),
           route_effects,
           lightbox_scroll_lock(False),
         ]),
@@ -426,6 +428,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         new_model,
         effect.batch([
           modem.push(route.href_url(target_route), option.None, option.None),
+          effect.map(video_effect.cleanup(), fn(_) { NoOp }),
           configured_post_effects(new_model),
           lightbox_scroll_lock(False),
         ]),
@@ -476,6 +479,7 @@ fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             new_model,
             effect.batch([
               modem.push(route.href_url(target_route), option.None, option.None),
+              effect.map(video_effect.cleanup(), fn(_) { NoOp }),
               configured_post_effects(new_model),
               lightbox_scroll_lock(False),
             ]),
@@ -684,6 +688,7 @@ fn post_effects_for(
         syntax_highlight_effect,
         effect.map(codeblock_effect.enhance(), fn(_) { NoOp }),
         effect.map(note_effect.enhance(), fn(_) { NoOp }),
+        effect.map(video_effect.enhance(), fn(_) { NoOp }),
         mathjax_effect,
         mermaid_effect,
       ])
@@ -815,6 +820,7 @@ fn handle_search_key(
             new_model,
             effect.batch([
               modem.push(route.href_url(target_route), option.None, option.None),
+              effect.map(video_effect.cleanup(), fn(_) { NoOp }),
               configured_post_effects(new_model),
               lightbox_scroll_lock(False),
             ]),

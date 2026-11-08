@@ -251,7 +251,8 @@ fn load_post(path: String, filename: String) -> Result(Post, Nil) {
     Ok(t) -> Some(t)
     Error(_) -> None
   }
-  let #(html_body, toc) = body |> markdown.to_html |> headings.process
+  let #(html_body, toc) =
+    expand_body(path, body) |> markdown.to_html |> headings.process
   let word_count = count_words(body)
   let reading_time = case word_count {
     0 -> 0
@@ -289,9 +290,21 @@ fn load_page(path: String, filename: String) -> Result(Page, Nil) {
     Ok(s) -> Some(s)
     Error(_) -> None
   }
-  let html_body = body |> markdown.to_html |> headings.process_ids_only
+  let html_body =
+    expand_body(path, body) |> markdown.to_html |> headings.process_ids_only
 
   Ok(Page(slug: slug, title: title, body: html_body, subtitle: subtitle))
+}
+/// Expand shortcodes in a Markdown body, surfacing the first invalid
+/// `video` shortcode as a build-time failure naming the source file.
+fn expand_body(path: String, body: String) -> String {
+  case markdown.expand_shortcodes(body) {
+    Ok(expanded) -> expanded
+    Error(message) -> {
+      let reason = path <> ": " <> message
+      panic as reason
+    }
+  }
 }
 
 /// Split a markdown file into frontmatter and body.
