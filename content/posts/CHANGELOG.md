@@ -21,6 +21,23 @@ For example, project-specific sections such as
 
 ---
 
+## [v1.8.0] — 2026-11-08
+
+### Added
+
+- Added a generic `video` shortcode written as `{{ video(...) }}` with a minimal `src`-only form and optional `type`, `poster`, `title`, `caption`, `autoplay`, `muted`, and `loop` parameters, validated at build time (missing `src`, unknown parameters, invalid booleans, unsafe protocols) and rendered as semantic native `<video controls>` with a direct source link and no per-post scripts.
+- Added lazy runtime enhancement for video embeds: ArtPlayer loads only when mounted content contains video embeds, and hls.js loads only when an HLS source requires it without native playback, with duplicate, stale-initialization, and idempotent cleanup guards integrated into the Lustre SPA lifecycle.
+- Made video player assets configurable via `assets.artplayer_url` and `assets.hls_url` in `content/arata.toml`, with pinned defaults (`artplayer@5.4.0`, `hls.js@1.7.4`) threaded through the config pipeline to the FFI.
+
+### Changed
+
+- Added responsive video-embed styles with a stable 16/9 aspect ratio reserving layout space before enhancement.
+
+### Fixed
+
+- Fixed fenced code blocks losing newline separators during shortcode expansion, which previously merged the closing fence with following text (e.g. ```` ```Hello ````) and caused the rest of the document to render as one code block.
+
+---
 ## [v1.7.9] — 2026-10-01
 
 ### Changed
