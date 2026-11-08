@@ -369,4 +369,21 @@ pub fn effect_exposes_enhance_and_cleanup_test() {
   string.contains(source, "enhance") |> should.be_true()
   string.contains(source, "cleanup") |> should.be_true()
   string.contains(source, "video.ffi.mjs") |> should.be_true()
+  string.contains(source, "artplayer_url") |> should.be_true()
+  string.contains(source, "hls_url") |> should.be_true()
+}
+
+pub fn ffi_defaults_to_pinned_versions_test() {
+  let source = ffi_source()
+  string.contains(source, "artplayer@5.4.0") |> should.be_true()
+  string.contains(source, "hls.js@1.7.4") |> should.be_true()
+  string.contains(source, "artplayer@5.2.0") |> should.be_false()
+  string.contains(source, "hls.js@1.5.18") |> should.be_false()
+}
+
+pub fn ffi_accepts_configured_urls_test() {
+  let source = ffi_source()
+  string.contains(source, "normalizeUrl") |> should.be_true()
+  string.contains(source, "DEFAULT_ARTPLAYER_URL") |> should.be_true()
+  string.contains(source, "DEFAULT_HLS_URL") |> should.be_true()
 }

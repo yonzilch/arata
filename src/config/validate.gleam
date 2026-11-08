@@ -525,6 +525,30 @@ fn validate_feature_assets(
     application.syntax_highlight_enabled,
     application.syntax_highlight_cdn_url,
   ))
+  |> append_errors(validate_video_asset(source_path, "assets", "artplayer_url", application.artplayer_cdn_url))
+  |> append_errors(validate_video_asset(source_path, "assets", "hls_url", application.hls_cdn_url))
+}
+
+fn validate_video_asset(
+  source_path: String,
+  section: String,
+  key: String,
+  asset_url: String,
+) -> List(ConfigError) {
+  let asset_url = string.trim(asset_url)
+  case asset_url {
+    "" -> [
+      error.validation(
+        source_path,
+        Some(section),
+        Some(key),
+        Some("an HTTP, HTTPS, protocol-relative, or site-local asset URL"),
+        Some(""),
+        "video runtime asset URL must not be empty",
+      ),
+    ]
+    _ -> validate_runtime_asset_url(source_path, section, key, asset_url)
+  }
 }
 
 fn validate_feature_asset(

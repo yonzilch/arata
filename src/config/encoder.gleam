@@ -98,6 +98,8 @@ pub fn application_to_json(application: config.Config) -> json.Json {
       "syntax_highlight_cdn_url",
       json.string(application.syntax_highlight_cdn_url),
     ),
+    #("artplayer_cdn_url", json.string(application.artplayer_cdn_url)),
+    #("hls_cdn_url", json.string(application.hls_cdn_url)),
     #(
       "syntax_highlight_grammars",
       json.dict(application.syntax_highlight_grammars, fn(k) { k }, json.string),

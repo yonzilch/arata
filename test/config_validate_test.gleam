@@ -236,6 +236,30 @@ mathjax_url = \"\"
   validate.validate_from(path, resolved)
   |> should.be_ok
 }
+pub fn empty_video_asset_urls_are_rejected_test() {
+  let path = "test/empty-video-asset.toml"
+
+  let source =
+    "
+[assets]
+artplayer_url = \"\"
+hls_url = \"video/hls.min.js\"
+"
+
+  let resolved = resolve_text(path, source)
+
+  let assert Error(errors) = validate.validate_from(path, resolved)
+
+  let rendered = error.render_all(errors)
+
+  rendered
+  |> string.contains("assets.artplayer_url")
+  |> should.equal(True)
+
+  rendered
+  |> string.contains("assets.hls_url")
+  |> should.equal(True)
+}
 
 pub fn invalid_navigation_url_is_rejected_test() {
   let path = "test/invalid-navigation-url.toml"

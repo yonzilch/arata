@@ -171,6 +171,15 @@ pub fn syntax_highlight_enabled() -> Bool {
 pub fn syntax_highlight_url() -> String {
   "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
 }
+/// Default ArtPlayer runtime asset URL.
+pub fn artplayer_url() -> String {
+  "https://cdn.jsdelivr.net/npm/artplayer@5.4.0/dist/artplayer.js"
+}
+
+/// Default hls.js runtime asset URL.
+pub fn hls_url() -> String {
+  "https://cdn.jsdelivr.net/npm/hls.js@1.7.4/dist/hls.min.js"
+}
 
 /// Default Gleam grammar asset URL.
 ///

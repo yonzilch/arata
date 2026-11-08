@@ -166,6 +166,8 @@ pub type RawAssets {
     mathjax_url: Option(String),
     mermaid_url: Option(String),
     syntax_highlight_url: Option(String),
+    artplayer_url: Option(String),
+    hls_url: Option(String),
   )
 }
 

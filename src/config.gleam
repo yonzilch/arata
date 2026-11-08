@@ -148,6 +148,10 @@ pub type Config {
     syntax_highlight_enabled: Bool,
     /// Resolved public syntax-highlighting runtime asset URL.
     syntax_highlight_cdn_url: String,
+    /// Resolved public ArtPlayer runtime asset URL.
+    artplayer_cdn_url: String,
+    /// Resolved public hls.js runtime asset URL.
+    hls_cdn_url: String,
     /// Explicit grammar URLs for languages not included in the Highlight.js
     /// runtime bundle. Keys are normalized language names; values are URLs or
     /// site-relative paths to Highlight.js-compatible grammar scripts.
@@ -247,6 +251,14 @@ pub fn default() -> Config {
     syntax_highlight_cdn_url: config_url.resolve_site_url(
       base_path,
       defaults.syntax_highlight_url(),
+    ),
+    artplayer_cdn_url: config_url.resolve_site_url(
+      base_path,
+      defaults.artplayer_url(),
+    ),
+    hls_cdn_url: config_url.resolve_site_url(
+      base_path,
+      defaults.hls_url(),
     ),
     syntax_highlight_grammars: dict.new(),
     sidebar_enabled: defaults.sidebar_enabled(),

@@ -11,6 +11,14 @@
 ////
 //// The FFI lives in `src/ffi/video.ffi.mjs`. The `@external` declarations
 //// have no-op Gleam fallback bodies so the project builds on Erlang.
+////
+//// Important invariants:
+//// - runtime asset URLs come from `config` via this module; the FFI must
+////   not guess them;
+//// - callers pass the resolved `artplayer_cdn_url` / `hls_cdn_url` from
+////   `config.Config`;
+//// - the JavaScript side must never throw into the SPA if a runtime asset
+////   fails to load.
 
 import lustre/effect.{type Effect}
 
@@ -19,9 +27,9 @@ import lustre/effect.{type Effect}
 /// Loads the runtime player only when mounted content contains video
 /// shortcode output and is safe to call repeatedly: already-enhanced
 /// containers are skipped.
-pub fn enhance() -> Effect(Nil) {
+pub fn enhance(artplayer_url: String, hls_url: String) -> Effect(Nil) {
   use _ <- effect.from
-  enhance_videos()
+  enhance_videos(artplayer_url, hls_url)
   Nil
 }
 
@@ -37,7 +45,7 @@ pub fn cleanup() -> Effect(Nil) {
 }
 
 @external(javascript, "../ffi/video.ffi.mjs", "enhance_videos")
-fn enhance_videos() -> Nil
+fn enhance_videos(artplayer_url: String, hls_url: String) -> Nil
 
 @external(javascript, "../ffi/video.ffi.mjs", "cleanup_videos")
 fn cleanup_videos() -> Nil

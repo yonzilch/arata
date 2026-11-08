@@ -601,6 +601,8 @@ fn configured_post_effects(model: Model) -> effect.Effect(Msg) {
     model.config.mermaid_cdn_url,
     model.config.syntax_highlight_enabled,
     model.config.syntax_highlight_cdn_url,
+    model.config.artplayer_cdn_url,
+    model.config.hls_cdn_url,
     grammar_list,
   )
 }
@@ -649,6 +651,8 @@ fn post_effects_for(
   mermaid_cdn_url: String,
   syntax_highlight_enabled: Bool,
   syntax_highlight_cdn_url: String,
+  artplayer_cdn_url: String,
+  hls_cdn_url: String,
   grammar_list: List(#(String, String)),
 ) -> effect.Effect(Msg) {
   // Every route that renders a Markdown body (posts, the homepage, and
@@ -688,7 +692,7 @@ fn post_effects_for(
         syntax_highlight_effect,
         effect.map(codeblock_effect.enhance(), fn(_) { NoOp }),
         effect.map(note_effect.enhance(), fn(_) { NoOp }),
-        effect.map(video_effect.enhance(), fn(_) { NoOp }),
+        effect.map(video_effect.enhance(artplayer_cdn_url, hls_cdn_url), fn(_) { NoOp }),
         mathjax_effect,
         mermaid_effect,
       ])

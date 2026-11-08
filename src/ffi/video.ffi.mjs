@@ -17,9 +17,11 @@
 //   discarded; cleanup is idempotent and releases player, provider,
 //   listeners, and media requests.
 // - Enhancement failure never removes the native video or the source link.
+// - Runtime asset URLs come from config (assets.artplayer_url / hls_url);
+//   defaults below are only fallbacks for callers passing no URL.
 
-const ARTPLAYER_URL = "https://cdn.jsdelivr.net/npm/artplayer@5.2.0/dist/artplayer.js";
-const HLS_URL = "https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js";
+const DEFAULT_ARTPLAYER_URL = "https://cdn.jsdelivr.net/npm/artplayer@5.4.0/dist/artplayer.js";
+const DEFAULT_HLS_URL = "https://cdn.jsdelivr.net/npm/hls.js@1.7.4/dist/hls.min.js";
 
 const SELECTOR = "[data-arata-video]";
 const OBSERVE_TIMEOUT_MS = 1500;
@@ -30,10 +32,28 @@ let scheduled = false;
 let observer = null;
 let observerTimer = null;
 let artplayerPromise = null;
+let artplayerUrl = null;
 let hlsPromise = null;
+let hlsUrl = null;
 
-export function enhance_videos() {
+function normalizeUrl(url, fallback) {
+  if (typeof url === "string" && url.trim() !== "") return url.trim();
+  return fallback;
+}
+
+export function enhance_videos(artplayer_url = DEFAULT_ARTPLAYER_URL, hls_url = DEFAULT_HLS_URL) {
   if (typeof window === "undefined" || typeof document === "undefined") return;
+  const playerUrl = normalizeUrl(artplayer_url, DEFAULT_ARTPLAYER_URL);
+  const providerUrl = normalizeUrl(hls_url, DEFAULT_HLS_URL);
+  // Reset cached loads when the configured URLs change.
+  if (artplayerPromise && artplayerUrl !== playerUrl) {
+    artplayerPromise = null;
+    artplayerUrl = null;
+  }
+  if (hlsPromise && hlsUrl !== providerUrl) {
+    hlsPromise = null;
+    hlsUrl = null;
+  }
   // Prune players whose containers left the document (SPA content swap).
   pruneDetached();
   if (scheduled) return;
@@ -43,10 +63,10 @@ export function enhance_videos() {
     const containers = findContainers();
     if (containers.length > 0) {
       stopObserver();
-      void enhanceAsync(containers, ++generation);
+      void enhanceAsync(containers, ++generation, playerUrl, providerUrl);
       return;
     }
-    observeUntilVideosExist();
+    observeUntilVideosExist(playerUrl, providerUrl);
   });
 }
 
@@ -65,18 +85,18 @@ function afterPaint(callback) {
   }
 }
 
-function observeUntilVideosExist() {
+function observeUntilVideosExist(playerUrl, providerUrl) {
   if (observer || typeof MutationObserver === "undefined") return;
   if (typeof document.body === "undefined" || document.body === null) {
     // Body may not exist yet; retry on the next paint.
-    afterPaint(() => observeUntilVideosExist());
+    afterPaint(() => observeUntilVideosExist(playerUrl, providerUrl));
     return;
   }
   observer = new MutationObserver(() => {
     const containers = findContainers();
     if (containers.length > 0) {
       stopObserver();
-      void enhanceAsync(containers, ++generation);
+      void enhanceAsync(containers, ++generation, playerUrl, providerUrl);
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
@@ -112,10 +132,10 @@ function pruneDetached() {
   }
 }
 
-async function enhanceAsync(containers, gen) {
+async function enhanceAsync(containers, gen, playerUrl, providerUrl) {
   let ArtplayerCtor;
   try {
-    ArtplayerCtor = await loadArtPlayer();
+    ArtplayerCtor = await loadArtPlayer(playerUrl);
   } catch {
     return;
   }
@@ -128,7 +148,7 @@ async function enhanceAsync(containers, gen) {
   let HlsCtor = null;
   if (needsProvider) {
     try {
-      HlsCtor = await loadHls();
+      HlsCtor = await loadHls(providerUrl);
     } catch {
       HlsCtor = null;
     }
@@ -320,10 +340,12 @@ function destroyInstance(container) {
   }
 }
 
-function loadArtPlayer() {
+function loadArtPlayer(url) {
+  const playerUrl = normalizeUrl(url, DEFAULT_ARTPLAYER_URL);
   if (typeof window.Artplayer !== "undefined") return Promise.resolve(window.Artplayer);
-  if (artplayerPromise) return artplayerPromise;
-  artplayerPromise = loadScript(ARTPLAYER_URL).then(() => {
+  if (artplayerPromise && artplayerUrl === playerUrl) return artplayerPromise;
+  artplayerUrl = playerUrl;
+  artplayerPromise = loadScript(playerUrl).then(() => {
     if (typeof window.Artplayer === "undefined") {
       throw new Error("ArtPlayer global missing after load");
     }
@@ -332,14 +354,17 @@ function loadArtPlayer() {
   // Allow a retry after failure so a later route with video can succeed.
   artplayerPromise.catch(() => {
     artplayerPromise = null;
+    artplayerUrl = null;
   });
   return artplayerPromise;
 }
 
-function loadHls() {
+function loadHls(url) {
+  const providerUrl = normalizeUrl(url, DEFAULT_HLS_URL);
   if (typeof window.Hls !== "undefined") return Promise.resolve(window.Hls);
-  if (hlsPromise) return hlsPromise;
-  hlsPromise = loadScript(HLS_URL).then(() => {
+  if (hlsPromise && hlsUrl === providerUrl) return hlsPromise;
+  hlsUrl = providerUrl;
+  hlsPromise = loadScript(providerUrl).then(() => {
     if (typeof window.Hls === "undefined") {
       throw new Error("Hls global missing after load");
     }
@@ -347,6 +372,7 @@ function loadHls() {
   });
   hlsPromise.catch(() => {
     hlsPromise = null;
+    hlsUrl = null;
   });
   return hlsPromise;
 }

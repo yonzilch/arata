@@ -188,6 +188,14 @@ pub fn resolve_from(
             site.base_path,
             assets.syntax_highlight_url,
           ),
+          artplayer_cdn_url: resolve_runtime_asset_url(
+            site.base_path,
+            assets.artplayer_url,
+          ),
+          hls_cdn_url: resolve_runtime_asset_url(
+            site.base_path,
+            assets.hls_url,
+          ),
           syntax_highlight_grammars: grammars,
           sidebar_enabled: features.sidebar,
           floating_buttons_enabled: features.floating_buttons,
@@ -280,6 +288,8 @@ type ResolvedAssets {
     mathjax_url: String,
     mermaid_url: String,
     syntax_highlight_url: String,
+    artplayer_url: String,
+    hls_url: String,
   )
 }
 
@@ -472,16 +482,17 @@ fn resolve_assets(raw: Option(RawAssets)) -> ResolvedAssets {
         mathjax_url: None,
         mermaid_url: None,
         syntax_highlight_url: None,
+        artplayer_url: None,
+        hls_url: None,
       )
   }
 
   ResolvedAssets(
     mathjax_url: unwrap(raw.mathjax_url, defaults.mathjax_url()),
     mermaid_url: unwrap(raw.mermaid_url, defaults.mermaid_url()),
-    syntax_highlight_url: unwrap(
-      raw.syntax_highlight_url,
-      defaults.syntax_highlight_url(),
-    ),
+    syntax_highlight_url: unwrap(raw.syntax_highlight_url, defaults.syntax_highlight_url()),
+    artplayer_url: unwrap(raw.artplayer_url, defaults.artplayer_url()),
+    hls_url: unwrap(raw.hls_url, defaults.hls_url()),
   )
 }
 

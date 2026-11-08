@@ -45,6 +45,14 @@ pub fn empty_configuration_uses_built_in_defaults_test() {
   application.posts_per_page
   |> should.equal(10)
 
+  // Empty config inherits the pinned video asset defaults.
+  application.artplayer_cdn_url
+  |> should.equal("https://cdn.jsdelivr.net/npm/artplayer@5.4.0/dist/artplayer.js")
+
+  application.hls_cdn_url
+  |> should.equal("https://cdn.jsdelivr.net/npm/hls.js@1.7.4/dist/hls.min.js")
+
+
   list.length(application.menu)
   |> should.equal(5)
 
@@ -132,6 +140,12 @@ pub fn full_configuration_resolves_all_supported_domains_test() {
 
   application.fonts.code
   |> should.equal("\"JetBrains Mono\", monospace")
+
+  application.artplayer_cdn_url
+  |> should.equal("https://cdn.example.com/artplayer.js")
+
+  application.hls_cdn_url
+  |> should.equal("https://cdn.example.com/hls.min.js")
 
   application.analytics
   |> should.equal(Umami(

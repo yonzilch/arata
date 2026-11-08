@@ -59,6 +59,8 @@ code = "\"JetBrains Mono\", monospace"
 mathjax_url = "https://cdn.example.com/mathjax.js"
 mermaid_url = "https://cdn.example.com/mermaid.mjs"
 syntax_highlight_url = "https://cdn.example.com/highlight.js"
+artplayer_url = "https://cdn.example.com/artplayer.js"
+hls_url = "https://cdn.example.com/hls.min.js"
 
 [analytics]
 provider = "umami"

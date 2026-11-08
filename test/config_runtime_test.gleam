@@ -57,6 +57,12 @@ pub fn runtime_projection_preserves_application_configuration_test() {
 
   application.syntax_highlight_cdn_url
   |> should.equal("https://cdn.example.com/highlight.js")
+
+  application.artplayer_cdn_url
+  |> should.equal("https://cdn.example.com/artplayer.js")
+
+  application.hls_cdn_url
+  |> should.equal("https://cdn.example.com/hls.min.js")
 }
 
 pub fn runtime_projection_preserves_public_site_metadata_test() {
@@ -280,6 +286,20 @@ pub fn runtime_encoder_emits_posts_per_page_test() {
   |> string.contains("\"posts_per_page\":25")
   |> should.equal(True)
 }
+pub fn runtime_encoder_emits_video_asset_urls_test() {
+  let encoded =
+    resolve_fixture(fixture_dir <> "/full.toml")
+    |> runtime.from_resolved
+    |> encoder.to_string
+
+  encoded
+  |> string.contains("\"artplayer_cdn_url\":\"https://cdn.example.com/artplayer.js\"")
+  |> should.equal(True)
+
+  encoded
+  |> string.contains("\"hls_cdn_url\":\"https://cdn.example.com/hls.min.js\"")
+  |> should.equal(True)
+}
 
 /// Round-trip test for the content-index contract: the `config` section
 /// encoded by the build side must be fully reconstructable by the SPA-side
@@ -299,6 +319,12 @@ pub fn runtime_config_round_trips_through_content_index_test() {
 
   decoded.application.posts_per_page
   |> should.equal(25)
+
+  decoded.application.artplayer_cdn_url
+  |> should.equal("https://cdn.example.com/artplayer.js")
+
+  decoded.application.hls_cdn_url
+  |> should.equal("https://cdn.example.com/hls.min.js")
 
   decoded.application.title
   |> should.equal("Full Arata")

@@ -28,6 +28,7 @@
 //// compiled configuration defaults before runtime configuration has loaded.
 
 import config
+import config/defaults
 import config/runtime.{
   type RuntimeConfig, type RuntimeSite, RuntimeConfig, RuntimeSite,
 }
@@ -183,6 +184,16 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     "syntax_highlight_cdn_url",
     decode.string,
   )
+  use artplayer_cdn_url <- decode.optional_field(
+    "artplayer_cdn_url",
+    defaults.artplayer_url(),
+    decode.string,
+  )
+  use hls_cdn_url <- decode.optional_field(
+    "hls_cdn_url",
+    defaults.hls_url(),
+    decode.string,
+  )
   use syntax_highlight_grammars <- decode.field(
     "syntax_highlight_grammars",
     decode.dict(decode.string, decode.string),
@@ -226,6 +237,8 @@ fn decode_application_config() -> decode.Decoder(config.Config) {
     mermaid_cdn_url: mermaid_cdn_url,
     syntax_highlight_enabled: syntax_highlight_enabled,
     syntax_highlight_cdn_url: syntax_highlight_cdn_url,
+    artplayer_cdn_url: artplayer_cdn_url,
+    hls_cdn_url: hls_cdn_url,
     syntax_highlight_grammars: syntax_highlight_grammars,
     sidebar_enabled: sidebar_enabled,
     floating_buttons_enabled: floating_buttons_enabled,

@@ -460,21 +460,31 @@ fn decode_assets(
   let syntax_highlight_url =
     optional_string(source_path, section, table, "syntax_highlight_url")
 
+  let artplayer_url = optional_string(source_path, section, table, "artplayer_url")
+
+  let hls_url = optional_string(source_path, section, table, "hls_url")
+
   let errors =
     unknown_key_errors(source_path, Some(section), table, [
       "mathjax_url",
       "mermaid_url",
       "syntax_highlight_url",
+      "artplayer_url",
+      "hls_url",
     ])
     |> append_field_errors(mathjax_url)
     |> append_field_errors(mermaid_url)
     |> append_field_errors(syntax_highlight_url)
+    |> append_field_errors(artplayer_url)
+    |> append_field_errors(hls_url)
 
   Field(
     value: Some(RawAssets(
       mathjax_url: mathjax_url.value,
       mermaid_url: mermaid_url.value,
       syntax_highlight_url: syntax_highlight_url.value,
+      artplayer_url: artplayer_url.value,
+      hls_url: hls_url.value,
     )),
     errors: errors,
   )
